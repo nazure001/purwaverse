@@ -1,0 +1,40 @@
+const CONFIG = Object.freeze({
+  APP_NAME: 'Purwaverse IPA VIII',
+  APP_MODE: 'TEST',
+  SOURCE_STATUS: 'READY',
+  SCHOOL_YEAR: '2026/2027',
+  CURRENT_SEMESTER: 1,
+  SESSION_HOURS: 8,
+  TEAM_COUNT: 8,
+  QUIZ_PASSING_SCORE: 70,
+  LOGIN_MAX_ATTEMPTS: 5,
+  LOGIN_BLOCK_SECONDS: 300,
+  QUICK_DIAGNOSTIC_ITEM_IDS: ['D01','D05','D08','D09','D24','D03','D13','D12','D22','D10','D21','D28'],
+  DOMAINS: ['observe_infer','evidence_experiment','model_concept','systems_causality','technology_design']
+});
+
+const SHEETS = Object.freeze({
+  SETTINGS: ['key','value','updated_at'],
+  MASTER_CLASSES: ['class_id','class_name','school_year','active'],
+  MASTER_STUDENTS: ['student_id','nis','nisn','name','gender','class_id','roll_no','pin_hash','active','source_row','updated_at'],
+  MASTER_ACTIVITIES: ['activity_id','chapter_id','unit_id','type','title','max_score','required','public','active'],
+  DIAGNOSTIC_ITEMS: ['item_id','source_number','domain','prompt','rubric_json','max_score','active','source_status'],
+  SELF_MAP_ITEMS: ['item_id','dimension','prompt','active','source_status'],
+  SESSIONS: ['session_id','actor_type','actor_id','class_id','expires_at','created_at'],
+  PROGRESS: ['progress_id','student_id','activity_id','status','score','evidence_json','updated_at','updated_by'],
+  DIAGNOSTIC_RESPONSES: ['response_id','student_id','item_id','answer','score','scored_by','submitted_at'],
+  DIAGNOSTIC_PROFILES: ['profile_id','student_id','observe_infer','evidence_experiment','model_concept','systems_causality','technology_design','overall_reasoning','self_map_score','leader_index','research_readiness','updated_at'],
+  TEAMS: ['team_id','class_id','version','balance_score','status','created_at','created_by'],
+  TEAM_MEMBERS: ['membership_id','team_id','student_id','role','is_leader','locked','override_note'],
+  PIN_ISSUANCE: ['student_id','class_id','roll_no','pin','issued_at','rotated_at'],
+  GROUP_LAB: ['lab_result_id','class_id','activity_id','team_id','status','score','result_json','teacher_note','updated_at','updated_by'],
+  STUDENT_ACTIVITY_STATE: ['state_id','student_id','activity_id','learning_status','unlock_status','best_score','attempt_count','updated_at'],
+  TEACHER_CHECKS: ['check_id','student_id','activity_id','check_type','status','score','note','checked_by','checked_at','revision'],
+  QUIZ_ITEMS: ['quiz_item_id','activity_id','question_type','prompt','options_json','answer_json','feedback_json','max_score','active'],
+  QUIZ_ATTEMPTS: ['attempt_id','student_id','activity_id','attempt_number','score','passed','started_at','submitted_at'],
+  QUIZ_RESPONSES: ['response_id','attempt_id','quiz_item_id','answer_json','score','feedback_code'],
+  SKILL_EVIDENCE: ['evidence_id','student_id','activity_id','team_id','skill_code','source_type','source_id','status','verified_by','verified_at'],
+  UNLOCK_OVERRIDES: ['override_id','student_id','activity_id','allowed','reason','created_by','created_at'],
+  ATTENDANCE: ['attendance_id','student_id','class_id','date','timestamp'],
+  AUDIT_LOG: ['event_id','actor_type','actor_id','action','entity_type','entity_id','detail_json','created_at']
+});

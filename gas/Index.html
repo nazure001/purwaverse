@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <?!= include('Styles'); ?>
+  <?!= include('LearningStyles'); ?>
+</head>
+<body>
+  <header class="topbar">
+    <button class="brand" onclick="goHomeForRole()" aria-label="Beranda sesuai akun">PURWAVERSE <span>IPA VIII</span></button>
+    <nav><span id="role-nav-label" class="role-indicator" hidden></span><button id="primary-nav-button" onclick="handlePrimaryNavigation()">Jalur Belajar</button><button id="secondary-nav-button" onclick="handleSecondaryNavigation()">LKPD</button><button id="auth-nav-button" onclick="handleAuthNavigation()">Masuk</button></nav>
+  </header>
+  <main>
+    <section id="view-home" class="view hero active">
+      <div class="eyebrow">EXPLORE SCIENCE AROUND YOU</div>
+      <h1>Dunia kecil.<br><em>Pertanyaan besar.</em></h1>
+      <p>Belajar IPA melalui pengamatan, bukti, eksperimen sederhana, dan tantangan nyata. Masuk untuk melihat jalur, nilai, dan LKPD yang sudah terbuka.</p>
+      <div class="actions"><button id="home-primary-button" class="primary" onclick="handleHomePrimary()">Mulai Belajar</button><button id="home-secondary-button" class="secondary" onclick="handleHomeSecondary()">Masuk ke Akun</button></div>
+      <div class="path-grid">
+        <article><b>01</b><h3>Learn</h3><p>Bangun konsep inti dengan bahasa ringkas.</p></article>
+        <article><b>02</b><h3>Explore</h3><p>Amati pola dan dunia mikroskopis.</p></article>
+        <article><b>03</b><h3>Lab</h3><p>Lakukan sains dengan alat sederhana.</p></article>
+        <article><b>04</b><h3>Challenge</h3><p>Gunakan bukti untuk memecahkan kasus.</p></article>
+      </div>
+    </section>
+
+    <section id="view-chapter" class="view">
+      <div class="chapter-head"><div><span class="pill">BAB 1 · GOLD STANDARD</span><h2>The Invisible World</h2><p>Bagaimana sesuatu yang tidak terlihat mata menentukan kehidupan kita?</p></div><div class="chapter-number">01</div></div>
+      <div class="cycle">
+        <article><div class="card-meta"><span>SCIENCE CYCLE 1</span><span id="status-CH08-01-U01-LRN01" class="status-badge">Belum dimulai</span></div><h3>Sel: unit kehidupan</h3><p><b>Discover:</b> benda hidup tersusun dari apa?</p><p><b>Learn:</b> sel adalah unit struktural dan fungsional terkecil kehidupan.</p><button onclick="openActivity('learn')">Buka materi</button></article>
+        <article><div class="card-meta"><span>SCIENCE CYCLE 2</span><span id="status-CH08-01-U02-LAB01" class="status-badge">Belum dimulai</span></div><h3>Melihat yang tak terlihat</h3><p><b>Explore:</b> perbesaran tidak sama dengan resolusi.</p><p><b>Lab:</b> observasi preparat/objek sederhana dan catat bukti.</p><button onclick="openActivity('lab')">Buka Lab</button></article>
+        <article><div class="card-meta"><span>SCIENCE CYCLE 3</span><span id="status-CH08-01-U03-CHL01" class="status-badge">Belum dimulai</span></div><h3>Struktur, fungsi, spesialisasi</h3><p><b>Challenge:</b> identifikasi sel misterius berdasarkan organel dan fungsi.</p><p><b>Research Path:</b> ubah observasi menjadi pertanyaan ilmiah.</p><div class="card-actions"><button onclick="openActivity('challenge')">Cell Case</button><button class="secondary" onclick="openActivity('research')">Research Path</button></div></article>
+      </div>
+    </section>
+
+    <section id="view-activity" class="view activity-view">
+      <div class="activity-toolbar"><button class="secondary" onclick="showView('chapter')">Kembali ke Bab 1</button><span id="activity-save-state" class="status-badge">Belum disimpan</span></div>
+      <div id="activity-content"></div>
+    </section>
+
+    <section id="view-login" class="view narrow">
+      <span class="pill">PROGRESS PRIBADI</span><h2>Masuk sebagai siswa</h2><p>Pilih kelas, nomor absen, lalu masukkan PIN 4 digit.</p>
+      <form onsubmit="studentLogin(event)"><label>Kelas<select id="class-id" required><option>8A</option><option>8B</option><option>8C</option><option>8D</option><option>8E</option></select></label><label>Nomor absen<input id="roll-no" type="number" min="1" required></label><label>PIN<input id="student-pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required></label><button class="primary" type="submit">Masuk</button></form>
+      <button class="text-button" onclick="showView('teacher-login')">Masuk sebagai guru</button>
+    </section>
+
+    <section id="view-student" class="view">
+      <div id="student-welcome"></div>
+      <div class="actions"><button class="primary" onclick="openLearningPath()">Lanjutkan Jalur Belajar</button><button class="secondary" onclick="openPracticeGuide()">Panduan Praktik & LKPD</button><button class="secondary" onclick="openSemesterCard()">Kartu Semester</button><button class="secondary" onclick="openGlossary()">Kamus Sains</button><button class="secondary" onclick="showView('wiki')" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;">Wiki Purwaverse</button></div>
+      <div class="student-grid">
+        <article class="mission-card"><span class="pill">MISSION 0</span><h3>Think Like a Scientist</h3><p>Profil cara berpikir sains, bukan ranking.</p><button onclick="loadDiagnostic()">Mulai Quick Diagnostic</button></article>
+        <article><h3>Research Passport</h3><ul class="passport"><li id="passport-observe">Observe</li><li id="passport-ask">Ask</li><li id="passport-predict">Predict</li><li id="passport-variables">Identify variables</li><li id="passport-evidence">Analyze evidence</li></ul></article>
+        <article id="profile-card"><h3>Science Self Map</h3><p>Profil akan muncul setelah Mission 0 selesai.</p></article>
+        <article id="badge-collection-card" style="grid-column: 1 / -1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div><h3>Koleksi Lencana</h3><p style="margin-top:0.25rem;">Tekan lencana untuk <i>share</i> pencapaianmu ke WhatsApp! 😎</p></div>
+          </div>
+          <div id="badge-showcase" style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:1rem;"></div>
+        </article>
+      </div>
+      <div id="diagnostic" class="hidden"></div>
+    </section>
+
+    <section id="view-glossary" class="view narrow">
+      <div class="activity-toolbar"><button class="secondary" onclick="showView('student')">Kembali</button><span class="status-badge">Kamus Sains</span></div>
+      <div class="dashboard-head" style="margin-bottom:1.5rem;">
+        <div><h2>Kamus Sains</h2><p>Temukan arti istilah sains yang membingungkanmu.</p></div>
+        <input type="text" id="glossary-search" placeholder="Cari istilah sains..." oninput="filterGlossary()" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid #ccc; font-size:1rem; margin-top:1rem; background:#fff;">
+      </div>
+      <div id="glossary-content" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
+    </section>
+
+    <section id="view-wiki" class="view">
+      <div class="activity-toolbar"><button class="secondary" onclick="showView('student')">Kembali</button><span class="status-badge">Wiki & Bantuan</span></div>
+      <div class="dashboard-head">
+        <div><span class="pill">PANDUAN SISWA</span><h2>Wiki Purwaverse</h2><p>Pelajari cara menggunakan fitur-fitur di Purwaverse agar kamu bisa belajar dengan maksimal dan mengumpulkan banyak lencana!</p></div>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:1.5rem; margin-top:2rem;">
+        <article class="material-card example">
+          <h3>🛣️ Jalur Belajar (Science Cycle)</h3>
+          <p>Belajar di Purwaverse menggunakan alur maju (Cycle). Kamu tidak bisa melompat materi sebelum materi sebelumnya selesai.</p>
+          <ul style="padding-left:1.5rem; margin-top:0.5rem; color:#475569;">
+            <li><b>Learn (Materi):</b> Baca materi dan buat rangkuman di bukumu.</li>
+            <li><b>Quick Quiz:</b> Kuis singkat untuk menguji pemahamanmu. Nilai minimal kelulusan adalah 70.</li>
+            <li><b>Lab / Explore:</b> Lakukan pengamatan atau praktikum berkelompok.</li>
+          </ul>
+        </article>
+        
+        <article class="material-card misconception">
+          <h3>🏅 Koleksi Lencana Dasar</h3>
+          <p>Buktikan ketangguhanmu dengan mengumpulkan lencana dan pamerkan ke teman-temanmu!</p>
+          <ul style="padding-left:1.5rem; margin-top:0.5rem; color:#475569;">
+            <li>📚 <b>Scholar / 🔬 Lab Researcher:</b> Tuntaskan materi atau eksperimen.</li>
+            <li>💎 <b>Diamond Mind:</b> Meraih nilai Sempurna 100 di Kuis.</li>
+            <li>🥇 <b>Gold, 🥈 Silver, 🥉 Bronze:</b> Skor 90, 80, dan 70 di Kuis.</li>
+            <li>🎯 <b>First Blood / 🔥 Streak Master / 🚀 Hyperdrive:</b> Menyelesaikan 1, 3, dan 7 misi beruntun.</li>
+            <li>🥉 <b>Novice s/d 🏆 Legendary Collector:</b> Terus kumpulkan lencana untuk berevolusi!</li>
+          </ul>
+        </article>
+        
+        <article class="material-card example">
+          <h3>👑 Lencana Legendaris & Rahasia</h3>
+          <p>Sangat sulit didapat. Hati-hati, jika kamu ketahuan memakai AI atau Curang pindah tab saat kuis, lencana ini <b>akan hangus permanen seumur hidup!</b></p>
+          <ul style="padding-left:1.5rem; margin-top:0.5rem; color:#475569;">
+            <li>🧬 <b>Concept Architect:</b> Semua nilai Kuis (min. 4x) wajib di atas 90.</li>
+            <li>🛡️ <b>The Untouchable:</b> Dapat 4x skor 100 berturut-turut murni pemikiran sendiri.</li>
+            <li>🦅 <b>The Phoenix:</b> Sempat dapat nilai jelek, namun bangkit menaklukkan kuis lain dengan nilai >= 90.</li>
+            <li>🏃‍♂️ <b>October Sprinter:</b> Menyelesaikan 10 misi sebelum bulan November.</li>
+            <li>🦉 <b>Night Owl (Rahasia):</b> Belajar di waktu terlarang (malam/dini hari).</li>
+          </ul>
+        </article>
+    
+        <article class="material-card example">
+          <h3>🧠 Mission 0 (Science Self Map)</h3>
+          <p>Ini BUKAN ujian masuk! Ini adalah pemetaan cara berpikirmu. Jawablah dengan jujur sesuai apa yang ada di pikiranmu. Guru akan menilai kualitas <i>reasoning</i> (alasan) yang kamu berikan, bukan sekadar benar atau salah. Jika berhasil, kamu akan mendapatkan lencana Master of Logic!</p>
+        </article>
+    
+        <article class="material-card misconception">
+          <h3>📖 Kamus Sains & LKPD</h3>
+          <p>Gunakan tombol <b>Kamus Sains</b> di Dashboard untuk mencari arti kata-kata sulit yang kamu temukan. Untuk Panduan Praktikum, kamu bisa menekan tombol <b>Panduan Praktik</b> untuk melihat langkah-langkah sebelum praktikum dimulai bersama timmu.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-learning" class="view"><div class="dashboard-head"><div><span class="pill">PERSONAL SCIENCE PATH</span><h2>Jalur Belajar</h2><p>Kecepatan setiap siswa dapat berbeda. Selesaikan tahap dengan teliti.</p></div></div><div id="learning-path"></div></section>
+    <section id="view-learning-unit" class="view"><div class="activity-toolbar"><button class="secondary" onclick="openLearningPath()">Kembali ke Jalur</button><span id="learning-unit-status" class="status-badge"></span></div><div id="learning-unit-content"></div></section>
+    <section id="view-quiz" class="view narrow"><button class="secondary" onclick="showView('learning-unit')">Kembali</button><div id="quiz-content"></div></section>
+    <section id="view-semester-card" class="view"><div class="no-print actions"><button id="semester-card-print" class="primary" onclick="window.print()">Cetak Kartu</button><button class="secondary" onclick="showView('student')">Kembali</button></div><div id="semester-card-content"></div></section>
+    <section id="view-practice-sheet" class="view worksheet"><div class="no-print actions"><button class="primary" onclick="printPracticeSheet()">Cetak LKPD/Laporan</button><button class="secondary" onclick="showView('learning-unit')">Kembali</button></div><div id="dynamic-practice-sheet" class="sheet"></div></section>
+    <section id="view-practice-guide" class="view"><div class="activity-toolbar"><button class="secondary" onclick="goHomeForRole()">Kembali</button><span class="status-badge">Panduan & SOP</span></div><div id="practice-guide-content"></div></section>
+    <section id="view-material-summary" class="view worksheet"><div class="no-print actions"><button class="primary" onclick="window.print()">Cetak Ringkasan</button><button class="secondary" onclick="closeMaterialSummary()">Kembali</button></div><div id="material-summary-content" class="sheet material-summary-sheet"></div></section>
+
+    <section id="view-teacher-login" class="view narrow"><span class="pill">RUANG GURU</span><h2>Dashboard IPA VIII</h2><form onsubmit="teacherLogin(event)"><label>Nama pengguna<input id="teacher-user" required></label><label>Kata sandi<input id="teacher-pass" type="password" required></label><button class="primary">Masuk</button></form></section>
+    <section id="view-teacher" class="view"><div class="dashboard-head"><div><span class="pill">KLASENA-STYLE OVERVIEW</span><h2>Dashboard IPA VIII</h2></div><select id="teacher-class" onchange="loadDashboard();loadTeacherLearning()"><option>8A</option><option>8B</option><option>8C</option><option>8D</option><option>8E</option></select></div><div class="practice-dashboard-card"><div><span class="pill">SEBELUM PRAKTIK</span><h3>SOP, contoh berhasil, dan contoh laporan</h3><p>Gunakan sebagai pengarahan kelas sebelum membuka LKPD tim.</p></div><button class="secondary" onclick="openPracticeGuide()">Buka Panduan Praktik</button></div><div id="dashboard-content"></div><div class="actions"><button onclick="loadDiagnosticReview()">Nilai Mission 0</button><button id="generate-teams-button" onclick="generateTeams()" disabled>Generate 8 Science Teams</button><button class="secondary" onclick="openTeacherMaterialPreview()">Pratinjau Materi</button><button class="secondary" onclick="loadTeacherLearning()">Periksa Rangkuman/LKPD</button><button class="secondary" onclick="loadGroupLab()">Progress Tim</button></div><div id="team-gate-note"></div><div id="teacher-learning"></div><div id="group-lab-dashboard"></div><div id="diagnostic-review"></div><div id="team-output"></div></section>
+    <section id="view-teacher-materials" class="view"><div class="activity-toolbar"><button class="secondary" onclick="showView('teacher')">Kembali ke Dashboard Guru</button><span class="status-badge">Pratinjau - tidak mencatat progres</span></div><div id="teacher-material-catalog"></div></section>
+    <section id="view-teacher-material-unit" class="view"><div class="activity-toolbar"><button class="secondary" onclick="openTeacherMaterialPreview()">Kembali ke Daftar Materi</button><span class="status-badge">Pratinjau - baca saja</span></div><div id="teacher-material-content"></div></section>
+
+    <section id="view-worksheet" class="view worksheet">
+      <div class="no-print actions"><button class="primary" onclick="window.print()">Cetak A4</button><button class="secondary" onclick="showView('chapter')">Kembali</button></div>
+      <div class="sheet"><header><div><b>PURWAVERSE SCIENCE LAB</b><small>Bab 1 · The Invisible World</small></div><div>LKPD SL-01</div></header><h2>Mengamati Dunia Mikroskopis</h2><div class="identity">Nama/Tim: ____________________ &nbsp; Kelas: ______ &nbsp; Tanggal: __________</div>
+        <h3>MISSION</h3><p>Temukan bukti bahwa struktur yang tidak tampak oleh mata dapat diamati dengan alat dan prosedur yang tepat.</p>
+        <h3>PREDICT</h3><p>Objek mana yang diperkirakan menampilkan detail paling banyak? Mengapa?</p><div class="lines"></div>
+        <h3>TOOLS</h3><p>Mikroskop/preparat tersedia, kaca objek, pipet, air, objek aman yang ditentukan guru, pensil.</p>
+        <h3>DO SCIENCE</h3><ol><li>Ikuti instruksi keselamatan dan cara membawa mikroskop.</li><li>Mulai dari perbesaran terendah.</li><li>Fokuskan objek, lalu gambar hanya yang benar-benar terlihat.</li><li>Ulangi pada perbesaran berikutnya jika aman.</li></ol>
+        <h3>DATA</h3><table><tr><th>Objek/perbesaran</th><th>Gambar observasi</th><th>Detail yang tampak</th></tr><tr><td></td><td class="drawing"></td><td></td></tr><tr><td></td><td class="drawing"></td><td></td></tr></table>
+        <h3>EVIDENCE & THINK</h3><p>Bukti apa yang menunjukkan bahwa perbesaran dan resolusi bukan hal yang sama?</p><div class="lines"></div>
+        <h3>ERROR CHECK</h3><p>Apa yang mungkin membuat hasil pengamatan kurang jelas atau kurang akurat?</p><div class="lines short"></div>
+        <h3>CONCLUSION</h3><p>Tulis kesimpulan berdasarkan data, bukan hanya dugaan awal.</p><div class="lines"></div>
+        <h3>REFLECT</h3><p>Satu pertanyaan baru yang muncul dari pengamatan ini:</p><div class="lines short"></div>
+      </div>
+    </section>
+  </main>
+  <button id="projection-exit" class="projection-exit" onclick="toggleProjectionMode(false)" hidden>Keluar Tayangan</button>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script>window.PURWAVERSE_BOOTSTRAP = <?!= bootstrap ?>;</script>
+  <?!= include('Scripts'); ?>
+  <?!= include('LearningScripts'); ?>
+</body>
+</html>
