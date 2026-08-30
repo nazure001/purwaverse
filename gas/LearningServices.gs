@@ -27,32 +27,62 @@ function contextOverride_(context,activityId){if(!context)return null;const x=co
 function verifiedCheck_(studentId,activityId,type){ const x=latestTeacherCheck_(studentId,activityId,type);return !!x&&x.status==='verified'; }
 function unlockOverride_(studentId,activityId){ const x=findAll_('UNLOCK_OVERRIDES',r=>r.student_id===studentId&&r.activity_id===activityId).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];return x?String(x.allowed).toLowerCase()==='true':null; }
 
-function unitState_(studentId,unit,index,units,context){
+function teamLearningContext_(studentId) {
+  const memberships=findAll_('TEAM_MEMBERS',m=>m.student_id===studentId),teamIds=new Set(memberships.map(m=>m.team_id)),team=findAll_('TEAMS',t=>teamIds.has(t.team_id)).sort((a,b)=>Number(b.version)-Number(a.version))[0];
+  if(!team) return null;
+  const members=findAll_('TEAM_MEMBERS',m=>m.team_id===team.team_id);
+  const studentIds=members.map(m=>m.student_id);
+  const checks=findAll_('TEACHER_CHECKS',r=>studentIds.includes(r.student_id));
+  const attempts=findAll_('QUIZ_ATTEMPTS',r=>studentIds.includes(r.student_id)&&r.submitted_at);
+  const teamContext={};
+  studentIds.forEach(id=>{teamContext[id]={checks:{},attempts:{}};});
+  checks.forEach(x=>{if(!teamContext[x.student_id])return;const k=x.activity_id+'|'+x.check_type,p=teamContext[x.student_id].checks[k];if(!p||Number(x.revision||0)>Number(p.revision||0)||Number(x.revision||0)===Number(p.revision||0)&&String(x.checked_at)>String(p.checked_at))teamContext[x.student_id].checks[k]=x;});
+  attempts.forEach(x=>{if(!teamContext[x.student_id])return;const p=teamContext[x.student_id].attempts[x.activity_id];if(!p||compareMasteryAttempts_(x,p)<0)teamContext[x.student_id].attempts[x.activity_id]=x;});
+  const students=Object.fromEntries(findAll_('MASTER_STUDENTS',s=>studentIds.includes(s.student_id)).map(s=>[s.student_id,s]));
+  return {teamId:team.team_id,members:studentIds.map(id=>({studentId:id,name:students[id]?students[id].name:id,checks:teamContext[id].checks,attempts:teamContext[id].attempts}))};
+}
+
+function unitState_(studentId,unit,index,units,context,teamContext){
   const previous=index>0?unitStateCore_(studentId,units[index-1],context):null;
   const override=context?contextOverride_(context,unit.learn_activity_id):unlockOverride_(studentId,unit.learn_activity_id);
-  const contentUnlocked=override===true||index===0||(previous&&previous.complete);
+  const contentUnlocked=override===true||index===0||(previous&&previous.materiSelesai);
   const summary=context?contextCheck_(context,unit.learn_activity_id,'summary'):latestTeacherCheck_(studentId,unit.learn_activity_id,'summary');
   const summaryVerified=!!summary&&summary.status==='verified';
   const quiz=context?contextAttempt_(context,unit.quiz_activity_id):latestQuizAttempt_(studentId,unit.quiz_activity_id);
   const quizPassed=!!quiz&&String(quiz.passed).toLowerCase()==='true';
+  const materiSelesai=summaryVerified&&quizPassed;
   const practice=unit.practice_activity_id?(context?contextCheck_(context,unit.practice_activity_id,'practice'):latestTeacherCheck_(studentId,unit.practice_activity_id,'practice')):null;
   const practiceVerified=!unit.practice_activity_id||!unit.practice_required||(!!practice&&practice.status==='verified');
+  
+  let practiceUnlocked=false,laggingMembers=[];
+  if(unit.practice_activity_id){
+    if(teamContext){
+      let allCleared=true;
+      teamContext.members.forEach(m=>{
+        const mSummary=m.checks[unit.learn_activity_id+'|summary'],mQuiz=m.attempts[unit.quiz_activity_id];
+        const mSumVer=!!mSummary&&mSummary.status==='verified',mQuizPass=!!mQuiz&&String(mQuiz.passed).toLowerCase()==='true';
+        if(!(mSumVer&&mQuizPass)){allCleared=false;if(m.studentId!==studentId)laggingMembers.push(m.name);}
+      });
+      practiceUnlocked=allCleared&&materiSelesai;
+    }
+  }
+
   const complete=contentUnlocked&&summaryVerified&&quizPassed&&practiceVerified;
-  const learningStatus=complete?'completed':practice&&practice.status==='needs_revision'?'needs_revision':quizPassed&&unit.practice_activity_id?'practice_ready':summaryVerified?'quiz_ready':contentUnlocked?'reading':'locked';
-  return {contentUnlocked,summary:summary||null,summaryVerified,quiz:quiz||null,quizPassed,practice:practice||null,practiceVerified,complete,learningStatus};
+  const learningStatus=complete?'completed':practice&&practice.status==='needs_revision'?'needs_revision':practiceUnlocked&&unit.practice_activity_id?'practice_ready':summaryVerified?'quiz_ready':contentUnlocked?'reading':'locked';
+  return {contentUnlocked,summary:summary||null,summaryVerified,quiz:quiz||null,quizPassed,materiSelesai,practice:practice||null,practiceVerified,practiceUnlocked,laggingMembers,complete,learningStatus};
 }
 
 function unitStateCore_(studentId,unit,context){
   const summary=context?contextCheck_(context,unit.learn_activity_id,'summary'):latestTeacherCheck_(studentId,unit.learn_activity_id,'summary'),summaryVerified=!!summary&&summary.status==='verified';
   const quiz=context?contextAttempt_(context,unit.quiz_activity_id):latestQuizAttempt_(studentId,unit.quiz_activity_id),quizPassed=!!quiz&&String(quiz.passed).toLowerCase()==='true';
   const practice=context&&unit.practice_activity_id?contextCheck_(context,unit.practice_activity_id,'practice'):unit.practice_activity_id?latestTeacherCheck_(studentId,unit.practice_activity_id,'practice'):null,practiceVerified=!unit.practice_activity_id||!unit.practice_required||!!practice&&practice.status==='verified';
-  return {complete:summaryVerified&&quizPassed&&practiceVerified};
+  return {materiSelesai:summaryVerified&&quizPassed,complete:summaryVerified&&quizPassed&&practiceVerified};
 }
 
 function learningHome_(session){
-  const studentId=session.actor_id,units=allLearningUnits_(),context=studentLearningContext_(studentId);
+  const studentId=session.actor_id,units=allLearningUnits_(),context=studentLearningContext_(studentId),teamContext=teamLearningContext_(studentId);
   const chapters=LEARNING_PATH_.map(chapter=>Object.assign({},chapter,{units:chapter.units.map(unit=>{
-    const globalIndex=units.findIndex(x=>x.unit_id===unit.unit_id),state=unitState_(studentId,unit,globalIndex,units,context);
+    const globalIndex=units.findIndex(x=>x.unit_id===unit.unit_id),state=unitState_(studentId,unit,globalIndex,units,context,teamContext);
     return Object.assign({},unit,{illustration_svg:learningIllustration_(unit.illustration),state});
   })}));
   return {chapters,outline:SEMESTER_OUTLINE_,semesterCard:semesterCardData_(studentId,CONFIG.CURRENT_SEMESTER,context),teamProgress:studentTeamProgress_(studentId)};
@@ -61,7 +91,7 @@ function learningHome_(session){
 function learningUnitForStudent_(session,unitId){
   const units=allLearningUnits_(),index=units.findIndex(x=>x.unit_id===unitId);
   if(index<0)throw new Error('Submateri tidak ditemukan.');
-  const unit=units[index],state=unitState_(session.actor_id,unit,index,units,studentLearningContext_(session.actor_id));
+  const unit=units[index],state=unitState_(session.actor_id,unit,index,units,studentLearningContext_(session.actor_id),teamLearningContext_(session.actor_id));
   if(!state.contentUnlocked)throw new Error('Submateri masih terkunci. Selesaikan tahap sebelumnya.');
   return Object.assign({},unit,{illustration_svg:learningIllustration_(unit.illustration),practice_preview:practiceCatalogItem_(unit.practice_activity_id),confusion_signal:studentConfusionSignal_(session.actor_id,unit.unit_id),state});
 }
@@ -291,9 +321,13 @@ function practiceReportFromRow_(row){
 
 function practiceWorkspace_(session,unitId){
   const units=allLearningUnits_(),index=units.findIndex(x=>x.unit_id===unitId);if(index<0)throw new Error('Submateri tidak ditemukan.');
-  const unit=units[index],state=unitState_(session.actor_id,unit,index,units,studentLearningContext_(session.actor_id));
+  const context=studentLearningContext_(session.actor_id),teamContext=teamLearningContext_(session.actor_id);
+  const unit=units[index],state=unitState_(session.actor_id,unit,index,units,context,teamContext);
   if(!unit.practice_activity_id)throw new Error('Submateri ini tidak memiliki LKPD praktik.');
-  if(!state.quizPassed&&unlockOverride_(session.actor_id,unit.practice_activity_id)!==true)throw new Error('LKPD terbuka setelah Quick Quiz tuntas.');
+  if(!state.practiceUnlocked&&unlockOverride_(session.actor_id,unit.practice_activity_id)!==true){
+    if(state.laggingMembers&&state.laggingMembers.length>0) throw new Error('LKPD terkunci karena rekan tim Anda belum tuntas materi/kuis bab ini: '+state.laggingMembers.join(', '));
+    else throw new Error('LKPD terbuka setelah kamu menuntaskan materi & kuis, DAN kamu telah tergabung dalam tim.');
+  }
   const teamInfo=practiceTeamForStudent_(session.actor_id),result=teamInfo?findOne_('GROUP_LAB',r=>r.team_id===teamInfo.team.team_id&&r.activity_id===unit.practice_activity_id):null,stored=practiceReportFromRow_(result),editorRole=teamInfo?(session.actor_id===teamInfo.leaderId?'leader':session.actor_id===teamInfo.deputyId?'deputy':'member'):'none';
   return {unitId,title:unit.title,chapterTitle:unit.chapter_title,practiceActivityId:unit.practice_activity_id,practice:practiceCatalogItem_(unit.practice_activity_id),guide:PRACTICE_GUIDE_,team:teamInfo?{teamId:teamInfo.team.team_id,classId:teamInfo.team.class_id,members:teamInfo.members,leaderId:teamInfo.leaderId,deputyId:teamInfo.deputyId}:null,result:result?{status:result.status,score:result.score,teacherNote:result.teacher_note,updatedAt:result.updated_at,updatedBy:result.updated_by}:null,report:stored.report,reportMeta:stored.meta,editorRole,canEdit:!!teamInfo&&(editorRole==='leader'||editorRole==='deputy')&&(!result||['draft','needs_revision'].includes(result.status)),clientVersion:result?result.updated_at:''};
 }
