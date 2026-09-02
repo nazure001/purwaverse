@@ -131,7 +131,38 @@
     <section id="view-material-summary" class="view worksheet"><div class="no-print actions"><button class="primary" onclick="window.print()">Cetak Ringkasan</button><button class="secondary" onclick="closeMaterialSummary()">Kembali</button></div><div id="material-summary-content" class="sheet material-summary-sheet"></div></section>
 
     <section id="view-teacher-login" class="view narrow"><span class="pill">RUANG GURU</span><h2>Dashboard IPA VIII</h2><form onsubmit="teacherLogin(event)"><label>Nama pengguna<input id="teacher-user" required></label><label>Kata sandi<input id="teacher-pass" type="password" required></label><button class="primary">Masuk</button></form></section>
-    <section id="view-teacher" class="view"><div class="dashboard-head"><div><span class="pill">KLASENA-STYLE OVERVIEW</span><h2>Dashboard IPA VIII</h2></div><select id="teacher-class" onchange="loadDashboard();loadTeacherLearning()"><option>8A</option><option>8B</option><option>8C</option><option>8D</option><option>8E</option></select></div><div class="practice-dashboard-card"><div><span class="pill">SEBELUM PRAKTIK</span><h3>SOP, contoh berhasil, dan contoh laporan</h3><p>Gunakan sebagai pengarahan kelas sebelum membuka LKPD tim.</p></div><button class="secondary" onclick="openPracticeGuide()">Buka Panduan Praktik</button></div><div id="dashboard-content"></div><div class="actions"><button onclick="loadDiagnosticReview()">Nilai Mission 0</button><button id="generate-teams-button" onclick="generateTeams()" disabled>Generate 8 Science Teams</button><button class="secondary" onclick="openTeacherMaterialPreview()">Pratinjau Materi</button><button class="secondary" onclick="loadTeacherLearning()">Periksa Rangkuman/LKPD</button><button class="secondary" onclick="loadGroupLab()">Progress Tim</button></div><div id="team-gate-note"></div><div id="teacher-learning"></div><div id="group-lab-dashboard"></div><div id="diagnostic-review"></div><div id="team-output"></div></section>
+    <section id="view-teacher" class="view">
+      <div class="dashboard-head">
+        <div><span class="pill">KLASENA-STYLE OVERVIEW</span><h2>Dashboard IPA VIII</h2></div>
+        <select id="teacher-class" onchange="loadTeacherActiveTab()"><option>8A</option><option>8B</option><option>8C</option><option>8D</option><option>8E</option></select>
+      </div>
+      <div class="teacher-nav-tabs">
+        <button id="tab-btn-overview" type="button" class="teacher-tab-btn active" onclick="switchTeacherTab('overview')">Overview Kelas & M0</button>
+        <button id="tab-btn-learning" type="button" class="teacher-tab-btn" onclick="switchTeacherTab('learning')">Periksa Rangkuman/LKPD</button>
+        <button id="tab-btn-teams" type="button" class="teacher-tab-btn" onclick="switchTeacherTab('teams')">Progress Tim & Lab</button>
+        <button type="button" class="teacher-tab-btn secondary" onclick="openTeacherMaterialPreview()">Pratinjau Materi</button>
+      </div>
+
+      <div id="panel-teacher-overview" class="teacher-tab-panel active">
+        <div class="practice-dashboard-card"><div><span class="pill">SEBELUM PRAKTIK</span><h3>SOP, contoh berhasil, dan contoh laporan</h3><p>Gunakan sebagai pengarahan kelas sebelum membuka LKPD tim.</p></div><button class="secondary" onclick="openPracticeGuide()">Buka Panduan Praktik</button></div>
+        <div id="dashboard-content"></div>
+        <div class="actions">
+          <button onclick="loadDiagnosticReview()">Nilai Mission 0</button>
+          <button id="generate-teams-button" onclick="generateTeams()" disabled>Generate 8 Science Teams</button>
+        </div>
+        <div id="team-gate-note"></div>
+        <div id="diagnostic-review"></div>
+        <div id="team-output"></div>
+      </div>
+
+      <div id="panel-teacher-learning" class="teacher-tab-panel">
+        <div id="teacher-learning"></div>
+      </div>
+
+      <div id="panel-teacher-teams" class="teacher-tab-panel">
+        <div id="group-lab-dashboard"></div>
+      </div>
+    </section>
     <section id="view-teacher-materials" class="view"><div class="activity-toolbar"><button class="secondary" onclick="showView('teacher')">Kembali ke Dashboard Guru</button><span class="status-badge">Pratinjau - tidak mencatat progres</span></div><div id="teacher-material-catalog"></div></section>
     <section id="view-teacher-material-unit" class="view"><div class="activity-toolbar"><button class="secondary" onclick="openTeacherMaterialPreview()">Kembali ke Daftar Materi</button><span class="status-badge">Pratinjau - baca saja</span></div><div id="teacher-material-content"></div></section>
 

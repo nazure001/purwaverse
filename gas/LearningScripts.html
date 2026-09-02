@@ -3,7 +3,7 @@
 
   async function openLearningPath() {
     if (!state.studentToken) { toast('Masuk sebagai siswa untuk melihat progres pribadi.'); showView('login'); return }
-    if (state.learningHome) { renderLearningPath(); showView('learning'); return }
+    if(state.learningHome) { renderLearningPath(); showView('learning'); return }
     const root = document.getElementById('learning-path'); root.innerHTML = '<div class="concept-callout"><b>Memuat jalur belajar...</b></div>'; showView('learning');
     try { state.learningHome = await callApi('learningHome', { token: state.studentToken }); renderLearningPath() } catch (e) { toast(e.message); showView('student') }
   }
@@ -75,7 +75,7 @@
   }
 
   function gateRow(label, ok, detail) { return '<div class="gate-row"><span>' + escapeHtml(label) + '</span><span class="' + (ok ? 'check-ok' : 'check-wait') + '">' + escapeHtml(detail) + '</span></div>' }
-  function teacherCheckStatusText(status) { return ({ pending_review: 'Menunggu pemeriksaan', verified: 'Terverifikasi', needs_revision: 'Perlu perbaikan', not_checked: 'Belum diperiksa' })[status] || status || 'Belum dilaporkan' }
+  function teacherCheckStatusText(status) { return ({ pending_review:'Menunggu pemeriksaan', verified: 'Terverifikasi', needs_revision: 'Perlu perbaikan', not_checked: 'Belum diperiksa' })[status] || status || 'Belum dilaporkan' }
 
   async function beginQuiz() {
     try {
@@ -102,7 +102,7 @@
     if (!token) { showView('login'); return }
     showView('practice-guide');
     try {
-      const cacheKey = teacher ? 'teacherPracticeGuide' : 'studentPracticeGuide';
+      const cacheKey=teacher?'teacherPracticeGuide':'studentPracticeGuide';
       const data = state[cacheKey] || (state[cacheKey] = await callApi(action, { token }));
       if (!teacher && !state.learningHome) state.learningHome = await callApi('learningHome', { token });
       renderPracticeGuide(data, teacher); showView('practice-guide');
@@ -181,29 +181,178 @@
   function renderSemesterCard(card) { document.getElementById('semester-card-content').innerHTML = '<article class="semester-card"><span class="pill">TAHUN PELAJARAN ' + escapeHtml(card.schoolYear) + '</span><h1>Kartu Kontrol Semester ' + card.semester + '</h1><p><b>' + escapeHtml(card.student.name) + '</b> · ' + escapeHtml(card.student.classId) + ' · No. ' + escapeHtml(card.student.rollNo) + '</p><table><tr><th>Materi</th><th>Rangkuman</th><th>Kuis</th><th>Praktik/LKPD</th></tr>' + card.details.map(x => '<tr><td>' + escapeHtml(x.title) + '</td><td>' + escapeHtml(x.summaryScore || '✓') + '</td><td>' + escapeHtml(x.quizScore) + '</td><td>' + escapeHtml(x.practiceStatus === 'not_required' ? '-' : x.practiceScore || '✓') + '</td></tr>').join('') + '</table><h3>Skill yang tercatat</h3><p>' + (card.skills && card.skills.length ? card.skills.map(escapeHtml).join(' · ') : '-') + '</p><p>Seluruh kewajiban semester telah tercatat. Challenge tambahan tidak menjadi syarat penerbitan kartu.</p><div class="identity">Tanda tangan guru: ____________________ &nbsp; Tanggal: __________</div></article>' }
 
   async function loadTeacherLearning() {
-    if (!state.teacherToken) return; const classId = document.getElementById('teacher-class').value;
-    try { const data = await callApi('teacherLearningDashboard', { token: state.teacherToken, classId, activityId: '', checkType: 'summary' }); renderTeacherLearning(data) } catch (e) { toast(e.message) }
+    if (!state.teacherToken) return;
+    if (typeof switchTeacherTab === 'function' && state.activeTeacherTab !== 'learning') {
+      state.activeTeacherTab = 'learning';
+      ['overview', 'learning', 'teams'].forEach(t => {
+        const b = document.getElementById('tab-btn-' + t), p = document.getElementById('panel-teacher-' + t);
+        if (b) b.classList.toggle('active', t === 'learning');
+        if (p) p.classList.toggle('active', t === 'learning');
+      });
+    }
+    const classId = document.getElementById('teacher-class').value;
+    state.teacherLearningCache = state.teacherLearningCache || {};
+    const cacheKey = classId + '|default';
+    if (state.teacherLearningCache[cacheKey]) {
+      renderTeacherLearning(state.teacherLearningCache[cacheKey]);
+    }
+    try {
+      const data = await callApi('teacherLearningDashboard', { token: state.teacherToken, classId, activityId: '', checkType: 'summary' });
+      state.teacherLearningCache[cacheKey] = data;
+      renderTeacherLearning(data);
+    } catch (e) { toast(e.message) }
   }
 
   function renderTeacherLearning(data) {
-    const root = document.getElementById('teacher-learning'), activity = data.selectedActivity || data.activities[0]; if (!activity) { root.innerHTML = '<p>Aktivitas belajar belum tersedia.</p>'; return }
-    root.dataset.activity = activity.activityId; root.dataset.checkType = activity.checkType;
+    const root = document.getElementById('teacher-learning'), activity = data.selectedActivity || data.activities[0];
+    if (!activity) { root.innerHTML = '<p>Aktivitas belajar belum tersedia.</p>'; return; }
+    root.dataset.activity = activity.activityId;
+    root.dataset.checkType = activity.checkType;
     const c = data.confusionSummary || {}, confusion = '<div class="confusion-summary"><b>Sinyal pemahaman kelas</b><span>Konsep ' + (c.concept || 0) + '</span><span>Istilah ' + (c.term || 0) + '</span><span>Hitungan ' + (c.calculation || 0) + '</span><span>Praktik ' + (c.practice || 0) + '</span><span class="clear">Sudah paham ' + (c.clear || 0) + '</span></div>';
-    root.innerHTML = '<h3>Pemeriksaan Rangkuman dan LKPD</h3>' + confusion + '<div class="teacher-check-toolbar"><label>Aktivitas <select id="teacher-check-activity" onchange="changeTeacherLearning()">' + data.activities.map(x => '<option value="' + escapeHtml(x.activityId) + '|' + escapeHtml(x.checkType) + '" ' + (x.activityId === activity.activityId && x.checkType === activity.checkType ? 'selected' : '') + '>' + escapeHtml(x.title) + '</option>').join('') + '</select></label><label>Status <select id="teacher-check-status"><option value="verified">Sudah diperiksa</option><option value="needs_revision">Perlu perbaikan</option></select></label><label>Nilai <input id="teacher-check-score" type="number" min="0" max="100"></label><label>Catatan <input id="teacher-check-note"></label><button onclick="saveSelectedTeacherChecks()">Simpan yang dicentang</button><button class="secondary" onclick="unlockSelectedStudents()">Buka manual</button></div><table class="student-table teacher-check-list"><thead><tr><th><input type="checkbox" onchange="toggleAllTeacherChecks(this.checked)"></th><th>No</th><th>Nama</th><th>Status</th><th>Nilai</th><th>Kuis</th></tr></thead><tbody>' + data.students.map(s => '<tr class="' + (s.check && s.check.status === 'verified' ? 'checked' : s.check && s.check.status === 'pending_review' ? 'pending' : '') + '"><td><input class="teacher-student-check" type="checkbox" value="' + escapeHtml(s.studentId) + '"></td><td>' + s.rollNo + '</td><td>' + escapeHtml(s.name) + '</td><td>' + escapeHtml(teacherCheckStatusText(s.check ? s.check.status : '')) + '</td><td>' + escapeHtml(s.check && s.check.score !== '' ? s.check.score : '-') + '</td><td>' + escapeHtml(s.quiz ? s.quiz.score : '-') + '</td></tr>').join('') + '</tbody></table>';
+
+    const pendingCount = data.students.filter(s => s.check && s.check.status === 'pending_review').length;
+    const verifiedCount = data.students.filter(s => s.check && s.check.status === 'verified').length;
+    const unsubmittedCount = data.students.filter(s => !s.check || !s.check.status || s.check.status === 'not_checked').length;
+    const totalCount = data.students.length;
+    const defaultFilter = (state.teacherCurrentFilter && ['pending','verified','unsubmitted','all'].includes(state.teacherCurrentFilter)) ? state.teacherCurrentFilter : (pendingCount > 0 ? 'pending' : 'all');
+    state.teacherCurrentFilter = defaultFilter;
+
+    const filterBar = '<div class="teacher-filter-bar">' +
+      '<button type="button" class="teacher-filter-chip ' + (defaultFilter === 'pending' ? 'active' : '') + '" data-filter="pending" onclick="filterTeacherChecks(\'pending\')">Perlu Diperiksa <span class="count-badge">' + pendingCount + '</span></button>' +
+      '<button type="button" class="teacher-filter-chip ' + (defaultFilter === 'verified' ? 'active' : '') + '" data-filter="verified" onclick="filterTeacherChecks(\'verified\')">Sudah Diperiksa <span class="count-badge">' + verifiedCount + '</span></button>' +
+      '<button type="button" class="teacher-filter-chip ' + (defaultFilter === 'unsubmitted' ? 'active' : '') + '" data-filter="unsubmitted" onclick="filterTeacherChecks(\'unsubmitted\')">Belum Kumpul <span class="count-badge">' + unsubmittedCount + '</span></button>' +
+      '<button type="button" class="teacher-filter-chip ' + (defaultFilter === 'all' ? 'active' : '') + '" data-filter="all" onclick="filterTeacherChecks(\'all\')">Semua Siswa <span class="count-badge">' + totalCount + '</span></button>' +
+    '</div>';
+
+    const toolbar = '<div class="teacher-check-toolbar">' +
+      '<label>Aktivitas <select id="teacher-check-activity" onchange="changeTeacherLearning()">' + data.activities.map(x => '<option value="' + escapeHtml(x.activityId) + '|' + escapeHtml(x.checkType) + '" ' + (x.activityId === activity.activityId && x.checkType === activity.checkType ? 'selected' : '') + '>' + escapeHtml(x.title) + '</option>').join('') + '</select></label>' +
+      '<label>Status <select id="teacher-check-status"><option value="verified">Sudah diperiksa</option><option value="needs_revision">Perlu perbaikan</option></select></label>' +
+      '<label>Nilai <input id="teacher-check-score" type="number" min="0" max="100"></label>' +
+      '<label>Catatan <input id="teacher-check-note"></label>' +
+      '<div class="toolbar-buttons">' +
+        '<button onclick="saveSelectedTeacherChecks()">Simpan yang dicentang</button>' +
+        '<button class="secondary" onclick="unlockSelectedStudents()">Buka manual</button>' +
+      '</div>' +
+    '</div>';
+
+    const rows = data.students.map(s => {
+      const st = s.check ? s.check.status : '';
+      const filterCat = st === 'pending_review' ? 'pending' : st === 'verified' ? 'verified' : (!st || st === 'not_checked') ? 'unsubmitted' : 'other';
+      const isVisible = (defaultFilter === 'all' || defaultFilter === filterCat);
+      return '<tr class="' + (s.check && s.check.status === 'verified' ? 'checked' : s.check && s.check.status==='pending_review'?'pending' : '') + '" data-status="' + filterCat + '" style="' + (isVisible ? '' : 'display:none;') + '">' +
+        '<td><input class="teacher-student-check" type="checkbox" value="' + escapeHtml(s.studentId) + '"></td>' +
+        '<td>' + s.rollNo + '</td>' +
+        '<td>' + escapeHtml(s.name) + '</td>' +
+        '<td>' + escapeHtml(teacherCheckStatusText(s.check ? s.check.status : '')) + '</td>' +
+        '<td>' + escapeHtml(s.check && s.check.score !== '' ? s.check.score : '-') + '</td>' +
+        '<td>' + escapeHtml(s.quiz ? s.quiz.score : '-') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    const table = '<div class="teacher-table-wrapper"><table class="student-table teacher-check-list"><thead><tr><th><input type="checkbox" onchange="toggleAllTeacherChecks(this.checked)"></th><th>No</th><th>Nama</th><th>Status</th><th>Nilai</th><th>Kuis</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+    root.innerHTML = '<h3>Pemeriksaan Rangkuman dan LKPD</h3>' + confusion + toolbar + filterBar + table;
   }
 
-  async function changeTeacherLearning() { const [activityId, checkType] = document.getElementById('teacher-check-activity').value.split('|'), classId = document.getElementById('teacher-class').value; try { renderTeacherLearning(await callApi('teacherLearningDashboard', { token: state.teacherToken, classId, activityId, checkType })) } catch (e) { toast(e.message) } }
-  function toggleAllTeacherChecks(value) { document.querySelectorAll('.teacher-student-check').forEach(x => x.checked = value) }
-  async function saveSelectedTeacherChecks() { const root = document.getElementById('teacher-learning'), studentIds = [...document.querySelectorAll('.teacher-student-check:checked')].map(x => x.value); if (!studentIds.length) { toast('Pilih minimal satu siswa.'); return } try { await callApi('saveTeacherChecks', { token: state.teacherToken, classId: document.getElementById('teacher-class').value, activityId: root.dataset.activity, checkType: root.dataset.checkType, status: document.getElementById('teacher-check-status').value, score: document.getElementById('teacher-check-score').value, note: document.getElementById('teacher-check-note').value, studentIds }); toast('Pemeriksaan tersimpan.'); await changeTeacherLearning() } catch (e) { toast(e.message) } }
-  async function unlockSelectedStudents() { const root = document.getElementById('teacher-learning'), studentIds = [...document.querySelectorAll('.teacher-student-check:checked')].map(x => x.value), reason = document.getElementById('teacher-check-note').value; if (!studentIds.length) { toast('Pilih minimal satu siswa.'); return } if (!reason.trim()) { toast('Isi catatan sebagai alasan pembukaan manual.'); return } try { await callApi('saveUnlockOverrides', { token: state.teacherToken, classId: document.getElementById('teacher-class').value, activityId: root.dataset.activity, studentIds, allowed: true, reason }); toast('Akses manual tercatat.') } catch (e) { toast(e.message) } }
+  function filterTeacherChecks(filter) {
+    state.teacherCurrentFilter = filter;
+    document.querySelectorAll('.teacher-filter-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    document.querySelectorAll('.teacher-check-list tbody tr').forEach(row => {
+      const st = row.dataset.status;
+      const show = (filter === 'all' || st === filter);
+      row.style.display = show ? '' : 'none';
+    });
+  }
+
+  async function changeTeacherLearning() {
+    const el = document.getElementById('teacher-check-activity');
+    if (!el) return;
+    const [activityId, checkType] = el.value.split('|'), classId = document.getElementById('teacher-class').value;
+    state.teacherLearningCache = state.teacherLearningCache || {};
+    const cacheKey = classId + '|' + activityId + '|' + checkType;
+    if (state.teacherLearningCache[cacheKey]) {
+      renderTeacherLearning(state.teacherLearningCache[cacheKey]);
+      return;
+    }
+    try {
+      const data = await callApi('teacherLearningDashboard', { token: state.teacherToken, classId, activityId, checkType });
+      state.teacherLearningCache[cacheKey] = data;
+      renderTeacherLearning(data);
+    } catch (e) { toast(e.message) }
+  }
+
+  function toggleAllTeacherChecks(value) { document.querySelectorAll('.teacher-student-check').forEach(x => { if (x.closest('tr').style.display !== 'none') x.checked = value; }) }
+
+  async function saveSelectedTeacherChecks() {
+    const root = document.getElementById('teacher-learning'), studentIds = [...document.querySelectorAll('.teacher-student-check:checked')].map(x => x.value);
+    if (!studentIds.length) { toast('Pilih minimal satu siswa.'); return; }
+    try {
+      const classId = document.getElementById('teacher-class').value;
+      await callApi('saveTeacherChecks', { token: state.teacherToken, classId, activityId: root.dataset.activity, checkType: root.dataset.checkType, status: document.getElementById('teacher-check-status').value, score: document.getElementById('teacher-check-score').value, note: document.getElementById('teacher-check-note').value, studentIds });
+      state.teacherLearningCache = {};
+      toast('Pemeriksaan tersimpan.');
+      await changeTeacherLearning();
+    } catch (e) { toast(e.message) }
+  }
+
+  async function unlockSelectedStudents() {
+    const root = document.getElementById('teacher-learning'), studentIds = [...document.querySelectorAll('.teacher-student-check:checked')].map(x => x.value), reason = document.getElementById('teacher-check-note').value;
+    if (!studentIds.length) { toast('Pilih minimal satu siswa.'); return; }
+    if (!reason.trim()) { toast('Isi catatan sebagai alasan pembukaan manual.'); return; }
+    try {
+      const classId = document.getElementById('teacher-class').value;
+      await callApi('saveUnlockOverrides', { token: state.teacherToken, classId, activityId: root.dataset.activity, studentIds, allowed: true, reason });
+      state.teacherLearningCache = {};
+      toast('Akses manual tercatat.');
+    } catch (e) { toast(e.message) }
+  }
 
   function teacherTeamReportDetails(result) {
     if (!result || !result.result_json) return '';
     try { const stored = JSON.parse(result.result_json), report = stored.report || {}, fields = [['Prediksi', report.prediction], ['Data', report.data], ['Bukti', report.evidence], ['Kesimpulan', report.conclusion], ['Peran anggota', report.memberRoles]].filter(x => x[1]); return fields.length ? '<details class="team-report-preview"><summary>Lihat isi laporan tim</summary>' + fields.map(x => '<div><b>' + x[0] + '</b><p>' + escapeHtml(x[1]) + '</p></div>').join('') + '</details>' : '' } catch (e) { return '' }
   }
 
-  async function loadGroupLab(activityId) { const classId = document.getElementById('teacher-class').value; try { const data = await callApi('groupLabDashboard', { token: state.teacherToken, classId, activityId: activityId || 'CH08-01-U02-LAB01' }), root = document.getElementById('group-lab-dashboard'); root.innerHTML = '<h3>Progress Praktik Tim</h3><p>Draft menunjukkan tim sedang mengisi. Submitted berarti laporan sudah dikirim dan siap diperiksa.</p><label>Praktik <select onchange="loadGroupLab(this.value)">' + data.activities.map(x => '<option value="' + escapeHtml(x.activityId) + '" ' + (x.activityId === data.activityId ? 'selected' : '') + '>' + escapeHtml(x.title) + '</option>').join('') + '</select></label><div class="teams">' + (data.teams.length ? data.teams.map((t, i) => { const current = t.result ? t.result.status : 'belum mulai'; return '<article class="team"><div class="team-head"><b>Science Team ' + (i + 1) + '</b><span class="mini-status">' + escapeHtml(current) + '</span></div><small>' + t.members.map(m => escapeHtml(m.name) + ' (' + escapeHtml(m.role) + ')').join(', ') + '</small>' + (t.result ? '<small>Terakhir diperbarui: ' + escapeHtml(t.result.updated_at || '-') + '</small>' : '') + teacherTeamReportDetails(t.result) + '<label>Keputusan guru<select id="team-status-' + i + '"><option value="">Pilih keputusan</option><option value="needs_revision" ' + (t.result && t.result.status === 'needs_revision' ? 'selected' : '') + '>Perlu perbaikan</option><option value="verified" ' + (t.result && t.result.status === 'verified' ? 'selected' : '') + '>Terverifikasi</option></select></label><label>Nilai<input id="team-score-' + i + '" type="number" min="0" max="100" value="' + escapeHtml(t.result ? t.result.score : '') + '"></label><label>Catatan<input id="team-note-' + i + '" value="' + escapeHtml(t.result ? t.result.teacher_note : '') + '"></label><button onclick="saveGroupLabResult(\'' + t.teamId + '\',\'' + data.activityId + '\',' + i + ')">Simpan Penilaian</button></article>' }).join('') : '<p>Belum ada Science Team untuk kelas ini.</p>') + '</div>'; root.scrollIntoView({ behavior: 'smooth' }) } catch (e) { toast(e.message) } }
-  async function saveGroupLabResult(teamId, activityId, index) { const status = document.getElementById('team-status-' + index).value; if (!status) { toast('Pilih Perlu perbaikan atau Terverifikasi.'); return } try { const saved = await callApi('saveGroupLab', { token: state.teacherToken, teamId, activityId, status, score: document.getElementById('team-score-' + index).value, note: document.getElementById('team-note-' + index).value, result: { recordedByTeacher: true } }); toast(saved.membersUpdated ? 'Progress tim dan ' + saved.membersUpdated + ' anggota tersimpan.' : 'Progress tim tersimpan; status siswa belum berubah.'); await loadGroupLab(activityId) } catch (e) { toast(e.message) } }
+  function renderGroupLabData(data) {
+    const root = document.getElementById('group-lab-dashboard');
+    if (!root) return;
+    root.innerHTML = '<h3>Progress Praktik Tim</h3><p>Draft menunjukkan tim sedang mengisi. Submitted berarti laporan sudah dikirim dan siap diperiksa.</p><label>Praktik <select onchange="loadGroupLab(this.value)">' + data.activities.map(x => '<option value="' + escapeHtml(x.activityId) + '" ' + (x.activityId === data.activityId ? 'selected' : '') + '>' + escapeHtml(x.title) + '</option>').join('') + '</select></label><div class="teams">' + (data.teams.length ? data.teams.map((t, i) => { const current = t.result ? t.result.status : 'belum mulai'; return '<article class="team"><div class="team-head"><b>Science Team ' + (i + 1) + '</b><span class="mini-status">' + escapeHtml(current) + '</span></div><small>' + t.members.map(m => escapeHtml(m.name) + ' (' + escapeHtml(m.role) + ')').join(', ') + '</small>' + (t.result ? '<small>Terakhir diperbarui: ' + escapeHtml(t.result.updated_at || '-') + '</small>' : '') + teacherTeamReportDetails(t.result) + '<label>Keputusan guru<select id="team-status-' + i + '"><option value="">Pilih keputusan</option><option value="needs_revision" ' + (t.result && t.result.status === 'needs_revision' ? 'selected' : '') + '>Perlu perbaikan</option><option value="verified" ' + (t.result && t.result.status === 'verified' ? 'selected' : '') + '>Terverifikasi</option></select></label><label>Nilai<input id="team-score-' + i + '" type="number" min="0" max="100" value="' + escapeHtml(t.result ? t.result.score : '') + '"></label><label>Catatan<input id="team-note-' + i + '" value="' + escapeHtml(t.result ? t.result.teacher_note : '') + '"></label><button onclick="saveGroupLabResult(\'' + t.teamId + '\',\'' + data.activityId + '\',' + i + ')">Simpan Penilaian</button></article>' }).join('') : '<p>Belum ada Science Team untuk kelas ini.</p>') + '</div>';
+  }
+
+  async function loadGroupLab(activityId) {
+    if (typeof switchTeacherTab === 'function' && state.activeTeacherTab !== 'teams') {
+      state.activeTeacherTab = 'teams';
+      ['overview', 'learning', 'teams'].forEach(t => {
+        const b = document.getElementById('tab-btn-' + t), p = document.getElementById('panel-teacher-' + t);
+        if (b) b.classList.toggle('active', t === 'teams');
+        if (p) p.classList.toggle('active', t === 'teams');
+      });
+    }
+    const classId = document.getElementById('teacher-class').value;
+    state.teacherTeamsCache = state.teacherTeamsCache || {};
+    const targetAct = activityId || 'CH08-01-U02-LAB01';
+    const cacheKey = classId + '|' + targetAct;
+    if (state.teacherTeamsCache[cacheKey]) {
+      renderGroupLabData(state.teacherTeamsCache[cacheKey]);
+    }
+    try {
+      const data = await callApi('groupLabDashboard', { token: state.teacherToken, classId, activityId: targetAct });
+      state.teacherTeamsCache[cacheKey] = data;
+      renderGroupLabData(data);
+    } catch (e) { toast(e.message) }
+  }
+
+  async function saveGroupLabResult(teamId, activityId, index) {
+    const status = document.getElementById('team-status-' + index).value;
+    if (!status) { toast('Pilih Perlu perbaikan atau Terverifikasi.'); return; }
+    try {
+      const saved = await callApi('saveGroupLab', { token: state.teacherToken, teamId, activityId, status, score: document.getElementById('team-score-' + index).value, note: document.getElementById('team-note-' + index).value, result: { recordedByTeacher: true } });
+      state.teacherTeamsCache = {};
+      toast(saved.membersUpdated ? 'Progress tim dan ' + saved.membersUpdated + ' anggota tersimpan.' : 'Progress tim tersimpan; status siswa belum berubah.');
+      await loadGroupLab(activityId);
+    } catch (e) { toast(e.message) }
+  }
 
   function shareBadge(name, desc, text, icon, color, bg) {
     let studentName = state.student ? state.student.name : (state.studentProfile ? state.studentProfile.name : 'Siswa Purwaverse');

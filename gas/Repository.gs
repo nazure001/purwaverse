@@ -14,15 +14,24 @@ function ensureSchema_() {
   });
 }
 
+let _SHEET_CACHE_ = {};
+function clearSheetCache_(sheetName) {
+  if (sheetName) delete _SHEET_CACHE_[sheetName];
+  else _SHEET_CACHE_ = {};
+}
+
 function rows_(sheetName) {
+  if (_SHEET_CACHE_[sheetName]) return _SHEET_CACHE_[sheetName];
   const sheet = spreadsheet_().getSheetByName(sheetName);
-  if (!sheet || sheet.getLastRow() < 2) return [];
+  if (!sheet || sheet.getLastRow() < 2) return (_SHEET_CACHE_[sheetName] = []);
   const values = sheet.getRange(1, 1, sheet.getLastRow(), SHEETS[sheetName].length).getValues();
   const headers = values.shift();
-  return values.filter(r => r.some(v => v !== '')).map(r => headers.reduce((o, h, i) => (o[h] = r[i], o), {}));
+  const res = values.filter(r => r.some(v => v !== '')).map(r => headers.reduce((o, h, i) => (o[h] = r[i], o), {}));
+  return (_SHEET_CACHE_[sheetName] = res);
 }
 
 function append_(sheetName, record) {
+  clearSheetCache_(sheetName);
   const headers = SHEETS[sheetName];
   const sheet = spreadsheet_().getSheetByName(sheetName);
   if (!sheet) throw new Error(`Sheet ${sheetName} belum tersedia. Hubungi administrator.`);
@@ -39,6 +48,7 @@ function upsert_(sheetName, key, record) {
   const data = rows_(sheetName);
   const idx = data.findIndex(r => String(r[key]) === String(record[key]));
   const complete = headers.reduce((o, h) => (o[h] = record[h] === undefined ? (idx >= 0 ? data[idx][h] : '') : record[h], o), {});
+  clearSheetCache_(sheetName);
   if (idx >= 0) sheet.getRange(idx + 2, 1, 1, headers.length).setValues([headers.map(h => complete[h])]);
   else append_(sheetName, complete);
   return complete;
@@ -65,6 +75,7 @@ function deleteWhere_(sheetName, predicate) {
     }
   }
   if (deleted > 0) {
+    clearSheetCache_(sheetName);
     range.clearContent();
     if(recordsToKeep.length > 0) {
       sheet.getRange(1, 1, recordsToKeep.length, headers.length).setValues(recordsToKeep);
