@@ -37,6 +37,12 @@ function credentialCardQrBlob_(execUrl){
 
 function credentialCardRows_(classId){
   if(!CREDENTIAL_CARD_CONFIG_.classes.includes(classId))throw new Error('Kelas tidak valid. Gunakan 8A, 8B, 8C, 8D, atau 8E.');
+  if(typeof OFFICIAL_ROSTER_!=='undefined'){
+    const rosterForClass=OFFICIAL_ROSTER_.filter(r=>r.class_id===classId&&r.active!==false);
+    const existingIds=new Set(findAll_('MASTER_STUDENTS',row=>row.class_id===classId).map(r=>String(r.student_id)));
+    const missing=rosterForClass.filter(r=>!existingIds.has(String(r.student_id)));
+    if(missing.length>0)importOfficialStudents(missing);
+  }
   const students=findAll_('MASTER_STUDENTS',row=>row.class_id===classId&&String(row.active).toLowerCase()==='true').sort((a,b)=>Number(a.roll_no)-Number(b.roll_no));
   let issuances = findAll_('PIN_ISSUANCE',row=>row.class_id===classId);
   const issuedIds = new Set(issuances.map(r=>String(r.student_id)));
@@ -146,3 +152,27 @@ function generateCredentialCards8B(){return generateStudentCredentialPdfForClass
 function generateCredentialCards8C(){return generateStudentCredentialPdfForClass('8C');}
 function generateCredentialCards8D(){return generateStudentCredentialPdfForClass('8D');}
 function generateCredentialCards8E(){return generateStudentCredentialPdfForClass('8E');}
+
+function syncAndGetStudentCard(studentIdOrNisn){
+  const query=String(studentIdOrNisn||'').trim();
+  const target=OFFICIAL_ROSTER_.find(r=>r.student_id===query||String(r.nisn)===query);
+  if(!target)throw new Error('Siswa tidak ditemukan dalam roster resmi.');
+  importOfficialStudents([target]);
+  const issuance=findOne_('PIN_ISSUANCE',r=>r.student_id===target.student_id);
+  const execUrl=credentialCardExecUrl_();
+  return {
+    studentId:target.student_id,
+    name:target.name,
+    classId:target.class_id,
+    rollNo:target.roll_no,
+    nisn:target.nisn,
+    pin:issuance?issuance.pin:null,
+    qrUrl:credentialCardQrRequestUrl_(execUrl),
+    execUrl
+  };
+}
+
+function syncThalitaCard(){
+  return syncAndGetStudentCard('0133470423');
+}
+

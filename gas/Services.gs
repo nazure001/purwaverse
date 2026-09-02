@@ -1,7 +1,14 @@
 function loginStudent_(classId, rollNo, pin) {
   const identity=String(classId)+'|'+String(rollNo);
   assertLoginAllowed_('student',identity);
-  const student = findOne_('MASTER_STUDENTS', r => String(r.class_id) === String(classId) && String(r.roll_no) === String(rollNo) && String(r.active).toLowerCase() === 'true');
+  let student = findOne_('MASTER_STUDENTS', r => String(r.class_id) === String(classId) && String(r.roll_no) === String(rollNo) && String(r.active).toLowerCase() === 'true');
+  if (!student && typeof OFFICIAL_ROSTER_ !== 'undefined') {
+    const fromRoster = OFFICIAL_ROSTER_.find(r => String(r.class_id) === String(classId) && String(r.roll_no) === String(rollNo) && r.active !== false);
+    if (fromRoster) {
+      importOfficialStudents([fromRoster]);
+      student = findOne_('MASTER_STUDENTS', r => String(r.class_id) === String(classId) && String(r.roll_no) === String(rollNo) && String(r.active).toLowerCase() === 'true');
+    }
+  }
   if (!student || !verifyStudentPin_(student,pin)){recordLoginFailure_('student',identity);throw new Error('Kelas, nomor absen, atau PIN tidak sesuai.');}
   clearLoginFailures_('student',identity);
   const now = new Date();
@@ -242,6 +249,12 @@ function overrideTeamMember_(session, payload) {
 
 function dashboard_(session, classId) {
   ensureTeacherClassAccess_(session,classId);
+  if(typeof OFFICIAL_ROSTER_!=='undefined'){
+    const rosterForClass=OFFICIAL_ROSTER_.filter(r=>r.class_id===classId&&r.active!==false);
+    const existingIds=new Set(findAll_('MASTER_STUDENTS',row=>row.class_id===classId).map(r=>String(r.student_id)));
+    const missing=rosterForClass.filter(r=>!existingIds.has(String(r.student_id)));
+    if(missing.length>0)importOfficialStudents(missing);
+  }
   const students = findAll_('MASTER_STUDENTS', r=>r.class_id===classId && String(r.active).toLowerCase()==='true');
   const ids = new Set(students.map(s=>s.student_id));
   const progress = findAll_('PROGRESS',r=>ids.has(r.student_id));
