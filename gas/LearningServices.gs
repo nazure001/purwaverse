@@ -302,8 +302,7 @@ function studentTeamProgress_(studentId){
 
 function semesterCard_(session,semester){
   const student=findOne_('MASTER_STUDENTS',r=>r.student_id===session.actor_id),card=semesterCardData_(session.actor_id,semester);
-  if(!card.eligible)throw new Error('Kartu kontrol tersedia setelah seluruh kewajiban semester selesai.');
-  return Object.assign({student:{name:student.name,classId:student.class_id,rollNo:student.roll_no},schoolYear:CONFIG.SCHOOL_YEAR,generatedAt:isoNow_()},card);
+  return Object.assign({student:{name:student.name,classId:student.class_id,rollNo:student.roll_no},schoolYear:CONFIG.SCHOOL_YEAR,generatedAt:isoNow_(),eligible:card.eligible},card);
 }
 
 function practiceTeamForStudent_(studentId){

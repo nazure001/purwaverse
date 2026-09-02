@@ -170,11 +170,39 @@
     if (enabled && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => { }); if (!enabled && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => { });
   }
 
+  function renderSemesterCardFallback(card, msg) {
+    document.getElementById('semester-card-print').classList.add('hidden');
+    document.getElementById('semester-card-content').innerHTML = '<div class="semester-card"><h2>Kartu Kontrol Semester belum tersedia</h2><p>' + escapeHtml(msg || 'Kartu kontrol tersedia setelah seluruh kewajiban semester selesai.') + '</p>' + (card && card.remainingChapters && card.remainingChapters.length ? '<p>Materi semester yang belum tersedia: ' + card.remainingChapters.map(escapeHtml).join(', ') + '</p>' : '') + '<table><tr><th>Submateri</th><th>Status</th></tr>' + ((card && card.details) || []).map(x => '<tr><td>' + escapeHtml(x.title) + '</td><td>' + (x.complete ? 'Selesai' : 'Belum lengkap') + '</td></tr>').join('') + '</table></div>';
+  }
+
   async function openSemesterCard() {
     if (!state.studentToken) { toast('Masuk sebagai siswa terlebih dahulu.'); showView('login'); return }
     const semester = Number(window.PURWAVERSE_BOOTSTRAP.currentSemester || 1);
-    try { const card = await callApi('semesterCard', { token: state.studentToken, semester }); document.getElementById('semester-card-print').classList.remove('hidden'); renderSemesterCard(card); showView('semester-card') } catch (e) {
-      try { const home = await callApi('learningHome', { token: state.studentToken }), card = home.semesterCard; document.getElementById('semester-card-print').classList.add('hidden'); document.getElementById('semester-card-content').innerHTML = '<div class="semester-card"><h2>Kartu Kontrol Semester belum tersedia</h2><p>' + escapeHtml(e.message) + '</p>' + (card.remainingChapters && card.remainingChapters.length ? '<p>Materi semester yang belum tersedia: ' + card.remainingChapters.map(escapeHtml).join(', ') + '</p>' : '') + '<table><tr><th>Submateri</th><th>Status</th></tr>' + card.details.map(x => '<tr><td>' + escapeHtml(x.title) + '</td><td>' + (x.complete ? 'Selesai' : 'Belum lengkap') + '</td></tr>').join('') + '</table></div>'; showView('semester-card') } catch (inner) { toast(inner.message) }
+    if (state.learningHome && state.learningHome.semesterCard) {
+      renderSemesterCardFallback(state.learningHome.semesterCard, 'Kartu kontrol tersedia setelah seluruh kewajiban semester selesai.');
+      showView('semester-card');
+    }
+    try {
+      const card = await callApi('semesterCard', { token: state.studentToken, semester });
+      if (card && card.eligible) {
+        document.getElementById('semester-card-print').classList.remove('hidden');
+        renderSemesterCard(card);
+      } else {
+        renderSemesterCardFallback(card, 'Kartu kontrol tersedia setelah seluruh kewajiban semester selesai.');
+      }
+      showView('semester-card');
+    } catch (e) {
+      if (state.learningHome && state.learningHome.semesterCard) {
+        renderSemesterCardFallback(state.learningHome.semesterCard, e.message);
+        showView('semester-card');
+      } else {
+        try {
+          const home = await callApi('learningHome', { token: state.studentToken });
+          state.learningHome = home;
+          renderSemesterCardFallback(home.semesterCard, e.message);
+          showView('semester-card');
+        } catch (inner) { toast(inner.message) }
+      }
     }
   }
 
