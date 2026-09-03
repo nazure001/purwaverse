@@ -22,6 +22,51 @@
         <article><b>03</b><h3>Lab</h3><p>Lakukan sains dengan alat sederhana.</p></article>
         <article><b>04</b><h3>Challenge</h3><p>Gunakan bukti untuk memecahkan kasus.</p></article>
       </div>
+
+      <!-- SCIENCE INTEGRITY INDEX (PERSENTASE KEMANDIRIAN KELAS TANPA AI) -->
+      <div class="integrity-panel">
+        <div class="integrity-header">
+          <div>
+            <span class="pill" style="background:#e0f2fe; color:#0369a1;">SCIENCE INTEGRITY INDEX</span>
+            <h3 style="font-size:1.5rem; margin:0.35rem 0 0.2rem;">Tingkat Kemandirian Belajar Bebas AI</h3>
+            <p style="margin:0; color:var(--muted); font-size:0.95rem;">Persentase kejujuran observasi dan penyelesaian tugas sains tanpa intervensi AI otomatis.</p>
+          </div>
+          <span id="integrity-last-update" class="mini-status" style="align-self:start;">Memuat status...</span>
+        </div>
+        <div id="integrity-bars-container" class="integrity-grid">
+          <div class="integrity-loading"><div class="concept-callout"><b>Memuat indeks integritas kelas...</b></div></div>
+        </div>
+      </div>
+
+      <!-- HALL OF FAME / LEADERBOARD ILMUWAN MUDA -->
+      <div class="leaderboard-section">
+        <div class="leaderboard-header">
+          <div>
+            <span class="pill" style="background:#fef3c7; color:#b45309;">HALL OF FAME</span>
+            <h2 style="margin:0.25rem 0 0.2rem;">Top 10 Ilmuwan Muda Purwaverse</h2>
+            <p style="margin:0; color:var(--muted); font-size:1.05rem;">Peringkat sains dihitung dari kombinasi misi tuntas, akumulasi skor kuis, dan orisinalitas bukti.</p>
+          </div>
+          <div class="leaderboard-controls">
+            <div class="filter-chips" id="leaderboard-class-filters">
+              <button type="button" class="filter-chip active" onclick="setLeaderboardFilter('ALL')">Semua Kelas</button>
+              <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8A')">8A</button>
+              <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8B')">8B</button>
+              <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8C')">8C</button>
+              <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8D')">8D</button>
+              <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8E')">8E</button>
+            </div>
+            <input type="text" id="leaderboard-search-input" placeholder="🔍 Cari nama siswa..." oninput="handleLeaderboardSearch(this.value)" class="leaderboard-search" />
+          </div>
+        </div>
+
+        <div id="leaderboard-table-container" class="leaderboard-table-wrapper">
+          <div class="leaderboard-loading"><div class="concept-callout"><b>Memuat papan peringkat sains...</b></div></div>
+        </div>
+
+        <div style="text-align:center; margin-top:1.25rem;">
+          <button type="button" id="toggle-roster-btn" class="secondary" onclick="toggleFullRoster()">Tampilkan Seluruh Roster Kelas (208 Siswa)</button>
+        </div>
+      </div>
     </section>
 
     <section id="view-chapter" class="view">

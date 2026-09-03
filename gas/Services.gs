@@ -278,3 +278,203 @@ function repairLegacyIntegrationArtifacts(){
   audit_({type:'system',id:'repair-legacy-integration-v2'},'REPAIR_LEGACY_INTEGRATION','student',student.student_id,summary);
   return {repaired:true,student_id:student.student_id,summary};
 }
+
+function hasHoneypotTrigger_(text) {
+  const t = String(text || '').toLowerCase();
+  const keys = ['kekuatan bulan', 'chatgpt', 'gemini', 'claude', 'dola', 'openai', 'model:', 'seblak', 'boba', 'terlalu mengantuk', 'robot pintar', 'buku paket'];
+  return keys.some(k => t.includes(k));
+}
+
+function publicLeaderboardData_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('PUBLIC_LEADERBOARD_DATA_V1');
+  if (cached) {
+    try { return JSON.parse(cached); } catch(e) {}
+  }
+
+  const students = findAll_('MASTER_STUDENTS', r => String(r.active).toLowerCase() === 'true');
+  const studentIds = new Set(students.map(s => s.student_id));
+  const studentClassMap = Object.fromEntries(students.map(s => [s.student_id, s.class_id]));
+
+  const progressRows = findAll_('PROGRESS', r => studentIds.has(r.student_id));
+  const quizRows = findAll_('QUIZ_ATTEMPTS', r => studentIds.has(r.student_id) && r.submitted_at);
+  const diagResponses = findAll_('DIAGNOSTIC_RESPONSES', r => studentIds.has(r.student_id));
+  const diagProfiles = Object.fromEntries(findAll_('DIAGNOSTIC_PROFILES', r => studentIds.has(r.student_id)).map(p => [p.student_id, p]));
+
+  const classStats = {
+    '8A': { total: 0, flagged: 0 },
+    '8B': { total: 0, flagged: 0 },
+    '8C': { total: 0, flagged: 0 },
+    '8D': { total: 0, flagged: 0 },
+    '8E': { total: 0, flagged: 0 }
+  };
+
+  const studentProgressMap = {};
+  const studentQuizMap = {};
+  const studentFlagsMap = {};
+
+  students.forEach(s => {
+    studentProgressMap[s.student_id] = [];
+    studentQuizMap[s.student_id] = [];
+    studentFlagsMap[s.student_id] = { aiCount: 0, tabSwitches: 0, hasExtreme: false };
+  });
+
+  progressRows.forEach(p => {
+    const cId = studentClassMap[p.student_id];
+    if (cId && classStats[cId]) classStats[cId].total++;
+    if (studentProgressMap[p.student_id]) studentProgressMap[p.student_id].push(p);
+
+    const evStr = String(p.evidence_json || '');
+    if (evStr.includes('[PERINGATAN:') || hasHoneypotTrigger_(evStr)) {
+      if (cId && classStats[cId]) classStats[cId].flagged++;
+      if (studentFlagsMap[p.student_id]) {
+        studentFlagsMap[p.student_id].aiCount++;
+        const match = evStr.match(/Pindah Tab (\d+)x/);
+        if (match) {
+          const count = parseInt(match[1], 10) || 0;
+          studentFlagsMap[p.student_id].tabSwitches += count;
+          if (count >= 5) studentFlagsMap[p.student_id].hasExtreme = true;
+        }
+        if (hasHoneypotTrigger_(evStr)) studentFlagsMap[p.student_id].hasExtreme = true;
+      }
+    }
+  });
+
+  diagResponses.forEach(r => {
+    const cId = studentClassMap[r.student_id];
+    if (cId && classStats[cId]) classStats[cId].total++;
+    const ans = String(r.answer || '');
+    if (ans.includes('[PERINGATAN:') || hasHoneypotTrigger_(ans)) {
+      if (cId && classStats[cId]) classStats[cId].flagged++;
+      if (studentFlagsMap[r.student_id]) {
+        studentFlagsMap[r.student_id].aiCount++;
+        const match = ans.match(/Pindah Tab (\d+)x/);
+        if (match) {
+          const count = parseInt(match[1], 10) || 0;
+          studentFlagsMap[r.student_id].tabSwitches += count;
+          if (count >= 5) studentFlagsMap[r.student_id].hasExtreme = true;
+        }
+        if (hasHoneypotTrigger_(ans)) studentFlagsMap[r.student_id].hasExtreme = true;
+      }
+    }
+  });
+
+  quizRows.forEach(q => {
+    if (studentQuizMap[q.student_id]) studentQuizMap[q.student_id].push(q);
+  });
+
+  const integrityIndex = Object.keys(classStats).map(cId => {
+    const stat = classStats[cId];
+    let percent = 100;
+    if (stat.total > 0) {
+      percent = Math.max(0, Math.round(((stat.total - stat.flagged) / stat.total) * 100));
+    }
+    return {
+      classId: cId,
+      percent,
+      totalSubmissions: stat.total,
+      flaggedCount: stat.flagged
+    };
+  });
+
+  const leaderboard = students.map(s => {
+    const sId = s.student_id;
+    const progs = studentProgressMap[sId] || [];
+    const quizzes = studentQuizMap[sId] || [];
+    const profile = diagProfiles[sId] || null;
+    const flags = studentFlagsMap[sId] || { aiCount: 0, tabSwitches: 0, hasExtreme: false };
+
+    let completedMissions = 0;
+    let rawScore = 0;
+    const badges = [];
+
+    if (profile) {
+      completedMissions++;
+      if (String(profile.research_readiness || '').toLowerCase().includes('tinggi')) {
+        badges.push({ icon: '🧠', name: 'Master of Logic' });
+      } else {
+        badges.push({ icon: '🔭', name: 'Curious Observer' });
+      }
+    }
+
+    let perfectQuizzes = 0;
+    progs.forEach(p => {
+      if (p.activity_id === 'M0-QUICK') return;
+      const isCompleted = p.status === 'completed' || p.status === 'verified';
+      if (isCompleted) {
+        completedMissions++;
+        if (p.activity_id.includes('-LRN')) badges.push({ icon: '📚', name: 'Scholar' });
+        if (p.activity_id.includes('-LAB')) badges.push({ icon: '🔬', name: 'Lab Researcher' });
+      }
+    });
+
+    quizzes.forEach(q => {
+      const sc = Number(q.score) || 0;
+      rawScore += sc;
+      if (sc === 100) { badges.push({ icon: '💎', name: 'Diamond Mind' }); perfectQuizzes++; }
+      else if (sc >= 90) badges.push({ icon: '🥇', name: 'Gold Mind' });
+      else if (sc >= 80) badges.push({ icon: '🥈', name: 'Silver Mind' });
+    });
+
+    if (completedMissions >= 1) badges.push({ icon: '🎯', name: 'First Blood' });
+    if (completedMissions >= 3) badges.push({ icon: '🔥', name: 'Streak Master' });
+    if (completedMissions >= 7) badges.push({ icon: '🚀', name: 'Hyperdrive' });
+    if (perfectQuizzes >= 3) badges.push({ icon: '👑', name: 'Flawless Crown' });
+
+    const uniqueBadges = [];
+    const badgeNames = new Set();
+    badges.forEach(b => {
+      if (!badgeNames.has(b.name)) {
+        badgeNames.add(b.name);
+        uniqueBadges.push(b);
+      }
+    });
+
+    let penalty = 0;
+    if (flags.hasExtreme) {
+      penalty = 150 + (flags.aiCount * 25);
+    } else if (flags.aiCount > 0) {
+      penalty = (flags.aiCount * 15) + Math.min(60, flags.tabSwitches * 5);
+    }
+
+    const netScore = Math.max(0, (completedMissions * 1000) + rawScore - penalty);
+
+    return {
+      studentId: sId,
+      name: s.name,
+      classId: s.class_id,
+      rollNo: s.roll_no,
+      completedMissions,
+      rawScore,
+      penalty,
+      netScore,
+      badges: uniqueBadges,
+      isExtreme: flags.hasExtreme
+    };
+  });
+
+  leaderboard.sort((a, b) => {
+    if (b.netScore !== a.netScore) return b.netScore - a.netScore;
+    if (a.penalty !== b.penalty) return a.penalty - b.penalty;
+    if (b.completedMissions !== a.completedMissions) return b.completedMissions - a.completedMissions;
+    return a.name.localeCompare(b.name);
+  });
+
+  leaderboard.forEach((item, idx) => {
+    item.rank = idx + 1;
+  });
+
+  const result = {
+    updatedAt: Utilities.formatDate(new Date(), 'Asia/Jakarta', 'dd MMM yyyy, HH:mm'),
+    integrityIndex,
+    topTen: leaderboard.slice(0, 10),
+    roster: leaderboard
+  };
+
+  try {
+    cache.put('PUBLIC_LEADERBOARD_DATA_V1', JSON.stringify(result), 900);
+  } catch(e) {}
+
+  return result;
+}
+

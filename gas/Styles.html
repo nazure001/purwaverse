@@ -5,5 +5,49 @@
 @media(max-width:760px){#primary-nav-button{display:none}.role-indicator{font-size:.62rem;padding:4px 7px}main{padding-top:24px}.hero{padding-top:25px}.path-grid,.cycle,.student-grid,.teams,.stat-grid,.lesson-grid{grid-template-columns:1fr}.chapter-number{font-size:4rem}.chapter-head{align-items:start}.student-table{font-size:.82rem}.student-table th:nth-child(3),.student-table td:nth-child(3){display:none}.sheet{padding:10mm}.card-meta{align-items:flex-start;flex-direction:column}.activity-hero{padding:22px}}
 @media print{body{background:#fff}.topbar,.no-print,#toast{display:none!important}main{padding:0;max-width:none}.view{display:none!important}#view-worksheet{display:block!important}.sheet{box-shadow:none;padding:8mm;font-size:10.5pt}.sheet h2{font-size:22pt}.drawing{height:72px}@page{size:A4;margin:8mm}}
 .passport{padding-left:0;list-style:none}
+.integrity-panel{background:#fff;border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:var(--shadow);margin-top:36px}
+.integrity-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:20px}
+.integrity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.integrity-card{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.integrity-card-head{display:flex;justify-content:space-between;align-items:center}
+.integrity-card-class{font-size:1.1rem;font-weight:800;color:var(--ink)}
+.integrity-card-val{font-size:1.4rem;font-weight:900;color:#087558}
+.integrity-card-val.warning{color:#b45309}
+.integrity-bar-bg{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.integrity-bar-fill{height:100%;border-radius:999px;transition:width .4s ease}
+.integrity-card-sub{font-size:.76rem;color:var(--muted);display:flex;justify-content:space-between}
+.leaderboard-section{background:#fff;border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:var(--shadow);margin-top:28px}
+.leaderboard-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:18px;margin-bottom:20px}
+.leaderboard-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px}
+.filter-chip{background:#f1f5f9;border:1px solid #cbd5e1;color:#475569;font-weight:700;font-size:.82rem;padding:7px 14px;border-radius:999px;cursor:pointer;transition:all .15s ease}
+.filter-chip:hover{background:#e2e8f0}
+.filter-chip.active{background:#155eef;color:#fff;border-color:#155eef;box-shadow:0 3px 10px rgba(21,94,239,.25)}
+.leaderboard-search{padding:8px 14px;font-size:.88rem;border:1px solid #cbd5e1;border-radius:999px;width:200px;background:#fff}
+.leaderboard-table-wrapper{overflow-x:auto;border:1px solid var(--line);border-radius:18px;background:#fff}
+.leaderboard-table{width:100%;border-collapse:collapse;margin:0;font-size:.92rem}
+.leaderboard-table th{background:#f8fafc;padding:12px 14px;font-weight:800;color:#475569;border-bottom:2px solid var(--line);text-align:left;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase}
+.leaderboard-table td{padding:12px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.leaderboard-table tr:hover td{background:#fcfdfe}
+.leaderboard-table tr.top-1 td{background:#fffdf5}
+.leaderboard-table tr.top-2 td{background:#fafbfe}
+.leaderboard-table tr.top-3 td{background:#fffaf6}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-weight:800;font-size:.88rem}
+.rank-1{background:#fef08a;color:#854d0e;box-shadow:0 2px 6px rgba(234,179,8,.3)}
+.rank-2{background:#e2e8f0;color:#334155}
+.rank-3{background:#ffedd5;color:#9a3412}
+.rank-normal{color:var(--muted);font-weight:700}
+.badge-pill-mini{display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1px solid #e2e8f0;padding:3px 7px;border-radius:999px;font-size:.76rem;margin:2px;cursor:default;transition:transform .15s ease}
+.badge-pill-mini:hover{transform:scale(1.08);background:#f1f5f9}
+.badge-count-more{font-size:.74rem;color:var(--muted);font-weight:700;margin-left:4px}
+.penalty-chip{display:inline-block;background:#fee2e2;color:#b91c1c;font-size:.72rem;padding:2px 6px;border-radius:6px;font-weight:700;margin-left:6px}
+.anti-cheat-protected{user-select:none!important;-webkit-user-select:none!important;position:relative}
+.watermark-grid{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;opacity:0.055;display:flex;flex-wrap:wrap;align-content:space-around;justify-content:space-around;gap:70px 40px;overflow:hidden;user-select:none;-webkit-user-select:none}
+.watermark-item{transform:rotate(-22deg);font-size:.82rem;font-weight:800;color:#1e293b;white-space:nowrap;letter-spacing:.04em}
+.level-badge{display:inline-block;font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:8px;vertical-align:middle}
+.level-lots{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}
+.level-mots{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.level-hots{background:#fce7f3;color:#be185d;border:1px solid #fbcfe8}
 @media print{#view-worksheet{display:none!important}#view-worksheet.active,#view-practice-sheet.active,#view-semester-card.active,#view-material-summary.active{display:block!important}.sheet section,.practice-field,.material-summary-sheet h3,.material-summary-sheet ul{break-inside:avoid}.practice-report-form{display:block}.practice-field{display:block;margin:0 0 5mm;border:1px solid #777}.practice-field textarea{display:block;width:100%;border:0;overflow:visible;resize:none;color:#000;background:#fff}.practice-editor-note,.practice-save-actions{display:none!important}.practice-brief,.team-roster{font-size:9.5pt}.practice-title-row h2{font-size:20pt;margin:3mm 0}.material-summary-sheet{font-size:10.5pt}.material-summary-sheet h2{font-size:22pt}.projection-exit{display:none!important}}
 </style>
+

@@ -40,6 +40,14 @@ function runIntegrationChecks() {
     const attempts=[{passed:false,score:50,attempt_number:2},{passed:true,score:75,attempt_number:1},{passed:true,score:80,attempt_number:3}].sort(compareMasteryAttempts_);
     assert_(attempts[0].passed===true&&attempts[0].score===80,'mastery terbaik tidak dipertahankan');
   });
+  check('dynamic sampling kuis LOTS/MOTS/HOTS',()=>{
+    assert_(typeof sampledQuizItemsForAttempt_==='function','sampledQuizItemsForAttempt_ belum tersedia');
+    const all=findAll_('QUIZ_ITEMS',r=>r.activity_id==='CH08-01-U01-QZ01'&&String(r.active).toLowerCase()==='true');
+    const sampled1=sampledQuizItemsForAttempt_(all,'STD-TEST',1);
+    const sampled1Again=sampledQuizItemsForAttempt_(all,'STD-TEST',1);
+    assert_(sampled1.length>=3&&sampled1.length<=5,'jumlah soal kuis harus 3-5 soal');
+    assert_(JSON.stringify(sampled1.map(x=>x.quiz_item_id))===JSON.stringify(sampled1Again.map(x=>x.quiz_item_id)),'sampling harus deterministik pada attempt yang sama');
+  });
   check('navigasi peran dan pratinjau guru lengkap',()=>{
     const scripts=HtmlService.createHtmlOutputFromFile('Scripts').getContent(),index=HtmlService.createHtmlOutputFromFile('Index').getContent(),learningScripts=HtmlService.createHtmlOutputFromFile('LearningScripts').getContent();
     assert_(scripts.includes('ROLE_VIEW_ACCESS')&&scripts.includes("state.teacherToken?'teacher'"),'pengaman rute peran belum lengkap');
@@ -118,6 +126,17 @@ function runIntegrationChecks() {
   });
   check('identitas siswa unik',()=>{const rows=rows_('MASTER_STUDENTS').filter(r=>String(r.active).toLowerCase()==='true'),nisn=rows.map(r=>String(r.nisn)).filter(Boolean),ids=rows.map(r=>String(r.student_id));assert_(new Set(nisn).size===nisn.length,'NISN aktif ganda');assert_(new Set(ids).size===ids.length,'student_id ganda');});
   check('profil hanya untuk penilaian lengkap',()=>rows_('DIAGNOSTIC_PROFILES').forEach(p=>{const count=findAll_('DIAGNOSTIC_RESPONSES',r=>r.student_id===p.student_id&&CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id)&&r.score!==''&&r.score!==null).length;assert_(count>=CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length,'profil prematur: '+p.student_id);}));
+  check('layanan leaderboard publik dan integritas',()=>{
+    assert_(typeof publicLeaderboardData_==='function','publicLeaderboardData_ belum tersedia');
+    const data=publicLeaderboardData_();
+    assert_(data.integrityIndex&&data.integrityIndex.length===5,'indeks integritas kelas harus 5 kelas');
+    assert_(data.topTen&&Array.isArray(data.topTen),'topTen harus berupa array');
+    assert_(data.roster&&data.roster.length>=data.topTen.length,'roster harus mencakup seluruh siswa aktif');
+    if(data.topTen.length>0){
+      const top=data.topTen[0];
+      assert_(top.name&&top.classId&&typeof top.netScore==='number','struktur data leaderboard siswa tidak valid');
+    }
+  });
   const result={ok:checks.every(c=>c.status==='PASS'),mode:CONFIG.APP_MODE,sourceStatus:CONFIG.SOURCE_STATUS,checks};
   checks.forEach(c=>Logger.log('%s | %s%s',c.status,c.name,c.detail?' | '+c.detail:''));
   Logger.log('RINGKASAN | mode=%s | sumber=%s | hasil=%s',result.mode,result.sourceStatus,result.ok?'SEMUA PASS':'ADA YANG GAGAL');

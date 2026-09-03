@@ -138,6 +138,55 @@ function teacherLearningUnit_(session,unitId){
   return Object.assign({},unit,{illustration_svg:learningIllustration_(unit.illustration),practice_preview:practiceCatalogItem_(unit.practice_activity_id),preview:true});
 }
 
+function sampledQuizItemsForAttempt_(allItems, studentId, attemptNumber) {
+  if (!allItems || allItems.length <= 3) return allItems || [];
+  const seed = String(studentId) + '|' + String(attemptNumber) + '|' + String(allItems[0].activity_id);
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = ((hash * 31) + seed.charCodeAt(i)) >>> 0;
+  const minCount = Math.min(3, allItems.length);
+  const maxCount = Math.min(5, allItems.length);
+  const targetCount = minCount + (hash % (maxCount - minCount + 1));
+  const catalog = typeof allQuizItems_ === 'function' ? allQuizItems_() : [];
+  const levelMap = {};
+  catalog.forEach(ci => { if (ci.quiz_item_id) levelMap[ci.quiz_item_id] = ci.level; });
+  const lots = [], mots = [], hots = [], rest = [];
+  allItems.forEach((item, idx) => {
+    let lvl = item.level || levelMap[item.quiz_item_id];
+    if (!lvl) {
+      try { const fb = JSON.parse(item.feedback_json || '{}'); if (fb.level) lvl = fb.level; } catch(e) {}
+    }
+    if (!lvl) {
+      lvl = (idx === 0 || idx === 1) ? 'LOTS' : (idx === 2 || idx === 4) ? 'MOTS' : 'HOTS';
+    }
+    item.level = lvl;
+    if (lvl === 'LOTS') lots.push(item);
+    else if (lvl === 'MOTS') mots.push(item);
+    else if (lvl === 'HOTS') hots.push(item);
+    else rest.push(item);
+  });
+  const sLots = stableShuffle_(lots, seed + '|lots');
+  const sMots = stableShuffle_(mots, seed + '|mots');
+  const sHots = stableShuffle_(hots, seed + '|hots');
+  const selected = [];
+  function pick(pool) {
+    if (pool.length > 0 && selected.length < targetCount) {
+      selected.push(pool.shift());
+    }
+  }
+  if (targetCount === 3) {
+    pick(sLots); pick(sMots); pick(sHots);
+  } else if (targetCount === 4) {
+    pick(sLots); pick(sMots); pick(sMots); pick(sHots);
+  } else {
+    pick(sLots); pick(sLots); pick(sMots); pick(sMots); pick(sHots);
+  }
+  const remainder = sLots.concat(sMots).concat(sHots).concat(rest);
+  while (selected.length < targetCount && remainder.length > 0) {
+    selected.push(remainder.shift());
+  }
+  return stableShuffle_(selected, seed + '|order');
+}
+
 function startQuiz_(session,activityId){
   const units=allLearningUnits_(),index=units.findIndex(x=>x.quiz_activity_id===activityId);
   if(index<0)throw new Error('Kuis tidak ditemukan.');
@@ -150,12 +199,14 @@ function startQuiz_(session,activityId){
     const unfinished=previous.filter(x=>!x.submitted_at).sort((a,b)=>Number(b.attempt_number)-Number(a.attempt_number))[0];
     const attemptNumber=unfinished?Number(unfinished.attempt_number):previous.length+1,attemptId=unfinished?unfinished.attempt_id:uid_('QAT');
     if(!unfinished)append_('QUIZ_ATTEMPTS',{attempt_id:attemptId,student_id:session.actor_id,activity_id:activityId,attempt_number:attemptNumber,score:'',passed:false,started_at:isoNow_(),submitted_at:''});
-    const items=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true').map(item=>{
+    const allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+    if(!allItems.length)throw new Error('Bank soal belum tersedia.');
+    const sampled=sampledQuizItemsForAttempt_(allItems,session.actor_id,attemptNumber);
+    const items=sampled.map(item=>{
       const {answer_json,feedback_json,options_json,...safe}=item;
-      return Object.assign({},safe,{options:quizOptionsForAttempt_(item,session.actor_id,attemptNumber).map(option=>option.text)});
+      return Object.assign({},safe,{level:item.level||'MOTS',options:quizOptionsForAttempt_(item,session.actor_id,attemptNumber).map(option=>option.text)});
     });
-    if(!items.length)throw new Error('Bank soal belum tersedia.');
-    return {attemptId,attemptNumber,items:stableShuffle_(items,session.actor_id+'|'+attemptNumber)};
+    return {attemptId,attemptNumber,items};
   }finally{lock.releaseLock();}
 }
 
@@ -165,7 +216,8 @@ function submitQuiz_(session,payload){
     const attempt=findOne_('QUIZ_ATTEMPTS',r=>r.attempt_id===payload.attemptId&&r.student_id===session.actor_id);
     if(!attempt)throw new Error('Percobaan kuis tidak ditemukan.');
     if(attempt.submitted_at)return {score:Number(attempt.score),passed:String(attempt.passed).toLowerCase()==='true',alreadySubmitted:true};
-    const items=findAll_('QUIZ_ITEMS',r=>r.activity_id===attempt.activity_id&&String(r.active).toLowerCase()==='true');
+    const allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===attempt.activity_id&&String(r.active).toLowerCase()==='true');
+    const items=sampledQuizItemsForAttempt_(allItems,session.actor_id,attempt.attempt_number);
     const answers=Object.fromEntries((payload.answers||[]).map(x=>[x.itemId,x.answer]));
     if(items.some(x=>answers[x.quiz_item_id]===undefined))throw new Error('Semua soal kuis perlu dijawab.');
     let earned=0,total=0,reviewItems=[];
@@ -179,7 +231,7 @@ function submitQuiz_(session,payload){
     });
     const score=Math.round(earned/Math.max(1,total)*100),passed=score>=CONFIG.QUIZ_PASSING_SCORE;
     upsert_('QUIZ_ATTEMPTS','attempt_id',Object.assign({},attempt,{score,passed,submitted_at:isoNow_()}));
-    audit_({type:'student',id:session.actor_id},'SUBMIT_QUIZ','quiz_attempt',attempt.attempt_id,{activity_id:attempt.activity_id,score,passed});
+    audit_({type:'student',id:session.actor_id},'SUBMIT_QUIZ','quiz_attempt',attempt.attempt_id,{activity_id:attempt.activity_id,score,passed,itemCount:items.length});
     return {score,passed,passingScore:CONFIG.QUIZ_PASSING_SCORE,reviewItems};
   }finally{lock.releaseLock();}
 }

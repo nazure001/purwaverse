@@ -481,7 +481,10 @@ const QUIZ_BANK_ = Object.freeze([
 
 function quizSet_(activityId,items){
   const unit=allLearningUnits_().find(item=>item.quiz_activity_id===activityId),review=unit?'Tinjau kembali '+unit.title+': '+unit.key_points.join(' '):'Tinjau kembali konsep inti pada materi ini.';
-  return items.map((x,i)=>({quiz_item_id:activityId+'-I'+String(i+1).padStart(2,'0'),activity_id:activityId,question_type:'single_choice',prompt:x[0],options:x[1],answer:x[2],feedback:x[3]||review,max_score:1,active:true}));
+  return items.map((x,i)=>{
+    const level=x[4]||(i===0||i===1?'LOTS':(i===2||i===4)?'MOTS':'HOTS');
+    return {quiz_item_id:activityId+'-I'+String(i+1).padStart(2,'0'),activity_id:activityId,question_type:'single_choice',prompt:x[0],options:x[1],answer:x[2],feedback:x[3]||review,max_score:1,active:true,level};
+  });
 }
 
 function allLearningUnits_(){ return LEARNING_PATH_.reduce((all,chapter)=>all.concat(chapter.units.map(unit=>Object.assign({chapter_id:chapter.chapter_id,chapter_title:chapter.title,semester:chapter.semester},unit))),[]); }
