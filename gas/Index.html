@@ -11,7 +11,7 @@
     <nav><span id="role-nav-label" class="role-indicator" hidden></span><button id="primary-nav-button" onclick="handlePrimaryNavigation()">Jalur Belajar</button><button id="secondary-nav-button" onclick="handleSecondaryNavigation()">LKPD</button><button id="auth-nav-button" onclick="handleAuthNavigation()">Masuk</button></nav>
   </header>
   <main>
-    <section id="view-home" class="view hero active">
+    <section id="view-home" class="view hero active" aria-hidden="false">
       <div class="hero-container">
         <div class="hero-content">
           <h1>Dunia kecil.<br><span>Pertanyaan besar.</span></h1>
@@ -223,7 +223,7 @@
       </div>
     </section>
 
-    <section id="view-chapter" class="view">
+    <section id="view-chapter" class="view" aria-hidden="true">
       <div class="chapter-head"><div><span class="pill">BAB 1 · GOLD STANDARD</span><h2>The Invisible World</h2><p>Bagaimana sesuatu yang tidak terlihat mata menentukan kehidupan kita?</p></div><div class="chapter-number">01</div></div>
       <div class="cycle">
         <article><div class="card-meta"><span>SCIENCE CYCLE 1</span><span id="status-CH08-01-U01-LRN01" class="status-badge">Belum dimulai</span></div><h3>Sel: unit kehidupan</h3><p><b>Discover:</b> benda hidup tersusun dari apa?</p><p><b>Learn:</b> sel adalah unit struktural dan fungsional terkecil kehidupan.</p><button onclick="openActivity('learn')">Buka materi</button></article>
@@ -232,18 +232,18 @@
       </div>
     </section>
 
-    <section id="view-activity" class="view activity-view">
+    <section id="view-activity" class="view activity-view" aria-hidden="true">
       <div class="activity-toolbar"><button class="secondary" onclick="showView('chapter')">Kembali ke Bab 1</button><span id="activity-save-state" class="status-badge">Belum disimpan</span></div>
       <div id="activity-content"></div>
     </section>
 
-    <section id="view-login" class="view narrow">
+    <section id="view-login" class="view narrow" aria-hidden="true">
       <span class="pill">PROGRESS PRIBADI</span><h2>Masuk sebagai siswa</h2><p>Pilih kelas, nomor absen, lalu masukkan PIN 4 digit.</p>
       <form onsubmit="studentLogin(event)"><label>Kelas<select id="class-id" required><option>8A</option><option>8B</option><option>8C</option><option>8D</option><option>8E</option></select></label><label>Nomor absen<input id="roll-no" type="number" min="1" required></label><label>PIN<input id="student-pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required></label><button class="primary" type="submit">Masuk</button></form>
       <button class="text-button" onclick="showView('teacher-login')">Masuk sebagai guru</button>
     </section>
 
-    <section id="view-student" class="view">
+    <section id="view-student" class="view" aria-hidden="true">
       <div id="student-welcome"></div>
       <div class="actions"><button class="primary" onclick="openLearningPath()">Lanjutkan Jalur Belajar</button><button class="secondary" onclick="openPracticeGuide()">Panduan Praktik & LKPD</button><button class="secondary" onclick="openSemesterCard()">Kartu Semester</button><button class="secondary" onclick="openGlossary()">Kamus Sains</button><button class="secondary" onclick="showView('wiki')" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;">Wiki Purwaverse</button></div>
       <div class="student-grid">
@@ -260,7 +260,7 @@
       <div id="diagnostic" class="hidden"></div>
     </section>
 
-    <section id="view-glossary" class="view narrow">
+    <section id="view-glossary" class="view narrow" aria-hidden="true">
       <div class="activity-toolbar"><button class="secondary" onclick="showView('student')">Kembali</button><span class="status-badge">Kamus Sains</span></div>
       <div class="dashboard-head" style="margin-bottom:1.5rem;">
         <div><h2>Kamus Sains</h2><p>Temukan arti istilah sains yang membingungkanmu.</p></div>
@@ -269,7 +269,7 @@
       <div id="glossary-content" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
     </section>
 
-    <section id="view-wiki" class="view">
+    <section id="view-wiki" class="view" aria-hidden="true">
       <div class="activity-toolbar"><button class="secondary" onclick="showView('student')">Kembali</button><span class="status-badge">Wiki & Bantuan</span></div>
       <div class="dashboard-head">
         <div><span class="pill">PANDUAN SISWA</span><h2>Wiki Purwaverse</h2><p>Pelajari cara menggunakan fitur-fitur di Purwaverse agar kamu bisa belajar dengan maksimal dan mengumpulkan banyak lencana!</p></div>
@@ -321,16 +321,16 @@
       </div>
     </section>
 
-    <section id="view-learning" class="view"><div class="dashboard-head"><div><span class="pill">PERSONAL SCIENCE PATH</span><h2>Jalur Belajar</h2><p>Kecepatan setiap siswa dapat berbeda. Selesaikan tahap dengan teliti.</p></div></div><div id="learning-path"></div></section>
-    <section id="view-learning-unit" class="view"><div class="activity-toolbar"><button class="secondary" onclick="openLearningPath()">Kembali ke Jalur</button><span id="learning-unit-status" class="status-badge"></span></div><div id="learning-unit-content"></div></section>
-    <section id="view-quiz" class="view narrow"><button class="secondary" onclick="showView('learning-unit')">Kembali</button><div id="quiz-content"></div></section>
-    <section id="view-semester-card" class="view"><div class="no-print actions"><button id="semester-card-print" class="primary" onclick="window.print()">Cetak Kartu</button><button class="secondary" onclick="showView('student')">Kembali</button></div><div id="semester-card-content"></div></section>
-    <section id="view-practice-sheet" class="view worksheet"><div class="no-print actions"><button class="primary" onclick="printPracticeSheet()">Cetak LKPD/Laporan</button><button class="secondary" onclick="showView('learning-unit')">Kembali</button></div><div id="dynamic-practice-sheet" class="sheet"></div></section>
-    <section id="view-practice-guide" class="view"><div class="activity-toolbar"><button class="secondary" onclick="goHomeForRole()">Kembali</button><span class="status-badge">Panduan & SOP</span></div><div id="practice-guide-content"></div></section>
-    <section id="view-material-summary" class="view worksheet"><div class="no-print actions"><button class="primary" onclick="window.print()">Cetak Ringkasan</button><button class="secondary" onclick="closeMaterialSummary()">Kembali</button></div><div id="material-summary-content" class="sheet material-summary-sheet"></div></section>
+    <section id="view-learning" class="view" aria-hidden="true"><div class="dashboard-head"><div><span class="pill">PERSONAL SCIENCE PATH</span><h2>Jalur Belajar</h2><p>Kecepatan setiap siswa dapat berbeda. Selesaikan tahap dengan teliti.</p></div></div><div id="learning-path"></div></section>
+    <section id="view-learning-unit" class="view" aria-hidden="true"><div class="activity-toolbar"><button class="secondary" onclick="openLearningPath()">Kembali ke Jalur</button><span id="learning-unit-status" class="status-badge"></span></div><div id="learning-unit-content"></div></section>
+    <section id="view-quiz" class="view narrow" aria-hidden="true"><button class="secondary" onclick="showView('learning-unit')">Kembali</button><div id="quiz-content"></div></section>
+    <section id="view-semester-card" class="view" aria-hidden="true"><div class="no-print actions"><button id="semester-card-print" class="primary" onclick="window.print()">Cetak Kartu</button><button class="secondary" onclick="showView('student')">Kembali</button></div><div id="semester-card-content"></div></section>
+    <section id="view-practice-sheet" class="view worksheet" aria-hidden="true"><div class="no-print actions"><button class="primary" onclick="printPracticeSheet()">Cetak LKPD/Laporan</button><button class="secondary" onclick="showView('learning-unit')">Kembali</button></div><div id="dynamic-practice-sheet" class="sheet"></div></section>
+    <section id="view-practice-guide" class="view" aria-hidden="true"><div class="activity-toolbar"><button class="secondary" onclick="goHomeForRole()">Kembali</button><span class="status-badge">Panduan & SOP</span></div><div id="practice-guide-content"></div></section>
+    <section id="view-material-summary" class="view worksheet" aria-hidden="true"><div class="no-print actions"><button class="primary" onclick="window.print()">Cetak Ringkasan</button><button class="secondary" onclick="closeMaterialSummary()">Kembali</button></div><div id="material-summary-content" class="sheet material-summary-sheet"></div></section>
 
-    <section id="view-teacher-login" class="view narrow"><span class="pill">RUANG GURU</span><h2>Dashboard IPA VIII</h2><form onsubmit="teacherLogin(event)"><label>Nama pengguna<input id="teacher-user" required></label><label>Kata sandi<input id="teacher-pass" type="password" required></label><button class="primary">Masuk</button></form></section>
-    <section id="view-teacher" class="view">
+    <section id="view-teacher-login" class="view narrow" aria-hidden="true"><span class="pill">RUANG GURU</span><h2>Dashboard IPA VIII</h2><form onsubmit="teacherLogin(event)"><label>Nama pengguna<input id="teacher-user" required></label><label>Kata sandi<input id="teacher-pass" type="password" required></label><button class="primary">Masuk</button></form></section>
+    <section id="view-teacher" class="view" aria-hidden="true">
       <div class="dashboard-head">
         <div><span class="pill">KLASENA-STYLE OVERVIEW</span><h2>Dashboard IPA VIII</h2></div>
         <select id="teacher-class" onchange="loadTeacherActiveTab()"><option>8A</option><option>8B</option><option>8C</option><option>8D</option><option>8E</option></select>
@@ -342,7 +342,7 @@
         <button type="button" class="teacher-tab-btn secondary" onclick="openTeacherMaterialPreview()">Pratinjau Materi</button>
       </div>
 
-      <div id="panel-teacher-overview" class="teacher-tab-panel active">
+      <div id="panel-teacher-overview" class="teacher-tab-panel active" aria-hidden="false">
         <div class="practice-dashboard-card"><div><span class="pill">SEBELUM PRAKTIK</span><h3>SOP, contoh berhasil, dan contoh laporan</h3><p>Gunakan sebagai pengarahan kelas sebelum membuka LKPD tim.</p></div><button class="secondary" onclick="openPracticeGuide()">Buka Panduan Praktik</button></div>
         <div id="dashboard-content"></div>
         <div class="actions">
@@ -354,18 +354,18 @@
         <div id="team-output"></div>
       </div>
 
-      <div id="panel-teacher-learning" class="teacher-tab-panel">
+      <div id="panel-teacher-learning" class="teacher-tab-panel" aria-hidden="true">
         <div id="teacher-learning"></div>
       </div>
 
-      <div id="panel-teacher-teams" class="teacher-tab-panel">
+      <div id="panel-teacher-teams" class="teacher-tab-panel" aria-hidden="true">
         <div id="group-lab-dashboard"></div>
       </div>
     </section>
-    <section id="view-teacher-materials" class="view"><div class="activity-toolbar"><button class="secondary" onclick="showView('teacher')">Kembali ke Dashboard Guru</button><span class="status-badge">Pratinjau - tidak mencatat progres</span></div><div id="teacher-material-catalog"></div></section>
-    <section id="view-teacher-material-unit" class="view"><div class="activity-toolbar"><button class="secondary" onclick="openTeacherMaterialPreview()">Kembali ke Daftar Materi</button><span class="status-badge">Pratinjau - baca saja</span></div><div id="teacher-material-content"></div></section>
+    <section id="view-teacher-materials" class="view" aria-hidden="true"><div class="activity-toolbar"><button class="secondary" onclick="showView('teacher')">Kembali ke Dashboard Guru</button><span class="status-badge">Pratinjau - tidak mencatat progres</span></div><div id="teacher-material-catalog"></div></section>
+    <section id="view-teacher-material-unit" class="view" aria-hidden="true"><div class="activity-toolbar"><button class="secondary" onclick="openTeacherMaterialPreview()">Kembali ke Daftar Materi</button><span class="status-badge">Pratinjau - baca saja</span></div><div id="teacher-material-content"></div></section>
 
-    <section id="view-worksheet" class="view worksheet">
+    <section id="view-worksheet" class="view worksheet" aria-hidden="true">
       <div class="no-print actions"><button class="primary" onclick="window.print()">Cetak A4</button><button class="secondary" onclick="showView('chapter')">Kembali</button></div>
       <div class="sheet"><header><div><b>PURWAVERSE SCIENCE LAB</b><small>Bab 1 · The Invisible World</small></div><div>LKPD SL-01</div></header><h2>Mengamati Dunia Mikroskopis</h2><div class="identity">Nama/Tim: ____________________ &nbsp; Kelas: ______ &nbsp; Tanggal: __________</div>
         <h3>MISSION</h3><p>Temukan bukti bahwa struktur yang tidak tampak oleh mata dapat diamati dengan alat dan prosedur yang tepat.</p>
