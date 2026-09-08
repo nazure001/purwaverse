@@ -27,7 +27,7 @@ const ROLE_VIEW_ACCESS={teacher:['teacher','teacher-materials','teacher-material
 const ACTIVITY_IDS={learn:'CH08-01-U01-LRN01',lab:'CH08-01-U02-LAB01',challenge:'CH08-01-U03-CHL01',research:'CH08-01-U03-RSH01'};
 function activeClientRole(){return state.teacherToken?'teacher':state.studentToken?'student':'guest'}
 function allowedViewForRole(name){const role=activeClientRole(),allowed=ROLE_VIEW_ACCESS[role];if(allowed.includes(name))return name;return role==='teacher'?'teacher':role==='student'?'student':'home'}
-function showView(name){name=allowedViewForRole(name);document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const target=document.getElementById('view-'+name);if(!target)return;target.classList.add('active');if(name==='chapter')updateChapterStatuses();if(name==='home')loadPublicLeaderboard();window.scrollTo(0,0)}
+function showView(name){name=allowedViewForRole(name);const switchTarget=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const target=document.getElementById('view-'+name);if(!target)return;target.classList.add('active');if(name==='chapter')updateChapterStatuses();if(name==='home')loadPublicLeaderboard();window.scrollTo(0,0)};if(document.startViewTransition){document.startViewTransition(switchTarget)}else{switchTarget()}}
 
 function openGlossary() { showView('glossary'); filterGlossary(); }
 function filterGlossary() {
@@ -156,22 +156,40 @@ function renderLeaderboard() {
 
     statWrapper.innerHTML = `
       <div class="dashboard-stat-block">
-        <h4>Total Siswa</h4>
-        <div class="big-number">${d.totalStudents || 0}</div>
-        <div class="trend">Aktif Terdaftar</div>
+        <h4>TOTAL STUDENTS</h4>
+        <div class="dashboard-stat-row">
+          <div>
+            <div class="big-number">${(d.totalStudents || 0).toLocaleString()}</div>
+            <div class="trend">+3.2% Aktif</div>
+          </div>
+          <div class="stat-icon-badge">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
+            </svg>
+          </div>
+        </div>
       </div>
       <div class="dashboard-stat-block">
-        <h4>Penyelesaian Tugas per Kelas</h4>
+        <h4>TASK COMPLETION RATE PER CLASS (${sortedClasses.map(c=>c.classId).join(', ')})</h4>
         <div class="bar-chart">
           ${completionBarsHtml}
         </div>
       </div>
-      <div class="dashboard-stat-block" style="align-items: center; text-align: center;">
-        <h4>Indeks Kejujuran Bebas AI</h4>
-        <div class="big-number">${avgIntegrity}%</div>
-        <div style="color:var(--muted); font-size:0.8rem; margin-top:5px;">
-          <span style="font-size:1.8rem; display:block; margin-bottom:5px;">🛡️</span>
-          Observasi Mandiri
+      <div class="dashboard-stat-block">
+        <h4>AI-FREE INTEGRITY INDEX</h4>
+        <div class="dashboard-stat-row">
+          <div>
+            <div class="big-number">${avgIntegrity}%</div>
+            <div style="color:var(--muted); font-size:0.8rem; font-weight:600; margin-top:4px;">
+              ${avgIntegrity >= 90 ? 'Outstanding Academic Honesty' : 'Observasi Mandiri Bebas AI'}
+            </div>
+          </div>
+          <div class="shield-badge-container">
+            <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span>${avgIntegrity}%</span>
+          </div>
         </div>
       </div>
     `;
