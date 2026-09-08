@@ -209,7 +209,10 @@
               <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8D')">8D</button>
               <button type="button" class="filter-chip" onclick="setLeaderboardFilter('8E')">8E</button>
             </div>
-            <input type="text" id="leaderboard-search-input" placeholder="🔍 Cari nama siswa..." oninput="handleLeaderboardSearch(this.value)" class="leaderboard-search" />
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <input type="text" id="leaderboard-search-input" placeholder="🔍 Cari nama siswa..." oninput="handleLeaderboardSearch(this.value)" class="leaderboard-search" />
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-leaderboard" onclick="refreshLeaderboardManual()" title="Segarkan data peringkat terbaru" style="white-space:nowrap; padding:0.45rem 0.8rem; border-radius:12px; font-weight:600; font-size:0.85rem;">🔄 Segarkan</button>
+            </div>
           </div>
         </div>
 

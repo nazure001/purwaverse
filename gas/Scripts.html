@@ -121,13 +121,31 @@ const leaderboardState = {
   showFullRoster: false
 };
 
+let _lastLeaderboardManualRefresh = 0;
+async function refreshLeaderboardManual() {
+  const now = Date.now();
+  if (now - _lastLeaderboardManualRefresh < 10000) {
+    toast('Data baru saja diperbarui. Tunggu beberapa saat untuk menyegarkan lagi.');
+    return;
+  }
+  _lastLeaderboardManualRefresh = now;
+  const btn = document.getElementById('btn-refresh-leaderboard');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memuat...'; }
+  try {
+    await loadPublicLeaderboard(true);
+    toast('Papan peringkat berhasil diperbarui!');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Segarkan'; }
+  }
+}
+
 async function loadPublicLeaderboard(force) {
   if (leaderboardState.data && !force) {
     renderLeaderboard();
     return;
   }
   try {
-    const d = await callApi('publicLeaderboard');
+    const d = await callApi('publicLeaderboard', { force: !!force });
     leaderboardState.data = d;
     renderLeaderboard();
   } catch (e) {

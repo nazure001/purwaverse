@@ -347,11 +347,13 @@ function hasHoneypotTrigger_(text) {
   return keys.some(k => t.includes(k));
 }
 
-function publicLeaderboardData_() {
+function publicLeaderboardData_(force) {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('PUBLIC_LEADERBOARD_DATA_V2');
-  if (cached) {
-    try { return JSON.parse(cached); } catch(e) {}
+  if (!force) {
+    const cached = cache.get('PUBLIC_LEADERBOARD_DATA_V2');
+    if (cached) {
+      try { return JSON.parse(cached); } catch(e) {}
+    }
   }
 
   const students = findAll_('MASTER_STUDENTS', r => String(r.active).toLowerCase() === 'true');
@@ -488,13 +490,21 @@ function publicLeaderboardData_() {
       }
     });
 
+    const passedQuizzes = new Set();
     quizzes.forEach(q => {
       const sc = Number(q.score) || 0;
       rawScore += sc;
       if (sc === 100) { badges.push({ icon: '💎', name: 'Diamond Mind' }); perfectQuizzes++; }
       else if (sc >= 90) badges.push({ icon: '🥇', name: 'Gold Mind' });
       else if (sc >= 80) badges.push({ icon: '🥈', name: 'Silver Mind' });
+      const isPassed = String(q.passed).toLowerCase() === 'true' || sc >= (CONFIG.QUIZ_PASSING_SCORE || 70);
+      if (isPassed && q.activity_id) {
+        passedQuizzes.add(q.activity_id);
+      }
     });
+
+    completedMissions += passedQuizzes.size;
+    if (passedQuizzes.size >= 1) badges.push({ icon: '🎓', name: 'Quiz Master' });
 
     if (completedMissions >= 1) badges.push({ icon: '🎯', name: 'First Blood' });
     if (completedMissions >= 3) badges.push({ icon: '🔥', name: 'Streak Master' });
@@ -553,7 +563,7 @@ function publicLeaderboardData_() {
   };
 
   try {
-    cache.put('PUBLIC_LEADERBOARD_DATA_V2', JSON.stringify(result), 900);
+    cache.put('PUBLIC_LEADERBOARD_DATA_V2', JSON.stringify(result), 90);
   } catch(e) {}
 
   return result;

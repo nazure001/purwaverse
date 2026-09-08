@@ -57,7 +57,7 @@ function api(action, payload) {
     let data;
     switch(action) {
       case 'bootstrap': data=publicBootstrap_(); break;
-      case 'publicLeaderboard': data=publicLeaderboardData_(); break;
+      case 'publicLeaderboard': data=publicLeaderboardData_(payload.force); break;
       case 'loginStudent': data=loginStudent_(payload.classId,payload.rollNo,payload.pin); break;
       case 'loginTeacher': data=loginTeacher_(payload.username,payload.password); break;
       case 'logout': data=logout_(payload.token); break;

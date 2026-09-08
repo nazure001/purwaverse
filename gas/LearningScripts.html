@@ -113,7 +113,7 @@
   async function finishQuiz(e) {
     e.preventDefault(); const form = new FormData(e.target), answers = state.activeQuiz.items.map(x => ({ itemId: x.quiz_item_id, answer: form.get(x.quiz_item_id) }));
     if ((state.tabSwitchCount || 0) > 2) { try { await callApi('saveProgress', { token: state.studentToken, activityId: state.activeUnit.quiz_activity_id, status: 'completed', evidence: { flag: '[PERINGATAN: Terindikasi AI / Pindah Tab ' + state.tabSwitchCount + 'x]' } }); } catch (err) { } }
-    try { const result = await callApi('submitQuiz', { token: state.studentToken, attemptId: state.activeQuiz.attemptId, answers }); if (typeof clearDraft === 'function') clearDraft(document.getElementById('quiz-form')); state.learningHome = null; toast(result.passed ? 'Kuis tuntas: ' + result.score : 'Nilai ' + result.score + '. Pelajari kembali materi lalu coba lagi.'); await openLearningUnit(state.activeUnit.unit_id); renderQuizReview(result) } catch (err) { toast(err.message) }
+    try { const result = await callApi('submitQuiz', { token: state.studentToken, attemptId: state.activeQuiz.attemptId, answers }); if (typeof clearDraft === 'function') clearDraft(document.getElementById('quiz-form')); state.learningHome = null; if (typeof leaderboardState !== 'undefined') leaderboardState.data = null; toast(result.passed ? 'Kuis tuntas: ' + result.score : 'Nilai ' + result.score + '. Pelajari kembali materi lalu coba lagi.'); await openLearningUnit(state.activeUnit.unit_id); renderQuizReview(result) } catch (err) { toast(err.message) }
   }
 
   function renderQuizReview(result) {
