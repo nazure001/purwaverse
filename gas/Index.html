@@ -16,26 +16,28 @@
       <h1>Dunia kecil.<br><em>Pertanyaan besar.</em></h1>
       <p>Belajar IPA melalui pengamatan, bukti, eksperimen sederhana, dan tantangan nyata. Masuk untuk melihat jalur, nilai, dan LKPD yang sudah terbuka.</p>
       <div class="actions"><button id="home-primary-button" class="primary" onclick="handleHomePrimary()">Mulai Belajar</button><button id="home-secondary-button" class="secondary" onclick="handleHomeSecondary()">Masuk ke Akun</button></div>
-      <div class="path-grid">
+      <!-- LIVE STATISTICS DASHBOARD -->
+      <div class="integrity-panel" style="margin-top: 20px;">
+        <div class="integrity-header">
+          <div>
+            <span class="pill" style="background:#e0f2fe; color:#0369a1;">LIVE STATISTICS DASHBOARD</span>
+            <h3 style="font-size:1.5rem; margin:0.35rem 0 0.2rem;">Overview Kelas & Integritas AI</h3>
+            <p style="margin:0; color:var(--muted); font-size:0.95rem;">Pantauan real-time total siswa aktif, penyelesaian tugas per kelas, dan persentase kemandirian bebas AI.</p>
+          </div>
+          <span id="integrity-last-update" class="mini-status" style="align-self:start;">Memuat status...</span>
+        </div>
+        
+        <div id="dashboard-stats-wrapper" class="dashboard-stats-grid">
+           <!-- Loaded dynamically via Scripts.html -->
+           <div class="integrity-loading" style="grid-column: 1 / -1;"><div class="concept-callout"><b>Memuat data statistik...</b></div></div>
+        </div>
+      </div>
+
+      <div class="path-grid" style="margin-top: 36px;">
         <article><b>01</b><h3>Learn</h3><p>Bangun konsep inti dengan bahasa ringkas.</p></article>
         <article><b>02</b><h3>Explore</h3><p>Amati pola dan dunia mikroskopis.</p></article>
         <article><b>03</b><h3>Lab</h3><p>Lakukan sains dengan alat sederhana.</p></article>
         <article><b>04</b><h3>Challenge</h3><p>Gunakan bukti untuk memecahkan kasus.</p></article>
-      </div>
-
-      <!-- SCIENCE INTEGRITY INDEX (PERSENTASE KEMANDIRIAN KELAS TANPA AI) -->
-      <div class="integrity-panel">
-        <div class="integrity-header">
-          <div>
-            <span class="pill" style="background:#e0f2fe; color:#0369a1;">SCIENCE INTEGRITY INDEX</span>
-            <h3 style="font-size:1.5rem; margin:0.35rem 0 0.2rem;">Tingkat Kemandirian Belajar Bebas AI</h3>
-            <p style="margin:0; color:var(--muted); font-size:0.95rem;">Persentase kejujuran observasi dan penyelesaian tugas sains tanpa intervensi AI otomatis.</p>
-          </div>
-          <span id="integrity-last-update" class="mini-status" style="align-self:start;">Memuat status...</span>
-        </div>
-        <div id="integrity-bars-container" class="integrity-grid">
-          <div class="integrity-loading"><div class="concept-callout"><b>Memuat indeks integritas kelas...</b></div></div>
-        </div>
       </div>
 
       <!-- HALL OF FAME / LEADERBOARD ILMUWAN MUDA -->

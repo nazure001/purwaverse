@@ -138,25 +138,43 @@ function renderLeaderboard() {
   const updateEl = document.getElementById('integrity-last-update');
   if (updateEl && d.updatedAt) updateEl.textContent = 'Pembaruan: ' + d.updatedAt;
 
-  const integrityContainer = document.getElementById('integrity-bars-container');
-  if (integrityContainer && d.integrityIndex) {
-    integrityContainer.innerHTML = d.integrityIndex.map(c => {
-      const isWarn = c.percent < 90;
-      const fillColor = c.percent >= 98 ? '#087558' : c.percent >= 90 ? '#155eef' : '#b45309';
-      return '<div class="integrity-card">' +
-        '<div class="integrity-card-head">' +
-          '<span class="integrity-card-class">Kelas ' + escapeHtml(c.classId) + '</span>' +
-          '<span class="integrity-card-val ' + (isWarn ? 'warning' : '') + '">' + c.percent + '%</span>' +
-        '</div>' +
-        '<div class="integrity-bar-bg">' +
-          '<div class="integrity-bar-fill" style="width:' + c.percent + '%; background:' + fillColor + ';"></div>' +
-        '</div>' +
-        '<div class="integrity-card-sub">' +
-          '<span>' + (c.percent === 100 ? '⭐ Perfect Integrity' : c.flaggedCount === 0 ? '✓ Mandiri' : c.flaggedCount + ' catatan sistem') + '</span>' +
-          '<span>' + c.totalSubmissions + ' tugas</span>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+  const statWrapper = document.getElementById('dashboard-stats-wrapper');
+  if (statWrapper && d.integrityIndex) {
+    let avgIntegrity = 100;
+    if (d.integrityIndex.length > 0) {
+      avgIntegrity = Math.round(d.integrityIndex.reduce((acc, curr) => acc + curr.percent, 0) / d.integrityIndex.length);
+    }
+    
+    const sortedClasses = [...d.integrityIndex].sort((a,b) => a.classId.localeCompare(b.classId));
+    const completionBarsHtml = sortedClasses.map(c => `
+      <div class="bar-col">
+        <span class="bar-value">${c.completionPercent || 0}%</span>
+        <div class="bar-fill" style="height:${c.completionPercent || 0}%"></div>
+        <span class="bar-label">${escapeHtml(c.classId)}</span>
+      </div>
+    `).join('');
+
+    statWrapper.innerHTML = `
+      <div class="dashboard-stat-block">
+        <h4>Total Siswa</h4>
+        <div class="big-number">${d.totalStudents || 0}</div>
+        <div class="trend">Aktif Terdaftar</div>
+      </div>
+      <div class="dashboard-stat-block">
+        <h4>Penyelesaian Tugas per Kelas</h4>
+        <div class="bar-chart">
+          ${completionBarsHtml}
+        </div>
+      </div>
+      <div class="dashboard-stat-block" style="align-items: center; text-align: center;">
+        <h4>Indeks Kejujuran Bebas AI</h4>
+        <div class="big-number">${avgIntegrity}%</div>
+        <div style="color:var(--muted); font-size:0.8rem; margin-top:5px;">
+          <span style="font-size:1.8rem; display:block; margin-bottom:5px;">🛡️</span>
+          Observasi Mandiri
+        </div>
+      </div>
+    `;
   }
 
   const tableContainer = document.getElementById('leaderboard-table-container');

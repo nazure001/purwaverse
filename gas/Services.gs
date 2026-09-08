@@ -287,7 +287,7 @@ function hasHoneypotTrigger_(text) {
 
 function publicLeaderboardData_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('PUBLIC_LEADERBOARD_DATA_V1');
+  const cached = cache.get('PUBLIC_LEADERBOARD_DATA_V2');
   if (cached) {
     try { return JSON.parse(cached); } catch(e) {}
   }
@@ -302,11 +302,11 @@ function publicLeaderboardData_() {
   const diagProfiles = Object.fromEntries(findAll_('DIAGNOSTIC_PROFILES', r => studentIds.has(r.student_id)).map(p => [p.student_id, p]));
 
   const classStats = {
-    '8A': { total: 0, flagged: 0 },
-    '8B': { total: 0, flagged: 0 },
-    '8C': { total: 0, flagged: 0 },
-    '8D': { total: 0, flagged: 0 },
-    '8E': { total: 0, flagged: 0 }
+    '8A': { total: 0, flagged: 0, studentCount: 0, completedTasks: 0 },
+    '8B': { total: 0, flagged: 0, studentCount: 0, completedTasks: 0 },
+    '8C': { total: 0, flagged: 0, studentCount: 0, completedTasks: 0 },
+    '8D': { total: 0, flagged: 0, studentCount: 0, completedTasks: 0 },
+    '8E': { total: 0, flagged: 0, studentCount: 0, completedTasks: 0 }
   };
 
   const studentProgressMap = {};
@@ -314,6 +314,8 @@ function publicLeaderboardData_() {
   const studentFlagsMap = {};
 
   students.forEach(s => {
+    const cId = s.class_id;
+    if (cId && classStats[cId]) classStats[cId].studentCount++;
     studentProgressMap[s.student_id] = [];
     studentQuizMap[s.student_id] = [];
     studentFlagsMap[s.student_id] = { aiCount: 0, tabSwitches: 0, hasExtreme: false };
@@ -321,7 +323,10 @@ function publicLeaderboardData_() {
 
   progressRows.forEach(p => {
     const cId = studentClassMap[p.student_id];
-    if (cId && classStats[cId]) classStats[cId].total++;
+    if (cId && classStats[cId]) {
+      classStats[cId].total++;
+      if (p.status === 'completed' || p.status === 'verified') classStats[cId].completedTasks++;
+    }
     if (studentProgressMap[p.student_id]) studentProgressMap[p.student_id].push(p);
 
     const evStr = String(p.evidence_json || '');
@@ -360,8 +365,14 @@ function publicLeaderboardData_() {
   });
 
   quizRows.forEach(q => {
+    const cId = studentClassMap[q.student_id];
+    if (cId && classStats[cId]) {
+      classStats[cId].completedTasks++; // count quiz submission as a completed task
+    }
     if (studentQuizMap[q.student_id]) studentQuizMap[q.student_id].push(q);
   });
+
+  const EXPECTED_TASKS_PER_STUDENT = 12; // Example: 3 cycles (LRN, LAB, CHL) = 9 + quizzes, etc. Let's say 12.
 
   const integrityIndex = Object.keys(classStats).map(cId => {
     const stat = classStats[cId];
@@ -369,9 +380,16 @@ function publicLeaderboardData_() {
     if (stat.total > 0) {
       percent = Math.max(0, Math.round(((stat.total - stat.flagged) / stat.total) * 100));
     }
+    
+    let completionPercent = 0;
+    if (stat.studentCount > 0) {
+      completionPercent = Math.min(100, Math.round((stat.completedTasks / (stat.studentCount * EXPECTED_TASKS_PER_STUDENT)) * 100));
+    }
+
     return {
       classId: cId,
       percent,
+      completionPercent,
       totalSubmissions: stat.total,
       flaggedCount: stat.flagged
     };
@@ -466,13 +484,14 @@ function publicLeaderboardData_() {
 
   const result = {
     updatedAt: Utilities.formatDate(new Date(), 'Asia/Jakarta', 'dd MMM yyyy, HH:mm'),
+    totalStudents: students.length,
     integrityIndex,
     topTen: leaderboard.slice(0, 10),
     roster: leaderboard
   };
 
   try {
-    cache.put('PUBLIC_LEADERBOARD_DATA_V1', JSON.stringify(result), 900);
+    cache.put('PUBLIC_LEADERBOARD_DATA_V2', JSON.stringify(result), 900);
   } catch(e) {}
 
   return result;
