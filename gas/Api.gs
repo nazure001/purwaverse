@@ -1,5 +1,14 @@
-function doGet() {
-  try { ensureSchema_(); } catch(e) { console.error('ensureSchema failed:', e); }
+function doGet(e) {
+  const forceSchema = e && e.parameter && (e.parameter.ensureSchema === '1' || e.parameter.setup === '1');
+  const cache = CacheService.getScriptCache();
+  if (forceSchema || !cache.get('SCHEMA_VERIFIED_V1')) {
+    try {
+      ensureSchema_();
+      cache.put('SCHEMA_VERIFIED_V1', '1', 43200); // 12 hours
+    } catch(err) {
+      console.error('ensureSchema failed:', err);
+    }
+  }
   const template = HtmlService.createTemplateFromFile('Index');
   template.bootstrap = JSON.stringify(publicBootstrap_());
   return template.evaluate().setTitle(CONFIG.APP_NAME).addMetaTag('viewport','width=device-width, initial-scale=1');
@@ -8,6 +17,12 @@ function doGet() {
 function include(filename) { return HtmlService.createHtmlOutputFromFile(filename).getContent(); }
 
 function publicBootstrap_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('PUBLIC_BOOTSTRAP_V2');
+  if (cached) {
+    try { return JSON.parse(cached); } catch(e) {}
+  }
+
   const glossaries = [];
   if (typeof LEARNING_MATERIALS_ !== 'undefined') {
     Object.values(LEARNING_MATERIALS_).forEach(m => {
@@ -20,7 +35,20 @@ function publicBootstrap_() {
     });
   }
   glossaries.sort((a,b) => a[0].localeCompare(b[0]));
-  return {appName:CONFIG.APP_NAME,mode:CONFIG.APP_MODE,sourceStatus:CONFIG.SOURCE_STATUS,currentSemester:CONFIG.CURRENT_SEMESTER,quizPassingScore:CONFIG.QUIZ_PASSING_SCORE,classes:rows_('MASTER_CLASSES').filter(r=>String(r.active).toLowerCase()==='true'),activities:rows_('MASTER_ACTIVITIES').filter(r=>String(r.public).toLowerCase()==='true'&&String(r.active).toLowerCase()==='true'), glossary: glossaries};
+  const result = {
+    appName:CONFIG.APP_NAME,
+    mode:CONFIG.APP_MODE,
+    sourceStatus:CONFIG.SOURCE_STATUS,
+    currentSemester:CONFIG.CURRENT_SEMESTER,
+    quizPassingScore:CONFIG.QUIZ_PASSING_SCORE,
+    classes:rows_('MASTER_CLASSES').filter(r=>String(r.active).toLowerCase()==='true'),
+    activities:rows_('MASTER_ACTIVITIES').filter(r=>String(r.public).toLowerCase()==='true'&&String(r.active).toLowerCase()==='true'),
+    glossary: glossaries
+  };
+  try {
+    cache.put('PUBLIC_BOOTSTRAP_V2', JSON.stringify(result), 7200); // 2 hours
+  } catch(e) {}
+  return result;
 }
 
 function api(action, payload) {

@@ -14,19 +14,44 @@ function ensureSchema_() {
   });
 }
 
+const CACHEABLE_SHEETS = new Set(['MASTER_CLASSES', 'MASTER_ACTIVITIES', 'SELF_MAP_ITEMS', 'DIAGNOSTIC_ITEMS', 'MASTER_STUDENTS']);
+
 let _SHEET_CACHE_ = {};
 function clearSheetCache_(sheetName) {
-  if (sheetName) delete _SHEET_CACHE_[sheetName];
-  else _SHEET_CACHE_ = {};
+  if (sheetName) {
+    delete _SHEET_CACHE_[sheetName];
+    try {
+      CacheService.getScriptCache().remove('SHEET_ROWS_' + sheetName);
+      if (sheetName === 'MASTER_ACTIVITIES' || sheetName === 'MASTER_CLASSES') {
+        CacheService.getScriptCache().remove('PUBLIC_BOOTSTRAP_V2');
+      }
+    } catch(e) {}
+  } else {
+    _SHEET_CACHE_ = {};
+  }
 }
 
 function rows_(sheetName) {
   if (_SHEET_CACHE_[sheetName]) return _SHEET_CACHE_[sheetName];
+  if (CACHEABLE_SHEETS.has(sheetName)) {
+    try {
+      const cached = CacheService.getScriptCache().get('SHEET_ROWS_' + sheetName);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        return (_SHEET_CACHE_[sheetName] = parsed);
+      }
+    } catch(e) {}
+  }
   const sheet = spreadsheet_().getSheetByName(sheetName);
   if (!sheet || sheet.getLastRow() < 2) return (_SHEET_CACHE_[sheetName] = []);
   const values = sheet.getRange(1, 1, sheet.getLastRow(), SHEETS[sheetName].length).getValues();
   const headers = values.shift();
   const res = values.filter(r => r.some(v => v !== '')).map(r => headers.reduce((o, h, i) => (o[h] = r[i], o), {}));
+  if (CACHEABLE_SHEETS.has(sheetName)) {
+    try {
+      CacheService.getScriptCache().put('SHEET_ROWS_' + sheetName, JSON.stringify(res), 7200);
+    } catch(e) {}
+  }
   return (_SHEET_CACHE_[sheetName] = res);
 }
 

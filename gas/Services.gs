@@ -28,18 +28,59 @@ function loginTeacher_(username, password) {
 
 function createSession_(type, id, classId) {
   const token = uid_('SES');
+  const sessionId = hash_(token);
   const expires = new Date(Date.now() + CONFIG.SESSION_HOURS * 3600000).toISOString();
-  append_('SESSIONS', {session_id:hash_(token),actor_type:type,actor_id:id,class_id:classId,expires_at:expires,created_at:isoNow_()});
+  const sessionRecord = {session_id:sessionId,actor_type:type,actor_id:id,class_id:classId,expires_at:expires,created_at:isoNow_()};
+  append_('SESSIONS', sessionRecord);
+  try {
+    const ttlSeconds = Math.min(21600, Math.floor(CONFIG.SESSION_HOURS * 3600));
+    CacheService.getScriptCache().put('SESS_' + sessionId, JSON.stringify(sessionRecord), ttlSeconds);
+    if (type === 'student') {
+      CacheService.getScriptCache().put('STD_ACTIVE_' + id, '1', 7200);
+    }
+  } catch(e) {}
   return {token, actorType:type, actorId:id, classId, expiresAt:expires};
 }
 
 function requireSession_(token, type) {
-  const session = findOne_('SESSIONS', r => r.session_id === hash_(token));
+  if (!token) throw new Error('Sesi berakhir. Silakan masuk kembali.');
+  const sessionId = hash_(token);
+  let session = null;
+  const cache = CacheService.getScriptCache();
+  try {
+    const cached = cache.get('SESS_' + sessionId);
+    if (cached) session = JSON.parse(cached);
+  } catch(e) {}
+
+  if (!session) {
+    session = findOne_('SESSIONS', r => r.session_id === sessionId);
+    if (session) {
+      const remainingSeconds = Math.floor((new Date(session.expires_at).getTime() - Date.now()) / 1000);
+      if (remainingSeconds > 0) {
+        try {
+          cache.put('SESS_' + sessionId, JSON.stringify(session), Math.min(21600, remainingSeconds));
+        } catch(e) {}
+      }
+    }
+  }
+
   if (!session || new Date(session.expires_at).getTime() <= Date.now()) throw new Error('Sesi berakhir. Silakan masuk kembali.');
   if (type && session.actor_type !== type) throw new Error('Akses tidak diizinkan.');
   if (session.actor_type === 'student') {
-    const active = findOne_('MASTER_STUDENTS', r => r.student_id === session.actor_id && String(r.active).toLowerCase() === 'true');
-    if (!active) throw new Error('Akun siswa tidak aktif.');
+    let studentActive = false;
+    try {
+      const cachedActive = cache.get('STD_ACTIVE_' + session.actor_id);
+      if (cachedActive !== null) studentActive = (cachedActive === '1');
+    } catch(e) {}
+
+    if (!studentActive) {
+      const active = findOne_('MASTER_STUDENTS', r => r.student_id === session.actor_id && String(r.active).toLowerCase() === 'true');
+      if (!active) throw new Error('Akun siswa tidak aktif.');
+      studentActive = true;
+      try {
+        cache.put('STD_ACTIVE_' + session.actor_id, '1', 7200);
+      } catch(e) {}
+    }
   }
   return session;
 }
@@ -47,6 +88,9 @@ function requireSession_(token, type) {
 function logout_(token) {
   if (!token) return {loggedOut:true};
   const sessionId = hash_(token);
+  try {
+    CacheService.getScriptCache().remove('SESS_' + sessionId);
+  } catch(e) {}
   const session = findOne_('SESSIONS', r => r.session_id === sessionId);
   if (!session) return {loggedOut:true};
   upsert_('SESSIONS','session_id',Object.assign({},session,{expires_at:isoNow_()}));
@@ -149,20 +193,33 @@ function isLegacyIntegrationStudent_(studentId) {
 }
 
 function validProfileForStudent_(studentId) {
-  return validProfilesForStudents_([studentId])[studentId]||null;
+  const profile = findOne_('DIAGNOSTIC_PROFILES', r => r.student_id === studentId);
+  if (!profile) return null;
+  const responses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId && CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id));
+  const legacy = responses.length >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length && responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
+  const scored = responses.filter(r => r.score !== '' && r.score !== null).length;
+  if (!legacy && scored >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length) return profile;
+  return null;
 }
 
 function validProfilesForStudents_(studentIds) {
-  const ids=new Set((studentIds||[]).map(String)),responsesByStudent={},profilesByStudent={};
-  if(!ids.size)return {};
-  findAll_('DIAGNOSTIC_RESPONSES',r=>ids.has(String(r.student_id))&&CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id)).forEach(r=>(responsesByStudent[r.student_id]||(responsesByStudent[r.student_id]=[])).push(r));
-  findAll_('DIAGNOSTIC_PROFILES',r=>ids.has(String(r.student_id))).forEach(p=>profilesByStudent[p.student_id]=p);
-  const result={};
-  ids.forEach(studentId=>{
-    const responses=responsesByStudent[studentId]||[];
-    const legacy=responses.length>=CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length&&responses.every(r=>String(r.answer).trim().toLowerCase()==='jawaban integrasi');
-    const scored=responses.filter(r=>r.score!==''&&r.score!==null).length;
-    if(!legacy&&scored>=CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length&&profilesByStudent[studentId])result[studentId]=profilesByStudent[studentId];
+  const ids = new Set((studentIds || []).map(String));
+  if (!ids.size) return {};
+  const profiles = findAll_('DIAGNOSTIC_PROFILES', r => ids.has(String(r.student_id)));
+  if (!profiles.length) return {};
+  const profileMap = Object.fromEntries(profiles.map(p => [p.student_id, p]));
+  const candidateIds = new Set(Object.keys(profileMap));
+  const responsesByStudent = {};
+  findAll_('DIAGNOSTIC_RESPONSES', r => candidateIds.has(String(r.student_id)) && CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id))
+    .forEach(r => (responsesByStudent[r.student_id] || (responsesByStudent[r.student_id] = [])).push(r));
+  const result = {};
+  candidateIds.forEach(studentId => {
+    const responses = responsesByStudent[studentId] || [];
+    const legacy = responses.length >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length && responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
+    const scored = responses.filter(r => r.score !== '' && r.score !== null).length;
+    if (!legacy && scored >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length && profileMap[studentId]) {
+      result[studentId] = profileMap[studentId];
+    }
   });
   return result;
 }
@@ -249,13 +306,18 @@ function overrideTeamMember_(session, payload) {
 
 function dashboard_(session, classId) {
   ensureTeacherClassAccess_(session,classId);
+  let students = findAll_('MASTER_STUDENTS', r=>r.class_id===classId && String(r.active).toLowerCase()==='true');
   if(typeof OFFICIAL_ROSTER_!=='undefined'){
     const rosterForClass=OFFICIAL_ROSTER_.filter(r=>r.class_id===classId&&r.active!==false);
-    const existingIds=new Set(findAll_('MASTER_STUDENTS',row=>row.class_id===classId).map(r=>String(r.student_id)));
-    const missing=rosterForClass.filter(r=>!existingIds.has(String(r.student_id)));
-    if(missing.length>0)importOfficialStudents(missing);
+    if(students.length < rosterForClass.length){
+      const existingIds=new Set(students.map(r=>String(r.student_id)));
+      const missing=rosterForClass.filter(r=>!existingIds.has(String(r.student_id)));
+      if(missing.length>0){
+        importOfficialStudents(missing);
+        students = findAll_('MASTER_STUDENTS', r=>r.class_id===classId && String(r.active).toLowerCase()==='true');
+      }
+    }
   }
-  const students = findAll_('MASTER_STUDENTS', r=>r.class_id===classId && String(r.active).toLowerCase()==='true');
   const ids = new Set(students.map(s=>s.student_id));
   const progress = findAll_('PROGRESS',r=>ids.has(r.student_id));
   const profiles = validProfilesForStudents_(students.map(s=>s.student_id));
