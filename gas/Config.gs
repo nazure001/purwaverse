@@ -9,6 +9,7 @@ const CONFIG = Object.freeze({
   QUIZ_PASSING_SCORE: 70,
   LOGIN_MAX_ATTEMPTS: 5,
   LOGIN_BLOCK_SECONDS: 300,
+  VERCEL_APP_URL: 'https://purwaverse.vercel.app',
   QUICK_DIAGNOSTIC_ITEM_IDS: ['D01','D05','D08','D09','D24','D03','D13','D12','D22','D10','D21','D28'],
   DOMAINS: ['observe_infer','evidence_experiment','model_concept','systems_causality','technology_design']
 });

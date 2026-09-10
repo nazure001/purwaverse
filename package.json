@@ -1,0 +1,10 @@
+{
+  "name": "purwaverse-ipa-viii",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Purwaverse IPA VIII - Media Pembelajaran IPA Kelas VIII SMP",
+  "scripts": {
+    "build": "node scripts/build-web.js",
+    "start": "npx serve public"
+  }
+}

@@ -42,7 +42,24 @@ function filterGlossary() {
   root.innerHTML = filtered.map(g => `<div style="padding:1rem; border-radius:8px; background:#f8fafc; border:1px solid #e2e8f0;"><strong>${escapeHtml(g[0])}</strong><br><span style="color:#475569; font-size:0.95rem;">${escapeHtml(g[1])}</span></div>`).join('');
 }
 function toast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200)}
-function callApi(action,payload){return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(r=>r.ok?resolve(r.data):reject(new Error(r.error))).withFailureHandler(reject).api(action,payload||{}))}
+async function callApi(action, payload) {
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(r => r.ok ? resolve(r.data) : reject(new Error(r.error)))
+        .withFailureHandler(reject)
+        .api(action, payload || {});
+    });
+  }
+  const res = await fetch('/api/purwa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload: payload || {} })
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Permintaan gagal diproses');
+  return json.data;
+}
 async function studentLogin(e){e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Memverifikasi...';}try{const s=await callApi('loginStudent',{classId:document.getElementById('class-id').value,rollNo:document.getElementById('roll-no').value,pin:document.getElementById('student-pin').value});state.studentToken=s.token;state.teacherToken='';state.activeRole='student';state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;SafeStorage.set('studentToken',s.token);SafeStorage.remove('teacherToken');updateAuthNavigation();document.getElementById('student-pin').value='';await loadStudent(true);showView('student')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Masuk';}}}
 function renderStudentDashboard(d){state.student=d.student;state.studentProgress=d.progress||[];state.studentProfile=d.profile||null;const initial=d.student.name.charAt(0).toUpperCase();document.getElementById('student-welcome').innerHTML='<div class="dashboard-head" style="align-items:center; display:flex; gap:1.25rem; margin-bottom:1.5rem;"><div style="width:64px; height:64px; min-width:64px; background:linear-gradient(135deg, var(--blue), #4f46e5); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:bold; box-shadow:0 4px 10px rgba(21,94,239,0.2);">'+initial+'</div><div><span class="pill" style="margin-bottom:0.2rem; display:inline-block;">'+d.student.class_id+' · NO. '+d.student.roll_no+'</span><h2 style="margin:0; font-size:clamp(1.5rem,4vw,2.2rem); display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; word-break:break-word;">Halo, <span id="student-name-display" style="transition: color 0.3s ease, text-shadow 0.3s ease;">'+escapeHtml(d.student.name)+'</span> <span id="top-badge-slot"></span></h2><p style="margin:0.25rem 0 0 0; color:var(--muted); font-size:1.05rem;">Lanjutkan perjalanan sainsmu dari bukti yang tersimpan.</p></div></div>';if(d.profile)renderProfile(d.profile);updateChapterStatuses();updatePassport();if(typeof renderBadges==='function')renderBadges();}
 async function loadStudent(forceRefresh){if(!state.studentToken)return;if(state.student&&!forceRefresh){renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile});callApi('studentHome',{token:state.studentToken}).then(d=>renderStudentDashboard(d)).catch(()=>{});return;}const d=await callApi('studentHome',{token:state.studentToken});renderStudentDashboard(d);}
@@ -385,6 +402,15 @@ function clearDraft(form) {
 }
 
 (async function initApp() {
+  if (!window.PURWAVERSE_BOOTSTRAP || !window.PURWAVERSE_BOOTSTRAP.appName) {
+    try {
+      window.PURWAVERSE_BOOTSTRAP = await callApi('bootstrap');
+    } catch(err) {
+      console.warn('Bootstrap fetch fallback failed:', err);
+      window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};
+    }
+  }
+
   const savedStudent = SafeStorage.get('studentToken');
   const savedTeacher = SafeStorage.get('teacherToken');
   

@@ -9,9 +9,48 @@ function doGet(e) {
       console.error('ensureSchema failed:', err);
     }
   }
-  const template = HtmlService.createTemplateFromFile('Index');
-  template.bootstrap = JSON.stringify(publicBootstrap_());
-  return template.evaluate().setTitle(CONFIG.APP_NAME).addMetaTag('viewport','width=device-width, initial-scale=1');
+
+  const props = PropertiesService.getScriptProperties();
+  const vercelUrl = (props && props.getProperty('PURWAVERSE_VERCEL_URL')) || CONFIG.VERCEL_APP_URL || '';
+
+  // Jika noredirect=1 atau gas=1 atau URL Vercel belum ada, sajikan Web App GAS normal
+  if ((e && e.parameter && (e.parameter.noredirect === '1' || e.parameter.gas === '1')) || !vercelUrl) {
+    const template = HtmlService.createTemplateFromFile('Index');
+    template.bootstrap = JSON.stringify(publicBootstrap_());
+    return template.evaluate().setTitle(CONFIG.APP_NAME).addMetaTag('viewport','width=device-width, initial-scale=1');
+  }
+
+  // Auto-redirect instan ke Vercel agar bebas dari isu Android Drive & multi-akun
+  const safeTitle = String(CONFIG.APP_NAME || 'Purwaverse IPA VIII').replace(/[&<>"']/g, '');
+  const safeUrl = String(vercelUrl).replace(/"/g, '&quot;');
+  const redirectHtml = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>Mengalihkan ke ' + safeTitle + '...</title>' +
+    '<style>' +
+    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8fafc;color:#1e293b;text-align:center;padding:20px;box-sizing:border-box}' +
+    '.card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:36px 28px;max-width:420px;width:100%;box-shadow:0 16px 40px rgba(0,0,0,.06)}' +
+    '.spinner{width:44px;height:44px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}' +
+    '@keyframes spin{to{transform:rotate(360deg)}}' +
+    'h2{margin:0 0 10px;font-size:1.25rem;color:#0f172a}' +
+    'p{color:#64748b;font-size:.95rem;margin:0 0 20px;line-height:1.55}' +
+    'a{display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:12px;font-size:.9rem;transition:background .2s}' +
+    'a:hover{background:#1d4ed8}' +
+    '</style>' +
+    '</head><body>' +
+    '<div class="card">' +
+    '<div class="spinner"></div>' +
+    '<h2>Mengalihkan ke Purwaverse...</h2>' +
+    '<p>Kamu sedang dipindahkan otomatis ke alamat baru yang lebih cepat, lancar, dan bebas kendala Google Drive.</p>' +
+    '<a id="btn-target" href="' + safeUrl + '" target="_top">Buka Purwaverse Sekarang</a>' +
+    '</div>' +
+    '<script>' +
+    'setTimeout(function(){try{window.top.location.href="' + safeUrl + '";}catch(e){window.location.href="' + safeUrl + '";}},500);' +
+    '</script>' +
+    '</body></html>';
+
+  return HtmlService.createHtmlOutput(redirectHtml)
+    .setTitle(CONFIG.APP_NAME)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 function include(filename) { return HtmlService.createHtmlOutputFromFile(filename).getContent(); }
@@ -94,4 +133,25 @@ function api(action, payload) {
     }
     return {ok:true,data};
   } catch (error) { return {ok:false,error:String(error.message||error)}; }
+}
+
+function doPost(e) {
+  let req = {};
+  try {
+    if (e && e.postData && e.postData.contents) {
+      req = JSON.parse(e.postData.contents);
+    } else if (e && e.parameter) {
+      req = e.parameter;
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'Invalid JSON request: ' + err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const action = req.action;
+  const payload = req.payload || {};
+  const res = api(action, payload);
+
+  return ContentService.createTextOutput(JSON.stringify(res))
+    .setMimeType(ContentService.MimeType.JSON);
 }
