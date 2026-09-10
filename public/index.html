@@ -3400,69 +3400,118 @@ function clearDraft(form) {
 
     const dataUrl = canvas.toDataURL('image/png');
 
-    fetch(dataUrl).then(r => r.blob()).then(blob => {
-      const file = new File([blob], 'Purwaverse_Badge.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    canvas.toBlob(blob => {
+      const safeName = (name || 'Lencana').replace(/[^a-zA-Z0-9]/g, '_');
+      const fileName = 'Purwaverse_' + safeName + '.png';
+      const file = blob ? new File([blob], fileName, { type: 'image/png' }) : null;
+
+      // CRITICAL: Share ONLY { files: [file] } WITHOUT `text` or `title`.
+      // Passing both `text` and `files` causes WhatsApp on Android to throw "Tidak dapat mengirim pesan kosong".
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({
-          title: name,
-          text: text,
           files: [file]
-        }).catch(() => showFallbackModal(dataUrl, text));
+        }).catch(err => {
+          if (err && err.name === 'AbortError') {
+            return;
+          }
+          showFallbackModal(dataUrl, text, name);
+        });
       } else {
-        showFallbackModal(dataUrl, text);
+        showFallbackModal(dataUrl, text, name);
       }
-    });
+    }, 'image/png');
   }
 
-  function showFallbackModal(dataUrl, text) {
+  function shareBadgeByIndex(index) {
+    if (!state.currentBadges || !state.currentBadges[index]) return;
+    const b = state.currentBadges[index];
+    shareBadge(b.name, b.desc, b.text, b.icon, b.color, b.bg);
+  }
+
+  function showFallbackModal(dataUrl, text, name) {
+    const safeName = (name || 'Lencana').replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = 'Purwaverse_' + safeName + '.png';
+
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.88);backdrop-filter:blur(6px);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+
+    const modalBox = document.createElement('div');
+    modalBox.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:20px;max-width:420px;width:100%;padding:20px;display:flex;flex-direction:column;align-items:center;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);box-sizing:border-box;';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Bagikan Lencana';
+    title.style.cssText = 'color:#f8fafc;margin:0 0 12px 0;font-size:1.2rem;font-weight:700;text-align:center;';
 
     const img = document.createElement('img');
     img.src = dataUrl;
-    img.style.cssText = 'max-width:100%;max-height:65vh;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.5);';
-
-    const btnBox = document.createElement('div');
-    btnBox.style.cssText = 'margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;';
+    img.alt = name || 'Badge';
+    img.style.cssText = 'width:100%;max-width:240px;height:auto;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,0.4);margin-bottom:12px;';
 
     const hint = document.createElement('p');
-    hint.textContent = 'Tekan tahan gambar untuk menyimpan, atau klik Salin Gambar.';
-    hint.style.cssText = 'color:#cbd5e1;text-align:center;width:100%;margin-bottom:8px;font-size:0.9rem;';
+    hint.textContent = 'Simpan gambar PNG ke HP untuk dibagikan ke WhatsApp, status, atau media sosial.';
+    hint.style.cssText = 'color:#94a3b8;text-align:center;font-size:0.85rem;margin:0 0 16px 0;line-height:1.4;';
 
+    const btnBox = document.createElement('div');
+    btnBox.style.cssText = 'display:flex;flex-direction:column;gap:10px;width:100%;';
+
+    // 1. Direct Download PNG Button
+    const downloadBtn = document.createElement('a');
+    downloadBtn.href = dataUrl;
+    downloadBtn.download = fileName;
+    downloadBtn.className = 'primary';
+    downloadBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#2563eb;color:#ffffff;font-weight:700;text-decoration:none;font-size:0.95rem;text-align:center;cursor:pointer;';
+    downloadBtn.innerHTML = '<span>📥</span> Unduh Gambar PNG';
+    downloadBtn.onclick = () => {
+      toast('Gambar badge sedang diunduh ke galeri!');
+    };
+
+    // 2. Copy Image Button
     const copyBtn = document.createElement('button');
-    copyBtn.className = 'primary';
-    copyBtn.textContent = 'Salin Gambar';
+    copyBtn.className = 'secondary';
+    copyBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#334155;color:#f8fafc;border:1px solid #475569;font-weight:600;font-size:0.95rem;cursor:pointer;';
+    copyBtn.innerHTML = '<span>📋</span> Salin Gambar';
     copyBtn.onclick = async () => {
       try {
         const r = await fetch(dataUrl);
         const b = await r.blob();
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]);
-        toast('Gambar disalin! Silakan paste di WA/IG.');
+        toast('Gambar disalin! Tempel (paste) di chat WhatsApp.');
       } catch (e) {
-        toast('Browser tidak mendukung salin otomatis. Tekan tahan gambar.');
+        toast('Tekan tahan gambar di atas untuk simpan ke galeri.');
       }
     };
 
+    // 3. WhatsApp Story/Text Button
     const waBtn = document.createElement('button');
     waBtn.className = 'secondary';
-    waBtn.textContent = 'Buka WhatsApp';
+    waBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#16a34a;color:#ffffff;border:none;font-weight:600;font-size:0.95rem;cursor:pointer;';
+    waBtn.innerHTML = '<span>💬</span> Kirim Pesan Teks WA';
     waBtn.onclick = () => window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
 
+    // 4. Close Button
     const closeBtn = document.createElement('button');
-    closeBtn.className = 'secondary';
-    closeBtn.style.background = 'transparent';
-    closeBtn.style.color = 'white';
-    closeBtn.style.border = '1px solid white';
+    closeBtn.style.cssText = 'margin-top:4px;padding:8px;background:transparent;color:#94a3b8;border:none;font-size:0.9rem;cursor:pointer;';
     closeBtn.textContent = 'Tutup';
-    closeBtn.onclick = () => document.body.removeChild(overlay);
+    closeBtn.onclick = () => {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    };
 
-    btnBox.appendChild(hint);
+    overlay.onclick = (e) => {
+      if (e.target === overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    };
+
+    btnBox.appendChild(downloadBtn);
     btnBox.appendChild(copyBtn);
     btnBox.appendChild(waBtn);
     btnBox.appendChild(closeBtn);
 
-    overlay.appendChild(img);
-    overlay.appendChild(btnBox);
+    modalBox.appendChild(title);
+    modalBox.appendChild(img);
+    modalBox.appendChild(hint);
+    modalBox.appendChild(btnBox);
+    overlay.appendChild(modalBox);
     document.body.appendChild(overlay);
   }
 
@@ -3595,11 +3644,13 @@ function clearDraft(form) {
       }
     }
 
-    root.innerHTML = badges.map(b => {
+    state.currentBadges = badges;
+
+    root.innerHTML = badges.map((b, i) => {
       const bColor = b.color || '#334155';
       const bBg = b.bg || '#ffffff';
       const border = b.color ? b.color : '#e2e8f0';
-      return `<button onclick="shareBadge('${escapeHtml(b.name)}', '${escapeHtml(b.desc)}', '${escapeHtml(b.text)}', '${b.icon}', '${bColor}', '${bBg}')" style="display:inline-flex; align-items:center; gap:0.5rem; background:${bBg}; border:1px solid ${border}; padding:0.5rem 0.75rem; border-radius:12px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-size:0.95rem; text-align:left; transition:transform 0.2s; min-width:200px;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'"><span style="font-size:1.5rem; line-height:1; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${b.icon}</span><div style="display:flex; flex-direction:column; line-height:1.2;"><b style="color:${bColor};">${escapeHtml(b.name)}</b><span style="font-size:0.75rem; color:#64748b;">${escapeHtml(b.desc)}</span></div></button>`;
+      return `<button type="button" onclick="shareBadgeByIndex(${i})" style="display:inline-flex; align-items:center; gap:0.5rem; background:${bBg}; border:1px solid ${border}; padding:0.5rem 0.75rem; border-radius:12px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-size:0.95rem; text-align:left; transition:transform 0.2s; min-width:200px;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'"><span style="font-size:1.5rem; line-height:1; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.1));">${b.icon}</span><div style="display:flex; flex-direction:column; line-height:1.2;"><b style="color:${bColor};">${escapeHtml(b.name)}</b><span style="font-size:0.75rem; color:#64748b;">${escapeHtml(b.desc)}</span></div></button>`;
     }).join('');
   }
 </script>
