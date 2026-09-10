@@ -1,4 +1,11 @@
 function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    let payload = {};
+    try { payload = JSON.parse(e.parameter.payload || '{}'); } catch(err) {}
+    const res = api(e.parameter.action, payload);
+    return ContentService.createTextOutput(JSON.stringify(res))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   const forceSchema = e && e.parameter && (e.parameter.ensureSchema === '1' || e.parameter.setup === '1');
   const cache = CacheService.getScriptCache();
   if (forceSchema || !cache.get('SCHEMA_VERIFIED_V1')) {

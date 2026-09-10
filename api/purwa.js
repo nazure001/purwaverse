@@ -20,14 +20,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'Metode tidak didukung. Harap gunakan POST.' });
   }
 
-  const gasUrl = process.env.PURWAVERSE_GAS_URL || 'https://script.google.com/macros/s/AKfycbwMUnknbtXDo7M_HQGL2VfMQlHFZfT-AnMpbQGKEEwKbKXIKHYgVMK0hB4B-LV9gyH_TQ/exec';
+  const baseUrl = process.env.PURWAVERSE_GAS_URL || 'https://script.google.com/macros/s/AKfycbwMUnknbtXDo7M_HQGL2VfMQlHFZfT-AnMpbQGKEEwKbKXIKHYgVMK0hB4B-LV9gyH_TQ/exec';
+  const gasUrl = baseUrl.includes('?') ? baseUrl + '&noredirect=1' : baseUrl + '?noredirect=1';
 
   try {
     const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
     const gasResponse = await fetch(gasUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'text/plain;charset=utf-8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
       },
       body: payload,
       redirect: 'follow'

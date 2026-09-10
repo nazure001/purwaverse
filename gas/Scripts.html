@@ -62,14 +62,33 @@ async function callApi(action, payload) {
         .api(action, payload || {});
     });
   }
-  const res = await fetch('/api/purwa', {
+  try {
+    const res = await fetch('/api/purwa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, payload: payload || {} })
+    });
+    const json = await res.json();
+    if (json.ok) return json.data;
+    if (json.error && !json.error.includes('Respons backend tidak valid') && !json.error.includes('<!doctype') && !json.error.includes('<!DOCTYPE')) {
+      throw new Error(json.error);
+    }
+  } catch (err) {
+    if (err.message && !err.message.includes('Respons backend tidak valid') && !err.message.includes('<!doctype') && !err.message.includes('Failed to fetch') && !err.message.includes('Gagal menghubungi')) {
+      throw err;
+    }
+  }
+
+  const gasFallbackUrl = 'https://script.google.com/macros/s/AKfycbwMUnknbtXDo7M_HQGL2VfMQlHFZfT-AnMpbQGKEEwKbKXIKHYgVMK0hB4B-LV9gyH_TQ/exec?noredirect=1';
+  const directRes = await fetch(gasFallbackUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action, payload: payload || {} })
   });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Permintaan gagal diproses');
-  return json.data;
+  const directText = await directRes.text();
+  const directJson = JSON.parse(directText);
+  if (!directJson.ok) throw new Error(directJson.error || 'Permintaan gagal diproses');
+  return directJson.data;
 }
 async function studentLogin(e){e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Memverifikasi...';}try{const s=await callApi('loginStudent',{classId:document.getElementById('class-id').value,rollNo:document.getElementById('roll-no').value,pin:document.getElementById('student-pin').value});state.studentToken=s.token;state.teacherToken='';state.activeRole='student';state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;SafeStorage.set('studentToken',s.token);SafeStorage.remove('teacherToken');updateAuthNavigation();document.getElementById('student-pin').value='';await loadStudent(true);showView('student')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Masuk';}}}
 function renderStudentDashboard(d){
