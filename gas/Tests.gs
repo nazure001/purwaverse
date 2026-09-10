@@ -85,7 +85,7 @@ function runIntegrationChecks() {
     assert_(unit.example&&unit.misconception&&unit.notebook_prompt,'komponen belajar kurang: '+unit.unit_id);
     assert_(unit.key_points&&unit.key_points.length>=2,'rangkuman inti kurang: '+unit.unit_id);
     assert_(unit.source_title&&/\(20\d{2}\)/.test(unit.source_title)&&unit.source_note&&unit.source_note.includes('hlm.'),'sumber, tahun, atau halaman materi kurang: '+unit.unit_id);
-    if(unit.semester===2)assert_(unit.sections.some(section=>section[0].includes('Contoh hitungan')),'contoh hitungan semester 2 kurang: '+unit.unit_id);
+    if(['CH08-05','CH08-06'].includes(unit.chapter_id))assert_(unit.sections.some(section=>section[0].includes('Contoh hitungan')),'contoh hitungan bab hitungan kurang: '+unit.unit_id);
     const illustration=learningIllustration_(unit.illustration),meta=LEARNING_ILLUSTRATION_META_[unit.illustration];
     assert_(illustration.includes('<svg')&&illustration.includes('<figcaption>')&&meta&&meta.labels.length>=4,'ilustrasi berlabel kurang: '+unit.unit_id);
   }));

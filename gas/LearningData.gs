@@ -313,7 +313,7 @@ const LEARNING_PATH_ = Object.freeze([
     ]
   },
   {
-    chapter_id:'CH08-04',semester:1,order:4,title:'Struktur Bumi dan Fenomena Alam',tagline:'Living Planet',
+    chapter_id:'CH08-04',semester:2,order:4,title:'Struktur Bumi dan Fenomena Alam',tagline:'Living Planet',
     units:[
       learningUnit_('CH08-04-U01',1,'Lapisan dan Struktur Bumi','earth','Bukti gelombang, batuan, dan material dari dalam bumi membantu ilmuwan menyusun model struktur bumi.',['Kerak, mantel, inti luar, dan inti dalam memiliki karakteristik berbeda.','Model lapisan bumi menyederhanakan struktur yang sebenarnya kompleks.'],'CH08-04-U01-LRN01','CH08-04-U01-QZ01',''),
       learningUnit_('CH08-04-U02',2,'Lempeng Tektonik dan Gempa','tectonic','Permukaan bumi terbagi menjadi lempeng yang bergerak perlahan dan berinteraksi pada batas-batasnya.',['Interaksi lempeng dapat membentuk pegunungan, palung, dan gempa.','Besar dampak gempa dipengaruhi lokasi, kedalaman, kondisi bangunan, dan kesiapsiagaan.'],'CH08-04-U02-LRN01','CH08-04-U02-QZ01','CH08-04-U02-LAB01'),
@@ -339,8 +339,8 @@ const LEARNING_PATH_ = Object.freeze([
 ]);
 
 const SEMESTER_OUTLINE_ = Object.freeze([
-  {semester:1,focus:'Konseptual',chapters:['Sel dan Organisasi Kehidupan','Sistem Tubuh Manusia','Unsur, Senyawa, dan Campuran','Struktur Bumi dan Fenomena Alam']},
-  {semester:2,focus:'Hitungan dan pengukuran',chapters:['Usaha dan Energi','Gelombang']}
+  {semester:1,focus:'Konseptual',chapters:['Sel dan Organisasi Kehidupan','Sistem Tubuh Manusia','Unsur, Senyawa, dan Campuran']},
+  {semester:2,focus:'Pengukuran dan Fenomena Alam',chapters:['Struktur Bumi dan Fenomena Alam','Usaha dan Energi','Getaran dan Gelombang']}
 ]);
 
 function learningUnit_(unitId,order,title,illustration,summary,keyPoints,learnId,quizId,practiceId){
