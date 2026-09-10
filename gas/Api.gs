@@ -25,26 +25,33 @@ function doGet(e) {
   const safeUrl = String(vercelUrl).replace(/"/g, '&quot;');
   const redirectHtml = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-    '<title>Mengalihkan ke ' + safeTitle + '...</title>' +
+    '<title>Buka ' + safeTitle + '</title>' +
     '<style>' +
-    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8fafc;color:#1e293b;text-align:center;padding:20px;box-sizing:border-box}' +
-    '.card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:36px 28px;max-width:420px;width:100%;box-shadow:0 16px 40px rgba(0,0,0,.06)}' +
-    '.spinner{width:44px;height:44px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}' +
+    'html,body{height:100%;margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1e293b}' +
+    'body{display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;cursor:pointer}' +
+    '.card{background:#fff;border:1.5px solid #cbd5e1;border-radius:24px;padding:36px 24px;max-width:440px;width:100%;box-shadow:0 20px 45px rgba(0,0,0,.08);text-align:center;box-sizing:border-box}' +
+    '.spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 20px}' +
     '@keyframes spin{to{transform:rotate(360deg)}}' +
-    'h2{margin:0 0 10px;font-size:1.25rem;color:#0f172a}' +
-    'p{color:#64748b;font-size:.95rem;margin:0 0 20px;line-height:1.55}' +
-    'a{display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:12px;font-size:.9rem;transition:background .2s}' +
-    'a:hover{background:#1d4ed8}' +
+    'h2{margin:0 0 10px;font-size:1.35rem;color:#0f172a;font-weight:800}' +
+    'p{color:#64748b;font-size:1rem;margin:0 0 24px;line-height:1.55}' +
+    '.btn-launch{display:block;width:100%;background:#2563eb;color:#fff!important;text-decoration:none!important;font-weight:800;padding:16px 20px;border-radius:16px;font-size:1.1rem;box-sizing:border-box;box-shadow:0 8px 20px rgba(37,99,235,.28);transition:all .15s ease}' +
+    '.btn-launch:active,.btn-launch:hover{background:#1d4ed8;transform:scale(.98)}' +
     '</style>' +
-    '</head><body>' +
+    '</head><body onclick="launchApp()">' +
     '<div class="card">' +
     '<div class="spinner"></div>' +
-    '<h2>Mengalihkan ke Purwaverse...</h2>' +
-    '<p>Kamu sedang dipindahkan otomatis ke alamat baru yang lebih cepat, lancar, dan bebas kendala Google Drive.</p>' +
-    '<a id="btn-target" href="' + safeUrl + '" target="_top">Buka Purwaverse Sekarang</a>' +
+    '<h2>Buka Purwaverse Baru</h2>' +
+    '<p>Sentuh tombol di bawah untuk membuka versi baru yang cepat dan bebas kendala Google Drive.</p>' +
+    '<a id="btn-target" class="btn-launch" href="' + safeUrl + '" target="_top">🚀 Masuk ke Purwaverse</a>' +
     '</div>' +
     '<script>' +
-    'setTimeout(function(){try{window.top.location.href="' + safeUrl + '";}catch(e){window.location.href="' + safeUrl + '";}},500);' +
+    'function launchApp(){' +
+    '  try { var btn = document.getElementById("btn-target"); if(btn) btn.click(); } catch(e){}' +
+    '  try { window.top.location.href = "' + safeUrl + '"; } catch(e){}' +
+    '}' +
+    'window.addEventListener("DOMContentLoaded", function(){' +
+    '  setTimeout(launchApp, 300);' +
+    '});' +
     '</script>' +
     '</body></html>';
 
