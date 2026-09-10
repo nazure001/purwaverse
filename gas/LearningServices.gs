@@ -366,6 +366,64 @@ function practiceTeamForStudent_(studentId){
   return {team,leaderId:leader?leader.student_id:'',deputyId:deputy?deputy.student_id:'',members:members.map(m=>({studentId:m.student_id,name:students[m.student_id]?students[m.student_id].name:m.student_id,role:m.student_id===(leader&&leader.student_id)?'Scientist Leader':m.student_id===(deputy&&deputy.student_id)?'Deputy Scientist Leader':m.role}))};
 }
 
+function studentTeamWithProgress_(studentId){
+  const teamInfo=practiceTeamForStudent_(studentId);
+  if(!teamInfo)return null;
+  const memberIds=teamInfo.members.map(m=>m.studentId);
+  if(!memberIds.length)return null;
+
+  const checks=findAll_('TEACHER_CHECKS',r=>memberIds.includes(r.student_id)&&r.check_type==='summary'&&r.status==='verified');
+  const quizzes=findAll_('QUIZ_ATTEMPTS',r=>memberIds.includes(r.student_id)&&r.submitted_at&&(String(r.passed).toLowerCase()==='true'||Number(r.score)>=70));
+
+  const memberProgress={};
+  memberIds.forEach(id=>{memberProgress[id]={summaryUnits:new Set(),quizUnits:new Set()};});
+  checks.forEach(c=>{if(memberProgress[c.student_id])memberProgress[c.student_id].summaryUnits.add(c.activity_id);});
+  quizzes.forEach(q=>{if(memberProgress[q.student_id])memberProgress[q.student_id].quizUnits.add(q.activity_id);});
+
+  let maxSummary=0,maxQuiz=0;
+  memberIds.forEach(id=>{
+    const sCount=memberProgress[id].summaryUnits.size,qCount=memberProgress[id].quizUnits.size;
+    if(sCount>maxSummary)maxSummary=sCount;
+    if(qCount>maxQuiz)maxQuiz=qCount;
+  });
+
+  const members=teamInfo.members.map(m=>{
+    const sCount=memberProgress[m.studentId].summaryUnits.size,qCount=memberProgress[m.studentId].quizUnits.size;
+    const missingSummaries=Math.max(0,maxSummary-sCount),missingQuizzes=Math.max(0,maxQuiz-qCount);
+    const isAligned=missingSummaries===0&&missingQuizzes===0;
+    let gapMessage='';
+    if(isAligned){
+      gapMessage='Progres setara dengan tim · Siap praktikum bersama!';
+    } else {
+      const parts=[];
+      if(missingSummaries>0)parts.push(missingSummaries+' materi rangkuman');
+      if(missingQuizzes>0)parts.push(missingQuizzes+' kuis');
+      gapMessage='Kurang '+parts.join(' & ')+' lagi agar setara dengan tim';
+    }
+    return {
+      studentId:m.studentId,
+      name:m.name,
+      role:m.role,
+      summaryCount:sCount,
+      quizCount:qCount,
+      missingSummaries,
+      missingQuizzes,
+      isAligned,
+      gapMessage
+    };
+  });
+
+  return {
+    teamId:teamInfo.team.team_id,
+    version:teamInfo.team.version,
+    leaderId:teamInfo.leaderId,
+    deputyId:teamInfo.deputyId,
+    maxSummary,
+    maxQuiz,
+    members
+  };
+}
+
 function practiceReportFromRow_(row){
   if(!row)return {report:{},meta:{}};try{const value=JSON.parse(String(row.result_json||'{}'));return {report:value.report||{},meta:value.meta||{}};}catch(e){return {report:{},meta:{}};}
 }
@@ -404,5 +462,5 @@ function saveTeamPracticeReport_(session,payload,submit){
 
 function practiceWorksheet_(session,unitId){return practiceWorkspace_(session,unitId);}
 
-function practiceGuideForStudent_(session){return {guide:practiceGuideData_(),catalog:Object.values(PRACTICE_CATALOG_).map(item=>({activityId:item.activity_id,title:item.title,duration:item.duration,context:item.context}))};}
+function practiceGuideForStudent_(session){return {guide:practiceGuideData_(),catalog:Object.values(PRACTICE_CATALOG_).map(item=>({activityId:item.activity_id,title:item.title,duration:item.duration,context:item.context})),team:studentTeamWithProgress_(session.actor_id)};}
 function practiceGuideForTeacher_(session){return practiceGuideForStudent_(session);}

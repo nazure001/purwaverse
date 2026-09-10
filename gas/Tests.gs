@@ -75,9 +75,11 @@ function runIntegrationChecks() {
     ['mission','prediction','tools','trial1','data','improvement','trial2','evidence','conclusion','modelLimit','reflection'].forEach(field=>assert_(PRACTICE_GUIDE_.successExample[field],'contoh laporan kurang: '+field));
   });
   check('alur laporan praktik tim terintegrasi',()=>{
-    const learningScripts=HtmlService.createHtmlOutputFromFile('LearningScripts').getContent();
-    assert_(typeof practiceWorkspace_==='function'&&typeof saveTeamPracticeReport_==='function'&&typeof practiceGuideForStudent_==='function'&&typeof practiceGuideForTeacher_==='function','layanan praktik tim belum lengkap');
+    const learningScripts=HtmlService.createHtmlOutputFromFile('LearningScripts').getContent(),scripts=HtmlService.createHtmlOutputFromFile('Scripts').getContent(),index=HtmlService.createHtmlOutputFromFile('Index').getContent();
+    assert_(typeof practiceWorkspace_==='function'&&typeof saveTeamPracticeReport_==='function'&&typeof practiceGuideForStudent_==='function'&&typeof practiceGuideForTeacher_==='function'&&typeof studentTeamWithProgress_==='function','layanan praktik tim belum lengkap');
     ['Simpan Draft','Kirim Laporan Tim','Scientist Leader','Deputy Scientist Leader','clientVersion'].forEach(marker=>assert_(learningScripts.includes(marker),'antarmuka laporan tim kurang: '+marker));
+    ['renderStudentTeamCard','refreshStudentTeam'].forEach(marker=>assert_(scripts.includes(marker),'fungsi kartu tim dashboard kurang: '+marker));
+    assert_(index.includes('student-team-container'),'wadah student-team-container kurang di index');
     const cleaned=cleanPracticeReport_({prediction:'  uji  ',ignored:'rahasia'});assert_(cleaned.prediction==='uji'&&cleaned.ignored===undefined&&Object.keys(cleaned).length===11,'pembersihan bidang laporan tidak sesuai kontrak');
   });
   check('isi materi, rangkuman, sumber, dan ilustrasi lengkap',()=>allLearningUnits_().forEach(unit=>{

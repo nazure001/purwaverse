@@ -85,6 +85,10 @@
 .level-mots{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
 .level-hots{background:#fce7f3;color:#be185d;border:1px solid #fbcfe8}
 @media print{#view-worksheet{display:none!important}#view-worksheet.active,#view-practice-sheet.active,#view-semester-card.active,#view-material-summary.active{display:block!important}.sheet section,.practice-field,.material-summary-sheet h3,.material-summary-sheet ul{break-inside:avoid}.practice-report-form{display:block}.practice-field{display:block;margin:0 0 5mm;border:1px solid #777}.practice-field textarea{display:block;width:100%;border:0;overflow:visible;resize:none;color:#000;background:#fff}.practice-editor-note,.practice-save-actions{display:none!important}.practice-brief,.team-roster{font-size:9.5pt}.practice-title-row h2{font-size:20pt;margin:3mm 0}.material-summary-sheet{font-size:10.5pt}.material-summary-sheet h2{font-size:22pt}.projection-exit{display:none!important}}
+.role-leader{background:#eff6ff!important;color:#1d4ed8!important;border:1px solid #bfdbfe!important}
+.role-deputy{background:#f0fdf4!important;color:#15803d!important;border:1px solid #bbf7d0!important}
+.role-member{background:#f8fafc!important;color:#475569!important;border:1px solid #e2e8f0!important}
+@keyframes spin{100%{transform:rotate(360deg)}}
 </style>
 
 
@@ -345,6 +349,7 @@
     <section id="view-student" class="view" aria-hidden="true">
       <div id="student-welcome"></div>
       <div class="actions"><button class="primary" onclick="openLearningPath()">Lanjutkan Jalur Belajar</button><button class="secondary" onclick="openPracticeGuide()">Panduan Praktik & LKPD</button><button class="secondary" onclick="openSemesterCard()">Kartu Semester</button><button class="secondary" onclick="openGlossary()">Kamus Sains</button><button class="secondary" onclick="showView('wiki')" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;">Wiki Purwaverse</button></div>
+      <div id="student-team-container" style="margin: 1.5rem 0;"></div>
       <div class="student-grid">
         <article class="mission-card"><span class="pill">MISSION 0</span><h3>Think Like a Scientist</h3><p>Profil cara berpikir sains, bukan ranking.</p><button onclick="loadDiagnostic()">Mulai Quick Diagnostic</button></article>
         <article><h3>Research Passport</h3><ul class="passport"><li id="passport-observe">Observe</li><li id="passport-ask">Ask</li><li id="passport-predict">Predict</li><li id="passport-variables">Identify variables</li><li id="passport-evidence">Analyze evidence</li></ul></article>
@@ -483,7 +488,7 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <script>window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};</script>
   <script>
-const state={studentToken:'',teacherToken:'',activeRole:'',studentProgress:[],activeActivity:null,previewUnit:null,summaryReturnView:'student',practiceWorkspace:null,learningHome:null,studentPracticeGuide:null,teacherPracticeGuide:null,teacherMaterialCatalog:null,activeTeacherTab:'overview',teacherLearningCache:{},teacherDashboardCache:{},teacherTeamsCache:{}};
+const state={studentToken:'',teacherToken:'',activeRole:'',studentProgress:[],studentTeam:null,activeActivity:null,previewUnit:null,summaryReturnView:'student',practiceWorkspace:null,learningHome:null,studentPracticeGuide:null,teacherPracticeGuide:null,teacherMaterialCatalog:null,activeTeacherTab:'overview',teacherLearningCache:{},teacherDashboardCache:{},teacherTeamsCache:{}};
 
 function switchTeacherTab(tabName){
   state.activeTeacherTab=tabName||'overview';
@@ -515,7 +520,7 @@ const ROLE_VIEW_ACCESS={teacher:['teacher','teacher-materials','teacher-material
 const ACTIVITY_IDS={learn:'CH08-01-U01-LRN01',lab:'CH08-01-U02-LAB01',challenge:'CH08-01-U03-CHL01',research:'CH08-01-U03-RSH01'};
 function activeClientRole(){return state.teacherToken?'teacher':state.studentToken?'student':'guest'}
 function allowedViewForRole(name){const role=activeClientRole(),allowed=ROLE_VIEW_ACCESS[role];if(allowed.includes(name))return name;return role==='teacher'?'teacher':role==='student'?'student':'home'}
-function showView(name){name=allowedViewForRole(name);const switchTarget=()=>{document.querySelectorAll('main > section').forEach(v=>{const isActive=(v.id==='view-'+name);v.classList.toggle('active',isActive);v.setAttribute('aria-hidden',(!isActive).toString())});if(name==='chapter')updateChapterStatuses();if(name==='home')loadPublicLeaderboard();if(name==='student'&&state.student)renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile});window.scrollTo(0,0)};if(document.startViewTransition){document.startViewTransition(switchTarget)}else{switchTarget()}}
+function showView(name){name=allowedViewForRole(name);const switchTarget=()=>{document.querySelectorAll('main > section').forEach(v=>{const isActive=(v.id==='view-'+name);v.classList.toggle('active',isActive);v.setAttribute('aria-hidden',(!isActive).toString())});if(name==='chapter')updateChapterStatuses();if(name==='home')loadPublicLeaderboard();if(name==='student'&&state.student)renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile,team:state.studentTeam});window.scrollTo(0,0)};if(document.startViewTransition){document.startViewTransition(switchTarget)}else{switchTarget()}}
 
 function openGlossary() { showView('glossary'); filterGlossary(); }
 function filterGlossary() {
@@ -545,8 +550,116 @@ async function callApi(action, payload) {
   return json.data;
 }
 async function studentLogin(e){e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Memverifikasi...';}try{const s=await callApi('loginStudent',{classId:document.getElementById('class-id').value,rollNo:document.getElementById('roll-no').value,pin:document.getElementById('student-pin').value});state.studentToken=s.token;state.teacherToken='';state.activeRole='student';state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;SafeStorage.set('studentToken',s.token);SafeStorage.remove('teacherToken');updateAuthNavigation();document.getElementById('student-pin').value='';await loadStudent(true);showView('student')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Masuk';}}}
-function renderStudentDashboard(d){state.student=d.student;state.studentProgress=d.progress||[];state.studentProfile=d.profile||null;const initial=d.student.name.charAt(0).toUpperCase();document.getElementById('student-welcome').innerHTML='<div class="dashboard-head" style="align-items:center; display:flex; gap:1.25rem; margin-bottom:1.5rem;"><div style="width:64px; height:64px; min-width:64px; background:linear-gradient(135deg, var(--blue), #4f46e5); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:bold; box-shadow:0 4px 10px rgba(21,94,239,0.2);">'+initial+'</div><div><span class="pill" style="margin-bottom:0.2rem; display:inline-block;">'+d.student.class_id+' · NO. '+d.student.roll_no+'</span><h2 style="margin:0; font-size:clamp(1.5rem,4vw,2.2rem); display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; word-break:break-word;">Halo, <span id="student-name-display" style="transition: color 0.3s ease, text-shadow 0.3s ease;">'+escapeHtml(d.student.name)+'</span> <span id="top-badge-slot"></span></h2><p style="margin:0.25rem 0 0 0; color:var(--muted); font-size:1.05rem;">Lanjutkan perjalanan sainsmu dari bukti yang tersimpan.</p></div></div>';if(d.profile)renderProfile(d.profile);updateChapterStatuses();updatePassport();if(typeof renderBadges==='function')renderBadges();}
-async function loadStudent(forceRefresh){if(!state.studentToken)return;if(state.student&&!forceRefresh){renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile});callApi('studentHome',{token:state.studentToken}).then(d=>renderStudentDashboard(d)).catch(()=>{});return;}const d=await callApi('studentHome',{token:state.studentToken});renderStudentDashboard(d);}
+function renderStudentDashboard(d){
+  state.student=d.student;
+  state.studentProgress=d.progress||[];
+  state.studentProfile=d.profile||null;
+  if(d.team!==undefined)state.studentTeam=d.team;
+  const initial=d.student.name.charAt(0).toUpperCase();
+  document.getElementById('student-welcome').innerHTML='<div class="dashboard-head" style="align-items:center; display:flex; gap:1.25rem; margin-bottom:1.5rem;"><div style="width:64px; height:64px; min-width:64px; background:linear-gradient(135deg, var(--blue), #4f46e5); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:bold; box-shadow:0 4px 10px rgba(21,94,239,0.2);">'+initial+'</div><div><span class="pill" style="margin-bottom:0.2rem; display:inline-block;">'+d.student.class_id+' · NO. '+d.student.roll_no+'</span><h2 style="margin:0; font-size:clamp(1.5rem,4vw,2.2rem); display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; word-break:break-word;">Halo, <span id="student-name-display" style="transition: color 0.3s ease, text-shadow 0.3s ease;">'+escapeHtml(d.student.name)+'</span> <span id="top-badge-slot"></span></h2><p style="margin:0.25rem 0 0 0; color:var(--muted); font-size:1.05rem;">Lanjutkan perjalanan sainsmu dari bukti yang tersimpan.</p></div></div>';
+  renderStudentTeamCard(state.studentTeam);
+  if(d.profile)renderProfile(d.profile);
+  updateChapterStatuses();
+  updatePassport();
+  if(typeof renderBadges==='function')renderBadges();
+}
+
+function renderStudentTeamCard(team){
+  const container=document.getElementById('student-team-container');
+  if(!container)return;
+  if(!team){
+    container.innerHTML='<div class="student-team-card empty-state" style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;"><div style="display:flex; align-items:center; gap:0.75rem;"><span style="font-size:1.5rem;">🧪</span><div><strong style="color:#334155; font-size:0.95rem;">Science Team Belum Dibentuk</strong><p style="margin:0.15rem 0 0; color:#64748b; font-size:0.85rem;">Tim sains praktikum sedang dipersiapkan oleh guru untuk kelasmu.</p></div></div><button type="button" class="secondary" onclick="refreshStudentTeam(true)" style="padding:0.4rem 0.85rem; font-size:0.85rem;">Cek Tim</button></div>';
+    return;
+  }
+  const myId=state.student?state.student.student_id:'';
+  const myMember=(team.members||[]).find(m=>m.studentId===myId);
+  const myRole=myMember?myMember.role:'Anggota Tim';
+
+  const memberRows=(team.members||[]).map(m=>{
+    const isMe=m.studentId===myId;
+    const isLeader=m.studentId===team.leaderId;
+    const isDeputy=m.studentId===team.deputyId;
+    const roleBadgeClass=isLeader?'role-leader':isDeputy?'role-deputy':'role-member';
+    const rowBg=isMe?'background:#eff6ff; border-color:#93c5fd;':'background:#ffffff; border-color:#e2e8f0;';
+    const youTag=isMe?'<span class="you-badge" style="background:#1d4ed8; color:#ffffff; font-size:0.7rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:9999px; margin-left:0.4rem;">Kamu</span>':'';
+    const gapColor=m.isAligned?'#15803d':'#b45309';
+    const gapIcon=m.isAligned?'✓':'⚠️';
+    const gapBg=m.isAligned?'#f0fdf4':'#fffbeb';
+    const gapBorder=m.isAligned?'#bbf7d0':'#fde68a';
+
+    return '<div class="team-member-row" style="display:flex; flex-direction:column; gap:0.5rem; padding:0.85rem 1rem; border:1px solid; border-radius:10px; '+rowBg+' transition:all 0.2s ease;">'+
+      '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">'+
+        '<div>'+
+          '<div style="display:flex; align-items:center; flex-wrap:wrap;">'+
+            '<strong style="color:#0f172a; font-size:0.95rem;">'+escapeHtml(m.name)+'</strong>'+youTag+
+          '</div>'+
+          '<div style="margin-top:0.25rem;">'+
+            '<span class="role-pill '+roleBadgeClass+'" style="display:inline-block; font-size:0.75rem; font-weight:600; padding:0.15rem 0.55rem; border-radius:6px;">'+escapeHtml(m.role||'Member')+'</span>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">'+
+          '<span title="Rangkuman yang sudah diverifikasi guru" style="background:#f1f5f9; color:#334155; font-size:0.8rem; font-weight:600; padding:0.25rem 0.6rem; border-radius:6px; border:1px solid #cbd5e1; display:flex; align-items:center; gap:0.3rem;">'+
+            '📚 <span style="color:#0f172a;">'+m.summaryCount+'</span> Rangkuman'+
+          '</span>'+
+          '<span title="Kuis materi yang sudah lulus" style="background:#f8fafc; color:#475569; font-size:0.8rem; font-weight:600; padding:0.25rem 0.6rem; border-radius:6px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:0.3rem;">'+
+            '📝 <span style="color:#0f172a;">'+m.quizCount+'</span> Kuis'+
+          '</span>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:0.8rem; padding:0.4rem 0.75rem; border-radius:6px; background:'+gapBg+'; border:1px solid '+gapBorder+'; color:'+gapColor+'; display:flex; align-items:center; gap:0.4rem;">'+
+        '<span>'+gapIcon+'</span>'+
+        '<span>'+escapeHtml(m.gapMessage||'')+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  container.innerHTML='<div class="student-team-card" style="background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border:1px solid #cbd5e1; border-radius:14px; padding:1.25rem; box-shadow:0 4px 12px rgba(15,23,42,0.04);">'+
+    '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem;">'+
+      '<div>'+
+        '<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">'+
+          '<span class="pill" style="background:#2563eb; color:#ffffff; font-weight:700; font-size:0.75rem;">SCIENCE TEAM</span>'+
+          '<h3 style="margin:0; font-size:1.2rem; color:#0f172a; font-weight:700;">'+escapeHtml(team.teamId)+'</h3>'+
+        '</div>'+
+        '<p style="margin:0.25rem 0 0; color:#475569; font-size:0.875rem;">Peranmu: <b style="color:#1d4ed8;">'+escapeHtml(myRole)+'</b> · Susunan tim praktikum sains kolaboratif.</p>'+
+      '</div>'+
+      '<button type="button" id="btn-refresh-team" class="secondary" onclick="refreshStudentTeam(true)" style="padding:0.4rem 0.85rem; font-size:0.85rem; display:flex; align-items:center; gap:0.35rem;">'+
+        '<span id="refresh-team-spinner" style="display:inline-block;">🔄</span> Segarkan Tim'+
+      '</button>'+
+    '</div>'+
+    '<div style="margin-bottom:0.75rem;"><span style="font-size:0.825rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.025em;">Daftar Anggota & Kesiapan Praktikum Bersama</span></div>'+
+    '<div class="team-members-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:0.75rem;">'+memberRows+'</div>'+
+  '</div>';
+}
+
+async function refreshStudentTeam(showToast){
+  if(!state.studentToken)return;
+  const btn=document.getElementById('btn-refresh-team');
+  const spinner=document.getElementById('refresh-team-spinner');
+  if(btn)btn.disabled=true;
+  if(spinner)spinner.style.animation='spin 1s linear infinite';
+  try{
+    const res=await callApi('refreshStudentTeam',{token:state.studentToken});
+    state.studentTeam=res.team||null;
+    renderStudentTeamCard(state.studentTeam);
+    if(showToast)toast('Data tim berhasil diperbarui!');
+  }catch(err){
+    if(showToast)toast('Gagal memperbarui tim: '+err.message);
+  }finally{
+    if(btn)btn.disabled=false;
+    if(spinner)spinner.style.animation='';
+  }
+}
+
+async function loadStudent(forceRefresh){
+  if(!state.studentToken)return;
+  if(state.student&&!forceRefresh){
+    renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile,team:state.studentTeam});
+    callApi('studentHome',{token:state.studentToken}).then(d=>renderStudentDashboard(d)).catch(()=>{});
+    return;
+  }
+  const d=await callApi('studentHome',{token:state.studentToken});
+  renderStudentDashboard(d);
+}
 function progressFor(activityId){return state.studentProgress.find(p=>p.activity_id===activityId)||null}
 function statusText(progress){if(!state.studentToken)return'Masuk untuk simpan';if(!progress)return'Belum dimulai';return progress.status==='completed'?'Selesai':progress.status==='submitted'?'Menunggu penilaian':'Sedang dikerjakan'}
 function updateChapterStatuses(){Object.values(ACTIVITY_IDS).forEach(id=>{const el=document.getElementById('status-'+id);if(el){const p=progressFor(id);el.textContent=statusText(p);el.className='status-badge '+(p?'status-'+p.status:'')}})}
@@ -834,7 +947,7 @@ function updateAuthNavigation(){
  if(primary)primary.textContent='Jalur Belajar';if(secondary)secondary.textContent='LKPD';if(homePrimary)homePrimary.textContent='Mulai Belajar';if(homeSecondary)homeSecondary.textContent='Masuk ke Akun';
 }
 function handleAuthNavigation(){if(state.studentToken||state.teacherToken)logout();else showView('login')}
-async function logout(){const token=state.activeRole==='teacher'?state.teacherToken:state.studentToken;try{if(token)await callApi('logout',{token})}catch(e){toast('Sesi lokal ditutup. Server tidak dapat dihubungi.')}finally{state.studentToken='';state.teacherToken='';state.activeRole='';state.studentProgress=[];state.activeActivity=null;state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;state.activeUnit=null;state.activeQuiz=null;state.previewUnit=null;state.practiceWorkspace=null;state.teacherLearningCache={};state.teacherDashboardCache={};state.teacherTeamsCache={};state.activeTeacherTab='overview';SafeStorage.remove('studentToken');SafeStorage.remove('teacherToken');toggleProjectionMode(false);updateAuthNavigation();showView('home')}}
+async function logout(){const token=state.activeRole==='teacher'?state.teacherToken:state.studentToken;try{if(token)await callApi('logout',{token})}catch(e){toast('Sesi lokal ditutup. Server tidak dapat dihubungi.')}finally{state.studentToken='';state.teacherToken='';state.activeRole='';state.studentProgress=[];state.studentTeam=null;state.activeActivity=null;state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;state.activeUnit=null;state.activeQuiz=null;state.previewUnit=null;state.practiceWorkspace=null;state.teacherLearningCache={};state.teacherDashboardCache={};state.teacherTeamsCache={};state.activeTeacherTab='overview';SafeStorage.remove('studentToken');SafeStorage.remove('teacherToken');toggleProjectionMode(false);updateAuthNavigation();showView('home')}}
 const draftState = { timer: null };
 function getDraftKey(form) {
   if (!state.studentToken) return null;

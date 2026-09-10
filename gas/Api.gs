@@ -107,7 +107,8 @@ function api(action, payload) {
       case 'loginStudent': data=loginStudent_(payload.classId,payload.rollNo,payload.pin); break;
       case 'loginTeacher': data=loginTeacher_(payload.username,payload.password); break;
       case 'logout': data=logout_(payload.token); break;
-      case 'studentHome': { const s=requireSession_(payload.token,'student'); const prog=findAll_('PROGRESS',r=>r.student_id===s.actor_id); const quiz=findAll_('QUIZ_ATTEMPTS',r=>r.student_id===s.actor_id&&r.submitted_at).map(q=>({activity_id:q.activity_id,score:q.score,status:'completed'})); data={session:s,student:findOne_('MASTER_STUDENTS',r=>r.student_id===s.actor_id),progress:prog.concat(quiz),profile:validProfileForStudent_(s.actor_id)}; break; }
+      case 'studentHome': { const s=requireSession_(payload.token,'student'); const prog=findAll_('PROGRESS',r=>r.student_id===s.actor_id); const quiz=findAll_('QUIZ_ATTEMPTS',r=>r.student_id===s.actor_id&&r.submitted_at).map(q=>({activity_id:q.activity_id,score:q.score,status:'completed'})); data={session:s,student:findOne_('MASTER_STUDENTS',r=>r.student_id===s.actor_id),progress:prog.concat(quiz),profile:validProfileForStudent_(s.actor_id),team:studentTeamWithProgress_(s.actor_id)}; break; }
+      case 'refreshStudentTeam': { const s=requireSession_(payload.token,'student'); data={team:studentTeamWithProgress_(s.actor_id)}; break; }
       case 'saveProgress': data=saveProgress_(requireSession_(payload.token,'student'),payload); break;
       case 'diagnosticItems': { const s=requireSession_(payload.token,'student'); const items=findAll_('DIAGNOSTIC_ITEMS',r=>CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id)&&String(r.active).toLowerCase()==='true').map(({rubric_json,...safe})=>safe); data=stableShuffle_(items,s.actor_id); break; }
       case 'selfMapItems': requireSession_(payload.token,'student'); data=findAll_('SELF_MAP_ITEMS',r=>String(r.active).toLowerCase()==='true'); break;
