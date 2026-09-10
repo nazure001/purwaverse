@@ -468,12 +468,171 @@
         padding-left: 18px
     }
 
+    #diagnostic {
+        contain: layout style;
+        min-height: 240px;
+    }
+
+    .diag-timer-sticky {
+        position: sticky;
+        top: 60px;
+        z-index: 40;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: border-color 0.3s ease;
+    }
+
+    .diag-timer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        font-size: 0.92rem;
+    }
+
+    .diag-timer-clock {
+        font-family: monospace;
+        font-size: 1.2rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #0f172a;
+        letter-spacing: 1px;
+    }
+
+    .diag-timer-progress-track {
+        width: 100%;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .diag-timer-progress-fill {
+        height: 100%;
+        width: 100%;
+        background: #2563eb;
+        border-radius: 999px;
+        transition: width 1s linear, background-color 0.5s ease;
+    }
+
+    .timer-warning-medium .diag-timer-progress-fill {
+        background: #ea580c !important;
+    }
+
+    .timer-warning-critical {
+        border-color: #ef4444 !important;
+        animation: pulseTimer 1.2s infinite ease-in-out;
+    }
+
+    .timer-warning-critical .diag-timer-clock {
+        background: #fee2e2 !important;
+        color: #b91c1c !important;
+    }
+
+    .timer-warning-critical .diag-timer-progress-fill {
+        background: #dc2626 !important;
+    }
+
+    @keyframes pulseTimer {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15); }
+    }
+
     .diagnostic-item {
         background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 18px;
-        margin: 12px 0
+        border: 1.5px solid var(--line);
+        border-radius: 20px;
+        padding: 20px;
+        margin: 14px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .diagnostic-item-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .diagnostic-item h4 {
+        margin: 0;
+        font-size: 1.08rem;
+        color: #0f172a;
+        font-weight: 800;
+    }
+
+    .diagnostic-domain-badge {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #e0e7ff;
+        color: #3730a3;
+        letter-spacing: 0.5px;
+    }
+
+    .diagnostic-story {
+        color: #334155;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+
+    .diagnostic-challenge-box {
+        background: #f8fafc;
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 12px 12px 0;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        font-size: 0.94rem;
+        color: #1e293b;
+    }
+
+    .diagnostic-challenge-box b {
+        color: #1d4ed8;
+    }
+
+    mark.ai-flag {
+        background: #fef08a;
+        color: #854d0e;
+        padding: 0.12rem 0.3rem;
+        border-radius: 4px;
+        font-weight: 700;
+        border-bottom: 2px solid #ca8a04;
+    }
+
+    mark.ai-flag-heavy {
+        background: #fecaca;
+        color: #991b1b;
+        padding: 0.12rem 0.3rem;
+        border-radius: 4px;
+        font-weight: 700;
+        border-bottom: 2px solid #dc2626;
+    }
+
+    .ai-badge-warning {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #fee2e2;
+        color: #991b1b;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin: 6px 0;
     }
 
     .worksheet {

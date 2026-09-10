@@ -114,91 +114,207 @@ function saveProgress_(session, payload) {
   } finally { lock.releaseLock(); }
 }
 
+function diagnosticItemsForStudent_(studentId) {
+  const allItems = findAll_('DIAGNOSTIC_ITEMS', r => String(r.active).toLowerCase() === 'true');
+  if (!allItems.length) throw new Error('Bank butir diagnostik belum dimuat dari sumber resmi.');
+  const itemMap = Object.fromEntries(allItems.map(i => [i.item_id, i]));
+
+  const existingResponses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId);
+  let selectedIds = [];
+
+  if (existingResponses.length > 0) {
+    selectedIds = existingResponses.map(r => r.item_id);
+  } else {
+    const sessionKey = 'diag_session|' + studentId;
+    const sessionSetting = findOne_('SETTINGS', r => r.key === sessionKey);
+    if (sessionSetting && sessionSetting.value) {
+      try { selectedIds = JSON.parse(sessionSetting.value); } catch(e) {}
+    }
+    if (!selectedIds || selectedIds.length < 5) {
+      selectedIds = [];
+      const usedIds = new Set();
+      // 1 butir per domain secara deterministik acak (5 domain)
+      CONFIG.DOMAINS.forEach((domain, idx) => {
+        const domainItems = allItems.filter(i => i.domain === domain);
+        if (domainItems.length > 0) {
+          const shuffled = stableShuffle_(domainItems, studentId + '|' + domain + '|v3');
+          selectedIds.push(shuffled[0].item_id);
+          usedIds.add(shuffled[0].item_id);
+        }
+      });
+      // 1 butir tantangan acak dari butir yang tersisa (total 6 butir)
+      const remaining = allItems.filter(i => !usedIds.has(i.item_id));
+      if (remaining.length > 0) {
+        const shuffledRemaining = stableShuffle_(remaining, studentId + '|EXTRA|v3');
+        selectedIds.push(shuffledRemaining[0].item_id);
+      }
+      upsert_('SETTINGS', 'key', { key: sessionKey, value: JSON.stringify(selectedIds), updated_at: isoNow_() });
+    }
+  }
+
+  const items = selectedIds.map(id => itemMap[id]).filter(Boolean).map(({ rubric_json, ...safe }) => safe);
+  const durationSeconds = items.length * (CONFIG.DIAGNOSTIC_SECONDS_PER_ITEM || 120);
+  return { items, durationSeconds, totalCount: items.length };
+}
+
 function submitDiagnostic_(session, payload) {
-  const items = findAll_('DIAGNOSTIC_ITEMS', r => CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id) && String(r.active).toLowerCase() === 'true');
-  if (!items.length) throw new Error('Butir diagnostik produksi belum dimuat dari sumber resmi.');
-  const byId = Object.fromEntries(items.map(x => [x.item_id, x]));
-  const responses=payload.responses||[],unique=new Set(responses.map(x=>x.itemId));
-  if(responses.length!==CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length||unique.size!==responses.length||CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.some(id=>!unique.has(id)))throw new Error('Semua butir Mission 0 harus dikirim tepat satu kali.');
+  const allItems = findAll_('DIAGNOSTIC_ITEMS', r => String(r.active).toLowerCase() === 'true');
+  if (!allItems.length) throw new Error('Butir diagnostik produksi belum dimuat dari sumber resmi.');
+  const byId = Object.fromEntries(allItems.map(x => [x.item_id, x]));
+
+  const responses = payload.responses || [], unique = new Set(responses.map(x => x.itemId));
+  if (responses.length < 5 || unique.size !== responses.length) {
+    throw new Error('Semua butir tantangan Mission 0 harus dikerjakan lengkap.');
+  }
+
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     responses.forEach(response => {
       if (!byId[response.itemId]) throw new Error('Butir diagnostik tidak dikenal: ' + response.itemId);
-      if(!String(response.answer||'').trim())throw new Error('Jawaban diagnostik tidak boleh kosong.');
+      if (!String(response.answer || '').trim()) throw new Error('Jawaban diagnostik tidak boleh kosong.');
       const responseId = session.actor_id + '|' + response.itemId;
       const existing = findOne_('DIAGNOSTIC_RESPONSES', r => r.response_id === responseId);
-      if(existing&&existing.score!==''&&existing.score!==null&&String(existing.answer)!==String(response.answer||''))throw new Error('Jawaban yang sudah dinilai tidak dapat diubah. Hubungi guru bila perlu koreksi.');
-      upsert_('DIAGNOSTIC_RESPONSES','response_id',{response_id:responseId,student_id:session.actor_id,item_id:response.itemId,answer:String(response.answer || ''),score:existing ? existing.score : '',scored_by:existing ? existing.scored_by : '',submitted_at:isoNow_()});
+      if (existing && existing.score !== '' && existing.score !== null && String(existing.answer) !== String(response.answer || '')) {
+        throw new Error('Jawaban yang sudah dinilai tidak dapat diubah. Hubungi guru bila perlu koreksi.');
+      }
+      upsert_('DIAGNOSTIC_RESPONSES', 'response_id', {
+        response_id: responseId,
+        student_id: session.actor_id,
+        item_id: response.itemId,
+        answer: String(response.answer || ''),
+        score: existing ? existing.score : '',
+        scored_by: existing ? existing.scored_by : '',
+        submitted_at: isoNow_()
+      });
     });
-    upsert_('SETTINGS','key',{key:'self_map|'+session.actor_id,value:String(payload.selfMapScore || ''),updated_at:isoNow_()});
-    saveProgress_(session,{activityId:'M0-QUICK',status:'submitted',score:''});
-    return {submitted:true, scored:false};
+
+    const speedSeconds = Math.max(0, Number(payload.remainingSeconds || 0));
+    upsert_('SETTINGS', 'key', { key: 'diag_speed|' + session.actor_id, value: String(speedSeconds), updated_at: isoNow_() });
+    upsert_('SETTINGS', 'key', { key: 'self_map|' + session.actor_id, value: String(payload.selfMapScore || ''), updated_at: isoNow_() });
+    saveProgress_(session, { activityId: 'M0-QUICK', status: 'submitted', score: '' });
+    return { submitted: true, scored: false, speedBonusSeconds: speedSeconds };
   } finally { lock.releaseLock(); }
 }
 
-function buildProfile_(studentId, selfMapScore) {
-  const responses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId && CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id) && r.score !== '' && r.score !== null);
+function buildProfile_(studentId, selfMapScore, speedSeconds) {
+  const responses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId && r.score !== '' && r.score !== null);
   const items = Object.fromEntries(rows_('DIAGNOSTIC_ITEMS').map(x => [x.item_id, x]));
   const scores = {};
+  const scoredDomains = [];
+
   CONFIG.DOMAINS.forEach(d => {
     const vals = responses.filter(r => items[r.item_id] && items[r.item_id].domain === d).map(r => Number(r.score));
-    scores[d] = vals.length ? vals.reduce((a,b)=>a+b,0) / vals.length : 0;
+    if (vals.length) {
+      scores[d] = vals.reduce((a, b) => a + b, 0) / vals.length;
+      scoredDomains.push(scores[d]);
+    } else {
+      scores[d] = 0;
+    }
   });
-  const overall = CONFIG.DOMAINS.reduce((n,d)=>n+scores[d],0) / CONFIG.DOMAINS.length;
-  const normalizedSelfMap = Math.max(0,Math.min(4,Number(selfMapScore)-1));
+
+  const domainAvg = scoredDomains.length ? (scoredDomains.reduce((a, b) => a + b, 0) / scoredDomains.length) : 0;
+  CONFIG.DOMAINS.forEach(d => {
+    if (!scores[d]) scores[d] = domainAvg;
+  });
+
+  const baseOverall = CONFIG.DOMAINS.reduce((n, d) => n + scores[d], 0) / CONFIG.DOMAINS.length;
+  // Speed Bonus: sisa waktu menambah poin efisiensi hingga +0.25 (pada skala 0-4)
+  const speedBonus = speedSeconds > 0 ? Math.min(0.25, round2_(speedSeconds / 1200 * 0.25)) : 0;
+  const overall = Math.min(4, round2_(baseOverall + speedBonus));
+
+  const normalizedSelfMap = Math.max(0, Math.min(4, Number(selfMapScore) - 1));
   const leader = 0.75 * overall + 0.25 * normalizedSelfMap;
   const research = (scores.evidence_experiment + scores.systems_causality + scores.technology_design) / 3;
   const readiness = research >= 3.25 ? 'R4' : research >= 2.5 ? 'R3' : research >= 1.5 ? 'R2' : 'R1';
-  return upsert_('DIAGNOSTIC_PROFILES','profile_id',Object.assign({profile_id:studentId,student_id:studentId,overall_reasoning:round2_(overall),self_map_score:round2_(normalizedSelfMap),leader_index:round2_(leader),research_readiness:readiness,updated_at:isoNow_()},Object.fromEntries(CONFIG.DOMAINS.map(d=>[d,round2_(scores[d])]))));
+
+  return upsert_('DIAGNOSTIC_PROFILES', 'profile_id', Object.assign({
+    profile_id: studentId,
+    student_id: studentId,
+    overall_reasoning: round2_(overall),
+    self_map_score: round2_(normalizedSelfMap),
+    leader_index: round2_(leader),
+    research_readiness: readiness,
+    updated_at: isoNow_()
+  }, Object.fromEntries(CONFIG.DOMAINS.map(d => [d, round2_(scores[d])]))));
 }
 
 function scoreDiagnosticResponse_(session, payload) {
-  const student=findOne_('MASTER_STUDENTS',r=>r.student_id===payload.studentId);
-  if(!student)throw new Error('Siswa tidak ditemukan.');
-  ensureTeacherClassAccess_(session,student.class_id);
-  if(!CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(payload.itemId))throw new Error('Butir di luar Mission 0 tidak dapat dinilai.');
+  const student = findOne_('MASTER_STUDENTS', r => r.student_id === payload.studentId);
+  if (!student) throw new Error('Siswa tidak ditemukan.');
+  ensureTeacherClassAccess_(session, student.class_id);
+
   const responseId = payload.studentId + '|' + payload.itemId;
   const response = findOne_('DIAGNOSTIC_RESPONSES', r => r.response_id === responseId);
   if (!response) throw new Error('Jawaban diagnostik tidak ditemukan.');
+
   const score = Number(payload.score);
   if (!Number.isInteger(score) || score < 0 || score > 4) throw new Error('Skor harus bilangan 0-4.');
-  upsert_('DIAGNOSTIC_RESPONSES','response_id',Object.assign({},response,{score,scored_by:session.actor_id}));
-  const expected = CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length;
-  const scored = findAll_('DIAGNOSTIC_RESPONSES',r=>r.student_id===payload.studentId && CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id) && r.score !== '' && r.score !== null).length;
+  upsert_('DIAGNOSTIC_RESPONSES', 'response_id', Object.assign({}, response, { score, scored_by: session.actor_id }));
+
+  const studentResponses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === payload.studentId);
+  const expected = studentResponses.length;
+  const scored = studentResponses.filter(r => r.score !== '' && r.score !== null).length;
+
   let profile = null;
-  if (scored >= expected) {
-    const selfMap = findOne_('SETTINGS',r=>r.key==='self_map|'+payload.studentId);
-    profile = buildProfile_(payload.studentId,Number(selfMap ? selfMap.value : 0));
-    upsert_('PROGRESS','progress_id',{progress_id:payload.studentId+'|M0-QUICK',student_id:payload.studentId,activity_id:'M0-QUICK',status:'completed',score:profile.overall_reasoning,evidence_json:JSON.stringify({scored_items:scored}),updated_at:isoNow_(),updated_by:session.actor_id});
+  if (scored >= expected && expected >= 5) {
+    const selfMap = findOne_('SETTINGS', r => r.key === 'self_map|' + payload.studentId);
+    const speedSetting = findOne_('SETTINGS', r => r.key === 'diag_speed|' + payload.studentId);
+    const speedSeconds = Number(speedSetting ? speedSetting.value : 0);
+    profile = buildProfile_(payload.studentId, Number(selfMap ? selfMap.value : 0), speedSeconds);
+    upsert_('PROGRESS', 'progress_id', {
+      progress_id: payload.studentId + '|M0-QUICK',
+      student_id: payload.studentId,
+      activity_id: 'M0-QUICK',
+      status: 'completed',
+      score: profile.overall_reasoning,
+      evidence_json: JSON.stringify({ scored_items: scored, speed_bonus_seconds: speedSeconds }),
+      updated_at: isoNow_(),
+      updated_by: session.actor_id
+    });
   }
-  audit_({type:'teacher',id:session.actor_id},'SCORE_DIAGNOSTIC','response',responseId,{score});
-  return {profile,scored,expected,complete:scored>=expected};
+  audit_({ type: 'teacher', id: session.actor_id }, 'SCORE_DIAGNOSTIC', 'response', responseId, { score });
+  return { profile, scored, expected, complete: scored >= expected && expected >= 5 };
 }
 
-function diagnosticReview_(session,classId) {
-  ensureTeacherClassAccess_(session,classId);
-  const students=findAll_('MASTER_STUDENTS',r=>r.class_id===classId&&String(r.active).toLowerCase()==='true');
-  const ids=new Set(students.map(s=>s.student_id));
-  const items=Object.fromEntries(rows_('DIAGNOSTIC_ITEMS').map(i=>[i.item_id,i]));
-  const responsesByStudent={};
-  findAll_('DIAGNOSTIC_RESPONSES',r=>ids.has(r.student_id)).forEach(r=>(responsesByStudent[r.student_id]||(responsesByStudent[r.student_id]=[])).push(Object.assign({},r,{prompt:items[r.item_id]?.prompt||'',rubric_json:items[r.item_id]?.rubric_json||'{}'})));
-  return students.map(s=>({studentId:s.student_id,name:s.name,rollNo:s.roll_no,responses:responsesByStudent[s.student_id]||[]}));
+function resetStudentDiagnostic_(session, payload) {
+  ensureTeacherClassAccess_(session, payload.classId);
+  const student = findOne_('MASTER_STUDENTS', r => r.student_id === payload.studentId);
+  if (!student) throw new Error('Siswa tidak ditemukan.');
+
+  deleteWhere_('DIAGNOSTIC_RESPONSES', r => r.student_id === payload.studentId);
+  deleteWhere_('DIAGNOSTIC_PROFILES', r => r.student_id === payload.studentId);
+  deleteWhere_('PROGRESS', r => r.student_id === payload.studentId && r.activity_id === 'M0-QUICK');
+  deleteWhere_('SETTINGS', r => r.key === 'diag_session|' + payload.studentId || r.key === 'diag_speed|' + payload.studentId || r.key === 'self_map|' + payload.studentId);
+
+  audit_({ type: 'teacher', id: session.actor_id }, 'RESET_DIAGNOSTIC', 'student', payload.studentId, { classId: payload.classId });
+  return { reset: true, studentId: payload.studentId };
+}
+
+function diagnosticReview_(session, classId) {
+  ensureTeacherClassAccess_(session, classId);
+  const students = findAll_('MASTER_STUDENTS', r => r.class_id === classId && String(r.active).toLowerCase() === 'true');
+  const ids = new Set(students.map(s => s.student_id));
+  const items = Object.fromEntries(rows_('DIAGNOSTIC_ITEMS').map(i => [i.item_id, i]));
+  const responsesByStudent = {};
+  findAll_('DIAGNOSTIC_RESPONSES', r => ids.has(r.student_id)).forEach(r => (responsesByStudent[r.student_id] || (responsesByStudent[r.student_id] = [])).push(Object.assign({}, r, { prompt: items[r.item_id]?.prompt || '', rubric_json: items[r.item_id]?.rubric_json || '{}' })));
+  return students.map(s => ({ studentId: s.student_id, name: s.name, rollNo: s.roll_no, responses: responsesByStudent[s.student_id] || [] }));
 }
 
 function round2_(n) { return Math.round(n * 100) / 100; }
 
 function isLegacyIntegrationStudent_(studentId) {
-  const responses = findAll_('DIAGNOSTIC_RESPONSES',r=>r.student_id===studentId&&CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id));
-  return responses.length>=CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length&&responses.every(r=>String(r.answer).trim().toLowerCase()==='jawaban integrasi');
+  const responses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId);
+  return responses.length >= 5 && responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
 }
 
 function validProfileForStudent_(studentId) {
   const profile = findOne_('DIAGNOSTIC_PROFILES', r => r.student_id === studentId);
   if (!profile) return null;
-  const responses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId && CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id));
-  const legacy = responses.length >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length && responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
+  const responses = findAll_('DIAGNOSTIC_RESPONSES', r => r.student_id === studentId);
+  if (responses.length < 5) return null;
+  const legacy = responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
   const scored = responses.filter(r => r.score !== '' && r.score !== null).length;
-  if (!legacy && scored >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length) return profile;
+  if (!legacy && scored >= responses.length) return profile;
   return null;
 }
 
@@ -210,14 +326,15 @@ function validProfilesForStudents_(studentIds) {
   const profileMap = Object.fromEntries(profiles.map(p => [p.student_id, p]));
   const candidateIds = new Set(Object.keys(profileMap));
   const responsesByStudent = {};
-  findAll_('DIAGNOSTIC_RESPONSES', r => candidateIds.has(String(r.student_id)) && CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id))
+  findAll_('DIAGNOSTIC_RESPONSES', r => candidateIds.has(String(r.student_id)))
     .forEach(r => (responsesByStudent[r.student_id] || (responsesByStudent[r.student_id] = [])).push(r));
   const result = {};
   candidateIds.forEach(studentId => {
     const responses = responsesByStudent[studentId] || [];
-    const legacy = responses.length >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length && responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
+    if (responses.length < 5) return;
+    const legacy = responses.every(r => String(r.answer).trim().toLowerCase() === 'jawaban integrasi');
     const scored = responses.filter(r => r.score !== '' && r.score !== null).length;
-    if (!legacy && scored >= CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length && profileMap[studentId]) {
+    if (!legacy && scored >= responses.length && profileMap[studentId]) {
       result[studentId] = profileMap[studentId];
     }
   });

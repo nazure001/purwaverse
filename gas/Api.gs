@@ -117,12 +117,13 @@ function api(action, payload) {
       case 'studentHome': { const s=requireSession_(payload.token,'student'); const prog=findAll_('PROGRESS',r=>r.student_id===s.actor_id); const quiz=findAll_('QUIZ_ATTEMPTS',r=>r.student_id===s.actor_id&&r.submitted_at).map(q=>({activity_id:q.activity_id,score:q.score,status:'completed'})); data={session:s,student:findOne_('MASTER_STUDENTS',r=>r.student_id===s.actor_id),progress:prog.concat(quiz),profile:validProfileForStudent_(s.actor_id),team:studentTeamWithProgress_(s.actor_id)}; break; }
       case 'refreshStudentTeam': { const s=requireSession_(payload.token,'student'); data={team:studentTeamWithProgress_(s.actor_id)}; break; }
       case 'saveProgress': data=saveProgress_(requireSession_(payload.token,'student'),payload); break;
-      case 'diagnosticItems': { const s=requireSession_(payload.token,'student'); const items=findAll_('DIAGNOSTIC_ITEMS',r=>CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id)&&String(r.active).toLowerCase()==='true').map(({rubric_json,...safe})=>safe); data=stableShuffle_(items,s.actor_id); break; }
+      case 'diagnosticItems': { const s=requireSession_(payload.token,'student'); data=diagnosticItemsForStudent_(s.actor_id); break; }
       case 'selfMapItems': requireSession_(payload.token,'student'); data=findAll_('SELF_MAP_ITEMS',r=>String(r.active).toLowerCase()==='true'); break;
       case 'submitDiagnostic': data=submitDiagnostic_(requireSession_(payload.token,'student'),payload); break;
       case 'dashboard': data=dashboard_(requireSession_(payload.token,'teacher'),payload.classId); break;
       case 'diagnosticReview': data=diagnosticReview_(requireSession_(payload.token,'teacher'),payload.classId); break;
       case 'scoreDiagnostic': data=scoreDiagnosticResponse_(requireSession_(payload.token,'teacher'),payload); break;
+      case 'resetStudentDiagnostic': data=resetStudentDiagnostic_(requireSession_(payload.token,'teacher'),payload); break;
       case 'generateTeams': data=generateTeams_(requireSession_(payload.token,'teacher'),payload.classId,payload.options||{}); break;
       case 'overrideTeamMember': data=overrideTeamMember_(requireSession_(payload.token,'teacher'),payload); break;
       case 'learningHome': data=learningHome_(requireSession_(payload.token,'student')); break;

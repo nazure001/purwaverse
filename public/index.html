@@ -476,12 +476,171 @@
         padding-left: 18px
     }
 
+    #diagnostic {
+        contain: layout style;
+        min-height: 240px;
+    }
+
+    .diag-timer-sticky {
+        position: sticky;
+        top: 60px;
+        z-index: 40;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        padding: 10px 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: border-color 0.3s ease;
+    }
+
+    .diag-timer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        font-size: 0.92rem;
+    }
+
+    .diag-timer-clock {
+        font-family: monospace;
+        font-size: 1.2rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #0f172a;
+        letter-spacing: 1px;
+    }
+
+    .diag-timer-progress-track {
+        width: 100%;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .diag-timer-progress-fill {
+        height: 100%;
+        width: 100%;
+        background: #2563eb;
+        border-radius: 999px;
+        transition: width 1s linear, background-color 0.5s ease;
+    }
+
+    .timer-warning-medium .diag-timer-progress-fill {
+        background: #ea580c !important;
+    }
+
+    .timer-warning-critical {
+        border-color: #ef4444 !important;
+        animation: pulseTimer 1.2s infinite ease-in-out;
+    }
+
+    .timer-warning-critical .diag-timer-clock {
+        background: #fee2e2 !important;
+        color: #b91c1c !important;
+    }
+
+    .timer-warning-critical .diag-timer-progress-fill {
+        background: #dc2626 !important;
+    }
+
+    @keyframes pulseTimer {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15); }
+    }
+
     .diagnostic-item {
         background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 18px;
-        margin: 12px 0
+        border: 1.5px solid var(--line);
+        border-radius: 20px;
+        padding: 20px;
+        margin: 14px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .diagnostic-item-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .diagnostic-item h4 {
+        margin: 0;
+        font-size: 1.08rem;
+        color: #0f172a;
+        font-weight: 800;
+    }
+
+    .diagnostic-domain-badge {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #e0e7ff;
+        color: #3730a3;
+        letter-spacing: 0.5px;
+    }
+
+    .diagnostic-story {
+        color: #334155;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+
+    .diagnostic-challenge-box {
+        background: #f8fafc;
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 12px 12px 0;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        font-size: 0.94rem;
+        color: #1e293b;
+    }
+
+    .diagnostic-challenge-box b {
+        color: #1d4ed8;
+    }
+
+    mark.ai-flag {
+        background: #fef08a;
+        color: #854d0e;
+        padding: 0.12rem 0.3rem;
+        border-radius: 4px;
+        font-weight: 700;
+        border-bottom: 2px solid #ca8a04;
+    }
+
+    mark.ai-flag-heavy {
+        background: #fecaca;
+        color: #991b1b;
+        padding: 0.12rem 0.3rem;
+        border-radius: 4px;
+        font-weight: 700;
+        border-bottom: 2px solid #dc2626;
+    }
+
+    .ai-badge-warning {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #fee2e2;
+        color: #991b1b;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin: 6px 0;
     }
 
     .worksheet {
@@ -2070,11 +2229,47 @@ function openActivity(type){state.activeActivity=type;const id=ACTIVITY_IDS[type
  if(type==='research')return `<div class="activity-hero"><span class="pill">RESEARCH PATH · OBSERVE + ASK</span><h2>Dari Observasi Menjadi Pertanyaan</h2><p>Mini research dimulai dari pertanyaan yang dapat diperiksa, bukan dari jawaban yang sudah dipastikan.</p></div><form id="activity-form" onsubmit="saveActivity(event,'submitted')" class="activity-form"><label>${inject('Fenomena atau detail yang kamu amati')}<textarea name="observation" rows="3" required></textarea></label><label>Pertanyaan ilmiah yang muncul<textarea name="research_question" rows="3" required></textarea></label><label>Dugaan awalmu dan alasannya<textarea name="hypothesis" rows="3" required></textarea></label><label>Data atau bukti apa yang perlu dikumpulkan?<textarea name="needed_evidence" rows="3" required></textarea></label><label>Variabel apa yang perlu dijaga agar pengujian adil?<textarea name="controlled_variables" rows="3" required></textarea></label><button class="primary">Simpan Research Path</button></form>`;
 }
 function hydrateActivity(activityId){const p=progressFor(activityId);if(!p||!p.evidence_json){if(typeof restoreDrafts==='function')setTimeout(restoreDrafts,50);return;}try{const data=JSON.parse(p.evidence_json);const form=document.getElementById('activity-form');Object.entries(data).forEach(([key,value])=>{const field=form?.elements.namedItem(key);if(field)field.value=value})}catch(e){}if(typeof restoreDrafts==='function')setTimeout(restoreDrafts,50);state.tabSwitchCount=0;}
+const AI_SUSPICIOUS_WORDS = new Set([
+  // Biologi, Fisiologi & Sel (35 kata)
+  'etiolasi', 'fototropisme', 'geotropisme', 'tigmotropisme', 'auksin', 'giberelin', 'sitokinin', 'klorofil', 'kloroplas', 'mitokondria', 'vakuola', 'ribosom', 'sitoplasma', 'nukleus', 'organel', 'fotosintesis', 'respirasi', 'anaerob', 'aerob', 'katabolisme', 'anabolisme', 'enzimatik', 'turgor', 'plasmolisis', 'stomata', 'floem', 'xilem', 'kambium', 'epidermis', 'meristem', 'parenkim', 'fisiologis', 'morfologis', 'metabolisme', 'homeostasis',
+  // Ekologi & Lingkungan (21 kata)
+  'eutrofikasi', 'hipoksia', 'anoksia', 'fitoplankton', 'zooplankton', 'dekomposer', 'detritivor', 'trofik', 'oligotrofik', 'biomassa', 'akumulasi', 'bioakumulasi', 'biomagnifikasi', 'simbiosis', 'mutualisme', 'komensalisme', 'parasitisme', 'suksesi', 'biodiversitas', 'antropogenik', 'polutan', 'kontaminan',
+  // Fisika, Kalor, Fluida & Termodinamika (27 kata)
+  'entalpi', 'entropi', 'termodinamika', 'kalorimetri', 'konduktivitas', 'konduksi', 'konveksi', 'radiasi', 'emisi', 'absorpsi', 'refleksi', 'transmisi', 'adhesi', 'kohesi', 'kapilaritas', 'meniskus', 'viskositas', 'densitas', 'hidrostatis', 'archimedes', 'aerodinamis', 'laten', 'evaporasi', 'transpirasi', 'kondensasi', 'sublimasi', 'deposisi',
+  // Optik & Gelombang (17 kata)
+  'refraksi', 'difraksi', 'interferensi', 'polarisasi', 'penumbra', 'umbra', 'dispersi', 'spektrum', 'foton', 'frekuensi', 'amplitudo', 'resonansi', 'longitudinal', 'transversal', 'elektromagnetik', 'inframerah', 'ultraviolet',
+  // Metodologi & Nalar Sains (19 kata)
+  'kausalitas', 'korelasi', 'probabilitas', 'hipotesis', 'premis', 'postulat', 'empiris', 'kuantitatif', 'kualitatif', 'verifikasi', 'validasi', 'variabel', 'spasial', 'temporal', 'fluktuasi', 'deviasi', 'anomali', 'kalibrasi', 'metodologi',
+  // Gaya Bahasa Akademis Kaku Khas AI (23 kata)
+  'komprehensif', 'fundamental', 'signifikan', 'substansial', 'implikasi', 'hakikatnya', 'konklusif', 'indikasi', 'mengindikasikan', 'parameter', 'perspektif', 'kategoris', 'esensial', 'simultan', 'fenomena', 'korelatif', 'kausatif', 'determinatif', 'konstelasi', 'diferensiasi', 'relevansi', 'sistematik', 'integratif', 'prinsipil',
+  // Honeypot & AI brand keys
+  'chatgpt', 'gemini', 'claude', 'dola', 'openai', 'seblak', 'boba', 'kekuatan bulan', 'buku paket'
+]);
+
+function analyzeAiWordsInText(text) {
+  if (!text || typeof text !== 'string') return { flaggedWords: [], highlightedHtml: '' };
+  const words = text.split(/[\s,.;:!?()\[\]"']+/);
+  const found = new Set();
+  words.forEach(w => {
+    const clean = w.toLowerCase().trim();
+    if (clean.length > 2 && AI_SUSPICIOUS_WORDS.has(clean)) {
+      found.add(clean);
+    }
+  });
+  const flagged = Array.from(found);
+  let safeHtml = escapeHtml(text);
+  if (flagged.length > 0) {
+    flagged.forEach(word => {
+      const regex = new RegExp('\\b(' + word + ')\\b', 'gi');
+      safeHtml = safeHtml.replace(regex, '<mark class="ai-flag">$1</mark>');
+    });
+  }
+  return { flaggedWords: flagged, highlightedHtml: safeHtml };
+}
+
 function isAiSuspiciousText(text) {
   if (typeof text !== 'string') return false;
-  const t = text.toLowerCase();
-  const keys = ['kekuatan bulan', 'chatgpt', 'gemini', 'claude', 'dola', 'openai', 'model:', 'seblak', 'boba', 'terlalu mengantuk', 'robot ai', 'robot pintar', 'buku paket'];
-  return keys.some(k => t.includes(k));
+  return analyzeAiWordsInText(text).flaggedWords.length > 0;
 }
 
 function buildWatermarkHtml() {
@@ -2101,26 +2296,317 @@ function getAntiCheatInjections(idx) {
 }
 
 async function saveActivity(event,status){event.preventDefault();if(!state.studentToken){toast('Masuk sebagai siswa untuk menyimpan jawaban.');showView('login');return}const form=event.target,id=ACTIVITY_IDS[state.activeActivity],evidence=Object.fromEntries(new FormData(form).entries()),button=form.querySelector('button[type="submit"],button:not([type])');if(button)button.disabled=true;let isAi=false;Object.values(evidence).forEach(v=>{if(isAiSuspiciousText(v))isAi=true;});if((state.tabSwitchCount||0)>2)isAi=true;if(isAi)Object.keys(evidence).forEach(k=>{if(evidence[k])evidence[k]='[PERINGATAN: Terindikasi AI / Pindah Tab '+(state.tabSwitchCount||0)+'x]\n\n'+evidence[k]});try{await callApi('saveProgress',{token:state.studentToken,activityId:id,status,evidence});clearDraft(form);await loadStudent();document.getElementById('activity-save-state').textContent=statusText(progressFor(id));toast(status==='completed'?'Materi ditandai selesai.':'Jawaban tersimpan dan menunggu tindak lanjut guru.')}catch(e){toast(e.message)}finally{if(button)button.disabled=false}}
+
+let _diagTimerInterval = null;
+let _diagRemainingSeconds = 0;
+let _diagTotalSeconds = 0;
+
+function startDiagnosticTimer(durationSeconds) {
+  clearInterval(_diagTimerInterval);
+  _diagTotalSeconds = durationSeconds || 600;
+  _diagRemainingSeconds = _diagTotalSeconds;
+  updateDiagnosticTimerDisplay();
+
+  _diagTimerInterval = setInterval(() => {
+    _diagRemainingSeconds--;
+    updateDiagnosticTimerDisplay();
+    if (_diagRemainingSeconds <= 0) {
+      clearInterval(_diagTimerInterval);
+      toast('Waktu habis! Menyerahkan jawaban secara otomatis...');
+      submitDiagnostic(true);
+    }
+  }, 1000);
+}
+
+function updateDiagnosticTimerDisplay() {
+  const clock = document.getElementById('diag-timer-clock');
+  const fill = document.getElementById('diag-timer-progress-fill');
+  const container = document.getElementById('diag-timer-container');
+  if (!clock || !fill) return;
+
+  const m = Math.floor(Math.max(0, _diagRemainingSeconds) / 60);
+  const s = Math.max(0, _diagRemainingSeconds) % 60;
+  clock.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+
+  const pct = Math.max(0, Math.min(100, (_diagRemainingSeconds / _diagTotalSeconds) * 100));
+  fill.style.width = pct + '%';
+
+  if (container) {
+    container.classList.remove('timer-warning-medium', 'timer-warning-critical');
+    if (pct < 25 || _diagRemainingSeconds < 150) {
+      container.classList.add('timer-warning-critical');
+    } else if (pct < 50 || _diagRemainingSeconds < 300) {
+      container.classList.add('timer-warning-medium');
+    }
+  }
+}
+
 window.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     const v = document.querySelector('.view.active');
     const isDiagnosticOpen = v && v.id === 'view-student' && !document.getElementById('diagnostic')?.classList.contains('hidden');
     const isActivityOpen = v && ['view-activity', 'view-practice-sheet', 'view-quiz'].includes(v.id);
     
-    if (isDiagnosticOpen || isActivityOpen) {
+    if (isDiagnosticOpen) {
       state.tabSwitchCount = (state.tabSwitchCount || 0) + 1;
-      if(typeof toast === 'function') toast('Peringatan: Sistem mencatat perpindahan tab/layar.');
+      if (state.tabSwitchCount === 1) {
+        _diagRemainingSeconds = Math.max(10, _diagRemainingSeconds - 30);
+        updateDiagnosticTimerDisplay();
+        toast('⚠️ Peringatan: Pindah tab terdeteksi! Waktu dipotong 30 detik.');
+      } else if (state.tabSwitchCount >= 2) {
+        toast('⚠️ Pelanggaran kedua! Jawaban langsung dikunci dan diserahkan.');
+        submitDiagnostic(true);
+      }
+    } else if (isActivityOpen) {
+      state.tabSwitchCount = (state.tabSwitchCount || 0) + 1;
+      toast('Peringatan: Sistem mencatat perpindahan tab/layar.');
     }
   }
 });
-function renderDiagnosticForm(items,selfMap){const root=document.getElementById('diagnostic');root.classList.remove('hidden');root.classList.add('anti-cheat-protected');state.tabSwitchCount=0;const watermark=buildWatermarkHtml();const inject=(t,i)=>{const h=Math.floor(t.length/2);return t.substring(0,h)+getAntiCheatInjections(i)+t.substring(h);};root.innerHTML=watermark+'<h2>Quick Diagnostic</h2><p>Jawab dengan kata-katamu sendiri. Tunjukkan clue, dugaan, alasan, dan cara mengujinya. Ini profil pemahaman sains murni.</p>'+items.map((x,i)=>'<div class="diagnostic-item"><b>'+(i+1)+'. '+inject(escapeHtml(x.prompt),i)+'</b><textarea id="ans-'+x.item_id+'" rows="4" placeholder="Jawaban dan alasan berbasis kata-katamu sendiri..." required></textarea></div>').join('')+'<h3>Peta Diri Sains</h3><p>1 = sangat tidak menggambarkan saya, 5 = sangat menggambarkan saya.</p>'+selfMap.map(x=>'<label>'+escapeHtml(x.prompt)+'<select id="self-'+x.item_id+'"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>').join('')+'<button class="primary" onclick="submitDiagnostic()">Kirim ke guru</button>';root.dataset.ids=JSON.stringify(items.map(x=>x.item_id));root.dataset.selfIds=JSON.stringify(selfMap.map(x=>x.item_id));root.scrollIntoView({behavior:'smooth'});if(typeof restoreDrafts==='function')setTimeout(restoreDrafts,50);}
-async function loadDiagnostic(){if(state.diagnosticData){renderDiagnosticForm(state.diagnosticData.items,state.diagnosticData.selfMap);return;}const root=document.getElementById('diagnostic');root.classList.remove('hidden');root.innerHTML='<div class="concept-callout"><b>Memuat butir Quick Diagnostic...</b></div>';root.scrollIntoView({behavior:'smooth'});try{const [items,selfMap]=await Promise.all([callApi('diagnosticItems',{token:state.studentToken}),callApi('selfMapItems',{token:state.studentToken})]);state.diagnosticData={items,selfMap};renderDiagnosticForm(items,selfMap);}catch(e){toast(e.message)}}
-async function submitDiagnostic(){const root=document.getElementById('diagnostic'),ids=JSON.parse(root.dataset.ids),selfIds=JSON.parse(root.dataset.selfIds),responses=ids.map(id=>({itemId:id,answer:document.getElementById('ans-'+id).value}));if(responses.some(r=>!r.answer.trim())){toast('Semua jawaban perlu diisi.');return}const selfMapScore=selfIds.reduce((n,id)=>n+Number(document.getElementById('self-'+id).value),0)/selfIds.length;let isAi=false;responses.forEach(r=>{if(isAiSuspiciousText(r.answer))isAi=true;});if((state.tabSwitchCount||0)>2)isAi=true;if(isAi)responses.forEach(r=>{r.answer='[PERINGATAN: Terindikasi AI / Pindah Tab '+(state.tabSwitchCount||0)+'x]\n\n'+r.answer;});try{await callApi('submitDiagnostic',{token:state.studentToken,responses,selfMapScore});clearDraft(root);state.diagnosticData=null;await loadStudent();root.classList.add('hidden');toast('Jawaban terkirim. Profil muncul setelah dinilai guru.')}catch(e){toast(e.message)}}
+
+function parseDetectivePrompt(prompt) {
+  const parts = (prompt || '').split('\n\n');
+  const title = parts[0] || 'Tantangan Nalar Sains';
+  let story = parts[1] || '';
+  let challenge = parts[2] || '';
+  if (challenge.startsWith('Tantangan: ')) challenge = challenge.replace(/^Tantangan:\s*/, '');
+  return { title, story, challenge };
+}
+
+function formatDomainLabel(domain) {
+  const map = {
+    'observe_infer': 'Detektif Observasi',
+    'evidence_experiment': 'Detektif Uji Adil',
+    'model_concept': 'Detektif Konsep',
+    'systems_causality': 'Detektif Kausalitas',
+    'technology_design': 'Detektif Rekayasa'
+  };
+  return map[domain] || 'Nalar Sains';
+}
+
+function renderDiagnosticForm(items, selfMap, durationSeconds) {
+  const root = document.getElementById('diagnostic');
+  root.classList.remove('hidden');
+  root.classList.add('anti-cheat-protected');
+  state.tabSwitchCount = 0;
+
+  const watermark = buildWatermarkHtml();
+  const inject = (t, i) => {
+    const h = Math.floor(t.length / 2);
+    return t.substring(0, h) + getAntiCheatInjections(i) + t.substring(h);
+  };
+
+  const timerBarHtml = `
+    <div id="diag-timer-container" class="diag-timer-sticky">
+      <div class="diag-timer-header">
+        <span>⏱️ Sisa Waktu Pengerjaan</span>
+        <div id="diag-timer-clock" class="diag-timer-clock">--:--</div>
+      </div>
+      <div class="diag-timer-progress-track">
+        <div id="diag-timer-progress-fill" class="diag-timer-progress-fill"></div>
+      </div>
+      <small style="color:var(--muted); font-size:0.75rem;">💡 Selesaikan mandiri lebih cepat untuk bonus skor efisiensi waktu! Dilarang berpindah tab.</small>
+    </div>
+  `;
+
+  const itemsHtml = items.map((x, i) => {
+    const p = parseDetectivePrompt(x.prompt);
+    return `
+      <div class="diagnostic-item">
+        <div class="diagnostic-item-head">
+          <span class="diagnostic-domain-badge">${escapeHtml(formatDomainLabel(x.domain))}</span>
+          <h4>${i + 1}. ${escapeHtml(p.title)}</h4>
+        </div>
+        <p class="diagnostic-story">${inject(escapeHtml(p.story), i)}</p>
+        <div class="diagnostic-challenge-box">
+          <b>🔍 Kasus & Tantangan:</b> ${escapeHtml(p.challenge)}
+        </div>
+        <textarea id="ans-${x.item_id}" rows="4" placeholder="Tuliskan petunjuk bukti dan alasanmu langsung dengan kata-katamu sendiri..." required></textarea>
+      </div>
+    `;
+  }).join('');
+
+  const selfMapHtml = `
+    <div style="background:#fff; border:1.5px solid var(--line); border-radius:20px; padding:20px; margin:16px 0;">
+      <h3 style="margin-top:0;">Peta Diri Sains</h3>
+      <p style="color:var(--muted); font-size:0.9rem;">1 = sangat tidak menggambarkan saya, 5 = sangat menggambarkan saya.</p>
+      ${selfMap.map(x => '<label style="display:block; margin:10px 0;">' + escapeHtml(x.prompt) + '<select id="self-' + x.item_id + '" style="margin-top:4px;"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>').join('')}
+    </div>
+  `;
+
+  root.innerHTML = watermark + timerBarHtml + '<div style="margin-bottom:12px;"><h2>Mission 0: Quick Diagnostic</h2><p style="color:var(--muted);">Jawab dengan kata-katamu sendiri. Tunjukkan petunjuk, dugaan, dan cara mengujinya.</p></div>' + itemsHtml + selfMapHtml + '<button id="btn-submit-diag" class="primary" style="width:100%; padding:14px; font-size:1.05rem;" onclick="submitDiagnostic(false)">🚀 Kirim Jawaban ke Guru</button>';
+
+  root.dataset.ids = JSON.stringify(items.map(x => x.item_id));
+  root.dataset.selfIds = JSON.stringify(selfMap.map(x => x.item_id));
+  root.scrollIntoView({ behavior: 'smooth' });
+
+  startDiagnosticTimer(durationSeconds || (items.length * 120));
+  if (typeof restoreDrafts === 'function') setTimeout(restoreDrafts, 50);
+}
+
+async function loadDiagnostic() {
+  if (state.diagnosticData) {
+    renderDiagnosticForm(state.diagnosticData.items, state.diagnosticData.selfMap, state.diagnosticData.durationSeconds);
+    return;
+  }
+  const root = document.getElementById('diagnostic');
+  root.classList.remove('hidden');
+  root.innerHTML = '<div class="concept-callout"><b>Memuat set tantangan Quick Diagnostic...</b></div>';
+  root.scrollIntoView({ behavior: 'smooth' });
+  try {
+    const [diagRes, selfMap] = await Promise.all([
+      callApi('diagnosticItems', { token: state.studentToken }),
+      callApi('selfMapItems', { token: state.studentToken })
+    ]);
+    const items = diagRes.items || diagRes;
+    const durationSeconds = diagRes.durationSeconds || (items.length * 120);
+    state.diagnosticData = { items, selfMap, durationSeconds };
+    renderDiagnosticForm(items, selfMap, durationSeconds);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function submitDiagnostic(isAutoSubmit) {
+  clearInterval(_diagTimerInterval);
+  const root = document.getElementById('diagnostic');
+  const btn = document.getElementById('btn-submit-diag');
+  if (btn) { btn.disabled = true; btn.textContent = 'Menyerahkan...'; }
+
+  const ids = JSON.parse(root.dataset.ids || '[]');
+  const selfIds = JSON.parse(root.dataset.selfIds || '[]');
+  const responses = ids.map(id => ({ itemId: id, answer: (document.getElementById('ans-' + id)?.value || '').trim() }));
+
+  if (!isAutoSubmit && responses.some(r => !r.answer)) {
+    toast('Semua tantangan perlu diisi sebelum mengirim.');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Kirim Jawaban ke Guru'; }
+    return;
+  }
+
+  const selfMapScore = selfIds.length ? (selfIds.reduce((n, id) => n + Number(document.getElementById('self-' + id)?.value || 3), 0) / selfIds.length) : 3;
+
+  let isAi = false;
+  responses.forEach(r => {
+    if (isAiSuspiciousText(r.answer)) isAi = true;
+  });
+  if ((state.tabSwitchCount || 0) > 1) isAi = true;
+
+  if (isAi) {
+    responses.forEach(r => {
+      r.answer = '[PERINGATAN: Terindikasi AI / Pindah Tab ' + (state.tabSwitchCount || 0) + 'x]\n\n' + r.answer;
+    });
+  }
+
+  try {
+    const result = await callApi('submitDiagnostic', {
+      token: state.studentToken,
+      responses,
+      selfMapScore,
+      remainingSeconds: Math.max(0, _diagRemainingSeconds)
+    });
+    clearDraft(root);
+    state.diagnosticData = null;
+    await loadStudent();
+    root.classList.add('hidden');
+    if (result && result.speedBonusSeconds > 0) {
+      toast('Jawaban terkirim! Bonus kecepatan +' + Math.round(result.speedBonusSeconds / 60) + ' menit dicatat.');
+    } else {
+      toast('Jawaban terkirim. Profil muncul setelah dinilai guru.');
+    }
+  } catch (e) {
+    toast(e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Kirim Jawaban ke Guru'; }
+  }
+}
+
 function renderProfile(p){document.getElementById('profile-card').innerHTML='<h3>Science Self Map</h3><p>Overall reasoning: <b>'+p.overall_reasoning+'/4</b></p><p>Research readiness: <b>'+p.research_readiness+'</b></p><small>Profil untuk dukungan belajar, bukan ranking.</small>'}
 async function teacherLogin(e){e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Memverifikasi...';}try{const s=await callApi('loginTeacher',{username:document.getElementById('teacher-user').value,password:document.getElementById('teacher-pass').value});state.teacherToken=s.token;state.studentToken='';state.activeRole='teacher';state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;SafeStorage.set('teacherToken',s.token);SafeStorage.remove('studentToken');updateAuthNavigation();document.getElementById('teacher-pass').value='';showView('teacher');await loadDashboard()}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Masuk sebagai guru';}}}
 function renderDashboardContent(d){document.getElementById('dashboard-content').innerHTML='<div class="stat-grid"><div class="stat"><span>Siswa aktif</span><strong>'+d.studentCount+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">total siswa kelas</small></div><div class="stat"><span>Profil lengkap</span><strong>'+d.diagnosedCount+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">siswa tuntas M0</small></div><div class="stat"><span>Catatan progress</span><strong>'+d.progressCount+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">total rekaman aktivitas</small></div><div class="stat"><span>Belum lengkap</span><strong>'+d.students.filter(s=>!s.profile).length+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">belum lengkap M0</small></div></div><div class="student-table-wrapper"><table class="student-table"><thead><tr><th>No</th><th>Nama</th><th>Reasoning</th><th>Readiness</th><th>Progress</th></tr></thead><tbody>'+d.students.map(s=>'<tr><td>'+s.rollNo+'</td><td>'+escapeHtml(s.name)+'</td><td>'+(s.profile?s.profile.overall_reasoning:'-')+'</td><td>'+(s.profile?s.profile.research_readiness:'Belum dinilai lengkap')+'</td><td>'+s.progress.length+'</td></tr>').join('')+'</tbody></table></div>';const button=document.getElementById('generate-teams-button');if(button)button.disabled=!d.canGenerateTeams;const note=document.getElementById('team-gate-note');if(note)note.textContent=d.canGenerateTeams?'Minimal calon Science Leader tersedia. Team Builder siap digunakan.':'Team Builder membutuhkan minimal '+Math.min(8,d.studentCount)+' profil Mission 0 lengkap; saat ini '+d.diagnosedCount+'.';}
 async function loadDashboard(){if(!state.teacherToken)return;const classId=document.getElementById('teacher-class').value;state.teacherDashboardCache=state.teacherDashboardCache||{};if(state.teacherDashboardCache[classId]){renderDashboardContent(state.teacherDashboardCache[classId])}try{const d=await callApi('dashboard',{token:state.teacherToken,classId});state.teacherDashboardCache[classId]=d;renderDashboardContent(d)}catch(e){toast(e.message)}}
-async function loadDiagnosticReview(){const root=document.getElementById('diagnostic-review');root.innerHTML='<div class="concept-callout"><b>Memuat butir penilaian Mission 0...</b></div>';root.scrollIntoView({behavior:'smooth'});try{const data=await callApi('diagnosticReview',{token:state.teacherToken,classId:document.getElementById('teacher-class').value}),pending=data.filter(s=>s.responses.length);root.innerHTML='<h3>Penilaian Mission 0</h3><p>Nilai kualitas reasoning 0-4. Rubrik adalah jangkar, bukan kunci kata.</p>'+pending.map(s=>'<details class="diagnostic-item"><summary><b>'+s.rollNo+'. '+escapeHtml(s.name)+'</b> · '+s.responses.filter(r=>r.score!==''&&r.score!==null).length+'/'+s.responses.length+' dinilai</summary>'+s.responses.map(r=>{const rb=JSON.parse(r.rubric_json||'{}');return '<div class="review-response"><b>'+escapeHtml(r.item_id)+' · '+escapeHtml(r.prompt.split('\n')[0])+'</b><blockquote>'+escapeHtml(r.answer)+'</blockquote><small><b>Jangkar:</b> '+escapeHtml(rb.anchor||'')+'<br><b>Bukti:</b> '+escapeHtml(rb.evidence||'')+'</small><label>Skor<select onchange="scoreResponse(\''+s.studentId+'\',\''+r.item_id+'\',this.value)"><option value="">Pilih</option>'+[0,1,2,3,4].map(n=>'<option '+(String(r.score)===String(n)?'selected':'')+'>'+n+'</option>').join('')+'</select></label></div>'}).join('')+'</details>').join('');if(!pending.length)root.innerHTML='<h3>Penilaian Mission 0</h3><p>Belum ada jawaban yang dikirim.</p>';root.scrollIntoView({behavior:'smooth'})}catch(e){toast(e.message)}}
+
+async function loadDiagnosticReview() {
+  const root = document.getElementById('diagnostic-review');
+  root.innerHTML = '<div class="concept-callout"><b>Memuat butir penilaian Mission 0...</b></div>';
+  root.scrollIntoView({ behavior: 'smooth' });
+  try {
+    const classId = document.getElementById('teacher-class').value;
+    const data = await callApi('diagnosticReview', { token: state.teacherToken, classId });
+    const pending = data.filter(s => s.responses.length);
+
+    root.innerHTML = '<h3>Penilaian Mission 0</h3><p>Nilai kualitas reasoning 0-4. Kata sains tinggi/kaku AI otomatis ditandai kuning. Skor 0-1 untuk indikasi AI.</p>' + pending.map(s => {
+      const scoredCount = s.responses.filter(r => r.score !== '' && r.score !== null).length;
+      return `
+        <details class="diagnostic-item" style="margin-bottom:14px;">
+          <summary style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <b>${s.rollNo}. ${escapeHtml(s.name)}</b>
+            <span style="font-size:0.85rem; color:${scoredCount >= s.responses.length ? '#16a34a' : '#ea580c'}; font-weight:700;">
+              ${scoredCount}/${s.responses.length} dinilai ${scoredCount >= s.responses.length ? '✓' : ''}
+            </span>
+          </summary>
+          <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+            <button type="button" class="secondary" style="font-size:0.75rem; padding:4px 8px; border-color:#e2e8f0; color:#64748b;" onclick="resetStudentDiagnostic('${s.studentId}')">🔄 Beri Kesempatan Ulang (Reset)</button>
+          </div>
+          ${s.responses.map(r => {
+            const rb = JSON.parse(r.rubric_json || '{}');
+            const analysis = analyzeAiWordsInText(r.answer);
+            const aiBadge = analysis.flaggedWords.length > 0
+              ? `<div class="ai-badge-warning">⚠️ Terdeteksi ${analysis.flaggedWords.length} kata suspek AI: [${escapeHtml(analysis.flaggedWords.join(', '))}]</div>`
+              : '';
+            return `
+              <div class="review-response" style="margin-top:12px; padding:12px; border-top:1px solid #e2e8f0;">
+                <b>${escapeHtml(r.item_id)} · ${escapeHtml(r.prompt.split('\n')[0])}</b>
+                ${aiBadge}
+                <blockquote style="margin:8px 0; background:#f8fafc; padding:10px; border-left:3px solid #cbd5e1; border-radius:4px; font-size:0.92rem; line-height:1.5;">
+                  ${analysis.highlightedHtml || escapeHtml(r.answer)}
+                </blockquote>
+                <small style="display:block; color:#64748b; margin-bottom:8px;">
+                  <b>Jangkar:</b> ${escapeHtml(rb.anchor || '')}<br>
+                  <b>Bukti:</b> ${escapeHtml(rb.evidence || '')}
+                </small>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <label style="margin:0; font-weight:700;">Skor
+                    <select id="score-select-${s.studentId}-${r.item_id}" onchange="scoreResponse('${s.studentId}','${r.item_id}',this.value)" style="margin-left:6px;">
+                      <option value="">Pilih</option>
+                      ${[0,1,2,3,4].map(n => '<option ' + (String(r.score) === String(n) ? 'selected' : '') + '>' + n + '</option>').join('')}
+                    </select>
+                  </label>
+                  <button type="button" class="secondary" style="font-size:0.78rem; padding:4px 10px; border-color:#dc2626; color:#b91c1c;" onclick="markAiPenalty('${s.studentId}','${r.item_id}')">🚩 Tandai AI (Skor 1)</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </details>
+      `;
+    }).join('');
+
+    if (!pending.length) root.innerHTML = '<h3>Penilaian Mission 0</h3><p>Belum ada jawaban yang dikirim.</p>';
+    root.scrollIntoView({ behavior: 'smooth' });
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function markAiPenalty(studentId, itemId) {
+  const sel = document.getElementById('score-select-' + studentId + '-' + itemId);
+  if (sel) sel.value = '1';
+  await scoreResponse(studentId, itemId, 1);
+  toast('Jawaban ditandai AI & skor disesuaikan menjadi 1.');
+}
+
+async function resetStudentDiagnostic(studentId) {
+  if (!confirm('Apakah Anda yakin ingin mereset tes Mission 0 siswa ini? Siswa akan mendapatkan set butir soal baru saat membuka tes.')) return;
+  const classId = document.getElementById('teacher-class').value;
+  try {
+    await callApi('resetStudentDiagnostic', { token: state.teacherToken, studentId, classId });
+    toast('Kesempatan Mission 0 siswa telah direset. Soal baru siap diundi.');
+    await loadDiagnosticReview();
+    if (state.teacherDashboardCache) delete state.teacherDashboardCache[classId];
+    await loadDashboard();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 async function scoreResponse(studentId,itemId,score){if(score==='')return;try{const r=await callApi('scoreDiagnostic',{token:state.teacherToken,studentId,itemId,score:Number(score)});toast(r.complete?'Profil siswa lengkap.':'Skor tersimpan '+r.scored+'/'+r.expected);if(r.complete){const classId=document.getElementById('teacher-class').value;if(state.teacherDashboardCache)delete state.teacherDashboardCache[classId];await loadDashboard()}}catch(e){toast(e.message)}}
 async function generateTeams(){try{const d=await callApi('generateTeams',{token:state.teacherToken,classId:document.getElementById('teacher-class').value,options:{teamCount:8}});document.getElementById('team-output').innerHTML='<h3>Balance score: '+d.balanceScore+'%</h3><div class="teams">'+d.teams.map(t=>'<article class="team"><b>Science Team '+t.number+'</b><ul>'+t.members.map((m,i)=>'<li>'+(i===0?'Leader: ':'')+escapeHtml(m.name)+'</li>').join('')+'</ul></article>').join('')+'</div>';toast('Draft tim dibuat. Guru tetap dapat meninjau sebelum menyimpan.')}catch(e){toast(e.message)}}
 function escapeHtml(v){return String(v||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}

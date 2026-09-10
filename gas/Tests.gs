@@ -127,7 +127,7 @@ function runIntegrationChecks() {
     });
   });
   check('identitas siswa unik',()=>{const rows=rows_('MASTER_STUDENTS').filter(r=>String(r.active).toLowerCase()==='true'),nisn=rows.map(r=>String(r.nisn)).filter(Boolean),ids=rows.map(r=>String(r.student_id));assert_(new Set(nisn).size===nisn.length,'NISN aktif ganda');assert_(new Set(ids).size===ids.length,'student_id ganda');});
-  check('profil hanya untuk penilaian lengkap',()=>rows_('DIAGNOSTIC_PROFILES').forEach(p=>{const count=findAll_('DIAGNOSTIC_RESPONSES',r=>r.student_id===p.student_id&&CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.includes(r.item_id)&&r.score!==''&&r.score!==null).length;assert_(count>=CONFIG.QUICK_DIAGNOSTIC_ITEM_IDS.length,'profil prematur: '+p.student_id);}));
+  check('profil hanya untuk penilaian lengkap',()=>rows_('DIAGNOSTIC_PROFILES').forEach(p=>{const responses=findAll_('DIAGNOSTIC_RESPONSES',r=>r.student_id===p.student_id);const count=responses.filter(r=>r.score!==''&&r.score!==null).length;assert_(responses.length>=5&&count>=responses.length,'profil prematur: '+p.student_id);}));
   check('layanan leaderboard publik dan integritas',()=>{
     assert_(typeof publicLeaderboardData_==='function','publicLeaderboardData_ belum tersedia');
     const data=publicLeaderboardData_();
