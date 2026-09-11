@@ -43,10 +43,10 @@ function openTeacherWa(submateriTitle) {
   let text = '';
   if (state.student && state.student.name) {
     const s = state.student;
-    text = 'Halo Pak Guru, saya ' + s.name + ' (Kelas ' + s.class_id + ', Absen ' + s.roll_no + ').\n\n' +
+    text = 'Halo Pak, saya ' + s.name + ' (Kelas ' + s.class_id + ', Absen ' + s.roll_no + ').\n\n' +
       'Saya ingin mengirimkan foto rangkuman buku catatan IPA' + (submateriTitle ? ' untuk Submateri ' + submateriTitle : '') + '.\n\n[Silakan lampirkan foto rangkuman di sini]';
   } else {
-    text = 'Halo Pak Guru, saya ingin mengirimkan foto rangkuman materi IPA Purwaverse.\n\n' +
+    text = 'Halo Pak, saya ingin mengirimkan foto rangkuman materi IPA Purwaverse.\n\n' +
       'Nama Siswa: \n' +
       'Kelas: \n' +
       'Nomor Absen: \n' +
