@@ -195,37 +195,68 @@ function startQuiz_(session,activityId){
   const unit=units[index],state=unitState_(session.actor_id,unit,index,units,studentLearningContext_(session.actor_id));
   if(!state.contentUnlocked)throw new Error('Kuis belum dapat dibuka karena submateri sebelumnya belum selesai.');
   if(!verifiedCheck_(session.actor_id,unit.learn_activity_id,'summary')&&unlockOverride_(session.actor_id,activityId)!==true)throw new Error('Kuis terbuka setelah rangkuman diperiksa guru.');
-  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  let attemptNumber, attemptId;
+  const lock=LockService.getScriptLock();
+  lock.waitLock(10000);
   try{
     const previous=findAll_('QUIZ_ATTEMPTS',r=>r.student_id===session.actor_id&&r.activity_id===activityId);
     const unfinished=previous.filter(x=>!x.submitted_at).sort((a,b)=>Number(b.attempt_number)-Number(a.attempt_number))[0];
-    const attemptNumber=unfinished?Number(unfinished.attempt_number):previous.length+1,attemptId=unfinished?unfinished.attempt_id:uid_('QAT');
+    attemptNumber=unfinished?Number(unfinished.attempt_number):previous.length+1;
+    attemptId=unfinished?unfinished.attempt_id:uid_('QAT');
     if(!unfinished)append_('QUIZ_ATTEMPTS',{attempt_id:attemptId,student_id:session.actor_id,activity_id:activityId,attempt_number:attemptNumber,score:'',passed:false,started_at:isoNow_(),submitted_at:''});
-    let allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
-    const catalogItems=allQuizItems_().filter(r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
-    if(!allItems.length || allItems.length < catalogItems.length){
-      seedLearningData_();
-      allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
-    }
-    if(!allItems.length)throw new Error('Bank soal belum tersedia.');
-    const sampled=sampledQuizItemsForAttempt_(allItems,session.actor_id,attemptNumber);
-    const items=sampled.map(item=>{
-      const {answer_json,feedback_json,options_json,...safe}=item;
-      return Object.assign({},safe,{level:item.level||'MOTS',options:quizOptionsForAttempt_(item,session.actor_id,attemptNumber).map(option=>option.text)});
-    });
-    const timeLimitSeconds = items.length * 90;
-    const tabTolerance = Math.floor(items.length / 2);
-    return {attemptId,attemptNumber,items,timeLimitSeconds,tabTolerance};
-  }finally{lock.releaseLock();}
+  }finally{
+    lock.releaseLock();
+  }
+
+  let allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+  const catalogItems=allQuizItems_().filter(r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+  if(!allItems.length || allItems.length < catalogItems.length){
+    allItems = catalogItems.map(item => ({
+      quiz_item_id: item.quiz_item_id,
+      activity_id: item.activity_id,
+      question_type: item.question_type,
+      prompt: item.prompt,
+      options_json: JSON.stringify(item.options),
+      answer_json: JSON.stringify(item.answer),
+      feedback_json: JSON.stringify({ default: item.feedback }),
+      max_score: item.max_score,
+      active: item.active,
+      level: item.level
+    }));
+  }
+  if(!allItems.length)throw new Error('Bank soal belum tersedia.');
+  const sampled=sampledQuizItemsForAttempt_(allItems,session.actor_id,attemptNumber);
+  const items=sampled.map(item=>{
+    const {answer_json,feedback_json,options_json,...safe}=item;
+    return Object.assign({},safe,{level:item.level||'MOTS',options:quizOptionsForAttempt_(item,session.actor_id,attemptNumber).map(option=>option.text)});
+  });
+  const timeLimitSeconds = items.length * 90;
+  const tabTolerance = Math.floor(items.length / 2);
+  return {attemptId,attemptNumber,items,timeLimitSeconds,tabTolerance};
 }
 
 function submitQuiz_(session,payload){
-  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
   try{
     const attempt=findOne_('QUIZ_ATTEMPTS',r=>r.attempt_id===payload.attemptId&&r.student_id===session.actor_id);
     if(!attempt)throw new Error('Percobaan kuis tidak ditemukan.');
     if(attempt.submitted_at)return {score:Number(attempt.score),passed:String(attempt.passed).toLowerCase()==='true',alreadySubmitted:true};
-    const allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===attempt.activity_id&&String(r.active).toLowerCase()==='true');
+    let allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===attempt.activity_id&&String(r.active).toLowerCase()==='true');
+    const catalogItems=allQuizItems_().filter(r=>r.activity_id===attempt.activity_id&&String(r.active).toLowerCase()==='true');
+    if(!allItems.length || allItems.length < catalogItems.length){
+      allItems = catalogItems.map(item => ({
+        quiz_item_id: item.quiz_item_id,
+        activity_id: item.activity_id,
+        question_type: item.question_type,
+        prompt: item.prompt,
+        options_json: JSON.stringify(item.options),
+        answer_json: JSON.stringify(item.answer),
+        feedback_json: JSON.stringify({ default: item.feedback }),
+        max_score: item.max_score,
+        active: item.active,
+        level: item.level
+      }));
+    }
     const items=sampledQuizItemsForAttempt_(allItems,session.actor_id,attempt.attempt_number);
     const answers=Object.fromEntries((payload.answers||[]).map(x=>[x.itemId,x.answer]));
     if(items.some(x=>answers[x.quiz_item_id]===undefined))throw new Error('Semua soal kuis perlu dijawab.');

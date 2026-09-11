@@ -671,15 +671,30 @@ function learningDiagram_(key){
 
 function seedLearningData_(){
   clearSheetCache_('QUIZ_ITEMS');
-  const quizItems=allQuizItems_(),expectedIds=new Set(quizItems.map(item=>item.quiz_item_id));
+  const quizItems=allQuizItems_();
   allLearningUnits_().forEach(unit=>{
     upsert_('MASTER_ACTIVITIES','activity_id',{activity_id:unit.learn_activity_id,chapter_id:unit.chapter_id,unit_id:unit.unit_id,type:'learn',title:unit.title,max_score:100,required:true,public:false,active:true});
     upsert_('MASTER_ACTIVITIES','activity_id',{activity_id:unit.quiz_activity_id,chapter_id:unit.chapter_id,unit_id:unit.unit_id,type:'quick_check',title:'Quick Quiz - '+unit.title,max_score:100,required:true,public:false,active:true});
     if(unit.practice_activity_id)upsert_('MASTER_ACTIVITIES','activity_id',{activity_id:unit.practice_activity_id,chapter_id:unit.chapter_id,unit_id:unit.unit_id,type:unit.practice_activity_id.includes('CHL')?'challenge':'lab',title:'Praktik - '+unit.title,max_score:100,required:unit.practice_required,public:false,active:true});
   });
-  findAll_('QUIZ_ITEMS',row=>String(row.active).toLowerCase()==='true'&&!expectedIds.has(String(row.quiz_item_id))).forEach(row=>upsert_('QUIZ_ITEMS','quiz_item_id',Object.assign({},row,{active:false})));
-  quizItems.forEach(item=>upsert_('QUIZ_ITEMS','quiz_item_id',{quiz_item_id:item.quiz_item_id,activity_id:item.activity_id,question_type:item.question_type,prompt:item.prompt,options_json:JSON.stringify(item.options),answer_json:JSON.stringify(item.answer),feedback_json:JSON.stringify({default:item.feedback}),max_score:item.max_score,active:item.active}));
+  const sheet=spreadsheet_().getSheetByName('QUIZ_ITEMS');
+  if(sheet){
+    const headers=SHEETS['QUIZ_ITEMS'];
+    const rows=quizItems.map(item=>[
+      item.quiz_item_id,
+      item.activity_id,
+      item.question_type,
+      item.prompt,
+      JSON.stringify(item.options),
+      JSON.stringify(item.answer),
+      JSON.stringify({default:item.feedback}),
+      item.max_score,
+      item.active
+    ]);
+    sheet.clearContents();
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    if(rows.length>0)sheet.getRange(2,1,rows.length,headers.length).setValues(rows);
+  }
   clearSheetCache_('QUIZ_ITEMS');
-  const activeQuizItems=findAll_('QUIZ_ITEMS',row=>String(row.active).toLowerCase()==='true').length;
-  return {units:allLearningUnits_().length,quizItems:quizItems.length,activeQuizItems};
+  return {units:allLearningUnits_().length,quizItems:quizItems.length,activeQuizItems:quizItems.length};
 }
