@@ -22,10 +22,30 @@ export default async function handler(req, res) {
 
   const baseUrl = process.env.PURWAVERSE_GAS_URL || 'https://script.google.com/macros/s/AKfycbwMUnknbtXDo7M_HQGL2VfMQlHFZfT-AnMpbQGKEEwKbKXIKHYgVMK0hB4B-LV9gyH_TQ/exec';
   const gasUrl = baseUrl.includes('?') ? baseUrl + '&noredirect=1' : baseUrl + '?noredirect=1';
+  const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+
+  async function fetchWithRetry(url, options, maxRetries = 1) {
+    let lastError = null;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastError = err;
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+    }
+    throw lastError;
+  }
 
   try {
-    const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
-    const gasResponse = await fetch(gasUrl, {
+    const gasResponse = await fetchWithRetry(gasUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
@@ -47,6 +67,10 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (error) {
     console.error('Vercel GAS proxy error:', error);
-    return res.status(500).json({ ok: false, error: 'Gagal menghubungi server Purwaverse: ' + error.message });
+    const isTimeout = error && (error.name === 'AbortError' || String(error.message).includes('aborted'));
+    const message = isTimeout
+      ? 'Koneksi ke Google Apps Script melampaui batas waktu (timeout 45d). Silakan coba kembali.'
+      : 'Gagal menghubungi server Purwaverse: ' + (error ? error.message : 'Unknown error');
+    return res.status(200).json({ ok: false, error: message });
   }
 }

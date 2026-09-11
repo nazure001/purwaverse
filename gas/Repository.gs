@@ -1,4 +1,10 @@
-function spreadsheet_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+let _ACTIVE_SPREADSHEET_ = null;
+function spreadsheet_() {
+  if (!_ACTIVE_SPREADSHEET_) {
+    _ACTIVE_SPREADSHEET_ = SpreadsheetApp.getActiveSpreadsheet();
+  }
+  return _ACTIVE_SPREADSHEET_;
+}
 
 function ensureSchema_() {
   const ss = spreadsheet_();

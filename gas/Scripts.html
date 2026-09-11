@@ -94,33 +94,78 @@ async function callApi(action, payload) {
         .api(action, payload || {});
     });
   }
-  try {
-    const res = await fetch('/api/purwa', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, payload: payload || {} })
-    });
-    const json = await res.json();
-    if (json.ok) return json.data;
-    if (json.error && !json.error.includes('Respons backend tidak valid') && !json.error.includes('<!doctype') && !json.error.includes('<!DOCTYPE')) {
-      throw new Error(json.error);
-    }
-  } catch (err) {
-    if (err.message && !err.message.includes('Respons backend tidak valid') && !err.message.includes('<!doctype') && !err.message.includes('Failed to fetch') && !err.message.includes('Gagal menghubungi')) {
-      throw err;
+
+  const reqBodyStr = JSON.stringify({ action, payload: payload || {} });
+  let lastError = null;
+
+  // 1. Percobaan melalui Vercel Proxy (/api/purwa) dengan Auto-Retry (hingga 2x percobaan ulang)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch('/api/purwa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: reqBodyStr
+      });
+
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (parseErr) {
+        // Jika respons bukan JSON (misal HTML 504 Vercel), lempar untuk memicu retry
+        throw new Error('Respons backend bukan JSON (status ' + res.status + ')');
+      }
+
+      if (json.ok) {
+        return json.data;
+      }
+
+      // Jika error adalah pesan bisnis terverifikasi (bukan server/proxy failure), langsung lempar
+      if (json.error && !json.error.includes('Respons backend tidak valid') && !json.error.includes('<!doctype') && !json.error.includes('Gagal menghubungi') && !json.error.includes('melampaui batas waktu')) {
+        throw new Error(json.error);
+      }
+
+      throw new Error(json.error || 'Terjadi kendala pada server.');
+    } catch (err) {
+      lastError = err;
+      // Jika error bisnis murni, jangan retry
+      const errMsg = String(err.message || '');
+      if (errMsg.includes('Login guru tidak sesuai') || errMsg.includes('PIN salah') || errMsg.includes('Siswa tidak ditemukan') || errMsg.includes('Aksi API tidak dikenal') || errMsg.includes('Token sesi')) {
+        throw err;
+      }
+      if (attempt < 3) {
+        // Tunggu sejenak sebelum retry (800ms lalu 1600ms)
+        await new Promise(r => setTimeout(r, attempt * 800));
+      }
     }
   }
 
-  const gasFallbackUrl = 'https://script.google.com/macros/s/AKfycbwMUnknbtXDo7M_HQGL2VfMQlHFZfT-AnMpbQGKEEwKbKXIKHYgVMK0hB4B-LV9gyH_TQ/exec?noredirect=1';
-  const directRes = await fetch(gasFallbackUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, payload: payload || {} })
-  });
-  const directText = await directRes.text();
-  const directJson = JSON.parse(directText);
-  if (!directJson.ok) throw new Error(directJson.error || 'Permintaan gagal diproses');
-  return directJson.data;
+  // 2. Fallback darurat langsung ke Google Apps Script via GET (CORS safe, browser mengikuti 302 redirect)
+  const gasBase = 'https://script.google.com/macros/s/AKfycbwMUnknbtXDo7M_HQGL2VfMQlHFZfT-AnMpbQGKEEwKbKXIKHYgVMK0hB4B-LV9gyH_TQ/exec';
+  const encodedPayload = encodeURIComponent(JSON.stringify(payload || {}));
+  if (encodedPayload.length < 2500) {
+    try {
+      const directGetUrl = gasBase + '?action=' + encodeURIComponent(action) + '&payload=' + encodedPayload;
+      const directRes = await fetch(directGetUrl);
+      const directText = await directRes.text();
+      const directJson = JSON.parse(directText);
+      if (directJson.ok) {
+        return directJson.data;
+      }
+      if (directJson.error) {
+        throw new Error(directJson.error);
+      }
+    } catch (directErr) {
+      // Direct GET juga gagal, lempar pesan user-friendly
+    }
+  }
+
+  const finalMsg = lastError && lastError.message
+    ? (lastError.message.includes('Failed to fetch') || lastError.message.includes('NetworkError')
+        ? 'Koneksi jaringan terputus. Silakan periksa koneksi internet Anda dan coba lagi.'
+        : lastError.message)
+    : 'Koneksi ke server terputus. Silakan coba lagi.';
+  throw new Error(finalMsg);
 }
 async function studentLogin(e){e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Memverifikasi...';}try{const s=await callApi('loginStudent',{classId:document.getElementById('class-id').value,rollNo:document.getElementById('roll-no').value,pin:document.getElementById('student-pin').value});state.studentToken=s.token;state.teacherToken='';state.activeRole='student';state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;SafeStorage.set('studentToken',s.token);SafeStorage.remove('teacherToken');updateAuthNavigation();document.getElementById('student-pin').value='';await loadStudent(true);showView('student')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Masuk';}}}
 function renderStudentDashboard(d){
