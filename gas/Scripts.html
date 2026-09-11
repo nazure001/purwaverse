@@ -330,9 +330,14 @@ window.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     const v = document.querySelector('.view.active');
     const isDiagnosticOpen = v && v.id === 'view-student' && !document.getElementById('diagnostic')?.classList.contains('hidden');
-    const isActivityOpen = v && ['view-activity', 'view-practice-sheet', 'view-quiz'].includes(v.id);
+    const isQuizOpen = v && v.id === 'view-quiz' && state.activeQuiz;
+    const isActivityOpen = v && ['view-activity', 'view-practice-sheet'].includes(v.id);
     
-    if (isDiagnosticOpen) {
+    if (isQuizOpen) {
+      if (typeof handleQuizTabSwitch === 'function') {
+        handleQuizTabSwitch();
+      }
+    } else if (isDiagnosticOpen) {
       state.tabSwitchCount = (state.tabSwitchCount || 0) + 1;
       if (state.tabSwitchCount === 1) {
         _diagRemainingSeconds = Math.max(10, _diagRemainingSeconds - 30);

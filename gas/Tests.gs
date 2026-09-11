@@ -45,7 +45,7 @@ function runIntegrationChecks() {
     const all=findAll_('QUIZ_ITEMS',r=>r.activity_id==='CH08-01-U01-QZ01'&&String(r.active).toLowerCase()==='true');
     const sampled1=sampledQuizItemsForAttempt_(all,'STD-TEST',1);
     const sampled1Again=sampledQuizItemsForAttempt_(all,'STD-TEST',1);
-    assert_(sampled1.length>=3&&sampled1.length<=5,'jumlah soal kuis harus 3-5 soal');
+    assert_(sampled1.length>=Math.min(5,all.length)&&sampled1.length<=Math.min(8,all.length),'jumlah soal kuis harus 5-8 soal');
     assert_(JSON.stringify(sampled1.map(x=>x.quiz_item_id))===JSON.stringify(sampled1Again.map(x=>x.quiz_item_id)),'sampling harus deterministik pada attempt yang sama');
   });
   check('navigasi peran dan pratinjau guru lengkap',()=>{

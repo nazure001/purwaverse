@@ -100,25 +100,314 @@
     return clipSpan + ocrSpan;
   }
 
-  async function beginQuiz() {
-    try {
-      state.activeQuiz = await callApi('startQuiz', { token: state.studentToken, activityId: state.activeUnit.quiz_activity_id }); const q = state.activeQuiz; state.tabSwitchCount = 0;
-      const watermark = buildWatermarkHtml();
-      const inject = (t, i) => { const h = Math.floor(t.length / 2); return t.substring(0, h) + getAntiCheatInjections(i) + t.substring(h); };
-      const levelClass = (lvl) => 'level-badge ' + (lvl === 'LOTS' ? 'level-lots' : lvl === 'HOTS' ? 'level-hots' : 'level-mots');
-      document.getElementById('quiz-content').innerHTML = '<div class="anti-cheat-protected" style="position:relative;">' + watermark + '<span class="pill">PERCOBAAN ' + q.attemptNumber + ' · ' + q.items.length + ' SOAL DINAMIS</span><h2>Quick Quiz</h2><p>Jawab berdasarkan pemahamanmu sendiri. Komposisi soal disajikan acak (LOTS, MOTS, HOTS). Nilai tuntas: ' + (window.PURWAVERSE_BOOTSTRAP.quizPassingScore || 70) + '.</p><form id="quiz-form" onsubmit="finishQuiz(event)">' + q.items.map((item, i) => '<fieldset class="diagnostic-item"><legend><b>' + (i + 1) + '. ' + inject(escapeHtml(item.prompt), i) + '</b><span class="' + levelClass(item.level || 'MOTS') + '">' + escapeHtml(item.level || 'MOTS') + '</span></legend>' + item.options.map((o, j) => '<label class="quiz-option"><input required type="radio" name="' + item.quiz_item_id + '" value="' + j + '"> ' + escapeHtml(o) + '</label>').join('') + '</fieldset>').join('') + '<button class="primary">Kirim Jawaban</button></form></div>'; showView('quiz'); if (typeof restoreDrafts === 'function') setTimeout(restoreDrafts, 50);
-    } catch (e) { toast(e.message) }
+  let _quizStep = 0;
+  let _quizAnswers = {};
+  let _quizTimerInterval = null;
+  let _quizRemainingSeconds = 0;
+  let _quizTotalTime = 0;
+  let _quizTabSwitchCount = 0;
+  let _quizTabTolerance = 2;
+  let _quizForcedLocked = false;
+
+  function stopQuizTimer() {
+    if (_quizTimerInterval) {
+      clearInterval(_quizTimerInterval);
+      _quizTimerInterval = null;
+    }
   }
 
-  async function finishQuiz(e) {
-    e.preventDefault(); const form = new FormData(e.target), answers = state.activeQuiz.items.map(x => ({ itemId: x.quiz_item_id, answer: form.get(x.quiz_item_id) }));
-    if ((state.tabSwitchCount || 0) > 2) { try { await callApi('saveProgress', { token: state.studentToken, activityId: state.activeUnit.quiz_activity_id, status: 'completed', evidence: { flag: '[PERINGATAN: Terindikasi AI / Pindah Tab ' + state.tabSwitchCount + 'x]' } }); } catch (err) { } }
-    try { const result = await callApi('submitQuiz', { token: state.studentToken, attemptId: state.activeQuiz.attemptId, answers }); if (typeof clearDraft === 'function') clearDraft(document.getElementById('quiz-form')); state.learningHome = null; if (typeof leaderboardState !== 'undefined') leaderboardState.data = null; toast(result.passed ? 'Kuis tuntas: ' + result.score : 'Nilai ' + result.score + '. Pelajari kembali materi lalu coba lagi.'); await openLearningUnit(state.activeUnit.unit_id); renderQuizReview(result) } catch (err) { toast(err.message) }
+  function startQuizTimer(totalSeconds) {
+    stopQuizTimer();
+    _quizTotalTime = totalSeconds;
+    _quizRemainingSeconds = totalSeconds;
+    updateQuizTimerDisplay();
+
+    _quizTimerInterval = setInterval(() => {
+      _quizRemainingSeconds--;
+      updateQuizTimerDisplay();
+      if (_quizRemainingSeconds <= 0) {
+        stopQuizTimer();
+        toast('⏰ Waktu kuis habis! Jawaban diserahkan otomatis...');
+        submitQuizAnswers(true);
+      }
+    }, 1000);
+  }
+
+  function updateQuizTimerDisplay() {
+    const el = document.getElementById('quiz-timer-badge');
+    const fill = document.getElementById('quiz-progress-fill');
+    if (!el) return;
+    const m = Math.floor(Math.max(0, _quizRemainingSeconds) / 60);
+    const s = Math.max(0, _quizRemainingSeconds) % 60;
+    el.textContent = '⏱️ ' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+
+    const pct = _quizTotalTime > 0 ? Math.max(0, Math.min(100, (_quizRemainingSeconds / _quizTotalTime) * 100)) : 0;
+    if (fill) fill.style.width = pct + '%';
+
+    el.className = 'quiz-timer-badge';
+    if (pct <= 25 || _quizRemainingSeconds <= 60) {
+      el.classList.add('danger');
+      if (fill) fill.style.background = '#dc2626';
+    } else if (pct <= 50) {
+      el.classList.add('warning');
+      if (fill) fill.style.background = '#ea580c';
+    } else {
+      el.classList.add('normal');
+      if (fill) fill.style.background = '#2563eb';
+    }
+  }
+
+  function handleQuizTabSwitch() {
+    if (!state.activeQuiz || _quizForcedLocked) return;
+    _quizTabSwitchCount = (_quizTabSwitchCount || 0) + 1;
+    const tolerance = _quizTabTolerance || Math.floor((state.activeQuiz.items || []).length / 2);
+    const tabEl = document.getElementById('quiz-tab-counter');
+    if (tabEl) tabEl.textContent = 'Alih Tab: ' + _quizTabSwitchCount + '/' + tolerance;
+
+    if (_quizTabSwitchCount <= tolerance) {
+      _quizRemainingSeconds = Math.max(5, _quizRemainingSeconds - 30);
+      updateQuizTimerDisplay();
+      toast('⚠️ Alih tab terdeteksi (' + _quizTabSwitchCount + '/' + tolerance + ')! Waktu dipotong 30 detik.');
+    } else {
+      _quizForcedLocked = true;
+      stopQuizTimer();
+      showQuizSarcasticModal();
+    }
+  }
+
+  function showQuizSarcasticModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'quiz-sarcastic-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.92);backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#1e293b;border:2px solid #ef4444;border-radius:20px;max-width:440px;width:100%;padding:24px;text-align:center;box-shadow:0 25px 50px -12px rgba(220,38,38,0.4);';
+
+    box.innerHTML = '<div style="font-size:3.5rem;margin-bottom:8px;">🤖💅</div>' +
+      '<h3 style="color:#f8fafc;font-size:1.3rem;margin:0 0 10px 0;">Ketahuan Deh, Sepuh!</h3>' +
+      '<p style="color:#fca5a5;font-size:0.95rem;line-height:1.5;margin:0 0 16px 0;">Terlalu sering bolak-balik tab lain (' + _quizTabSwitchCount + 'x). Kuis dikunci otomatis & skor dipotong penalti 20%. Lain kali pakai otak sendiri ya, bukan suruh robot AI!</p>' +
+      '<button id="sarcastic-submit-btn" class="primary" style="width:100%;padding:12px;border-radius:12px;background:#dc2626;color:white;font-weight:700;cursor:pointer;border:none;">Lihat Hasil Kuis</button>';
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const btn = document.getElementById('sarcastic-submit-btn');
+    if (btn) btn.onclick = () => {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      submitQuizAnswers(true);
+    };
+
+    setTimeout(() => {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      submitQuizAnswers(true);
+    }, 3000);
+  }
+
+  async function beginQuiz() {
+    try {
+      state.activeQuiz = await callApi('startQuiz', { token: state.studentToken, activityId: state.activeUnit.quiz_activity_id });
+      const q = state.activeQuiz;
+      _quizStep = 0;
+      _quizAnswers = {};
+      _quizTabSwitchCount = 0;
+      _quizForcedLocked = false;
+      _quizTotalTime = q.timeLimitSeconds || (q.items.length * 90);
+      _quizTabTolerance = q.tabTolerance !== undefined ? q.tabTolerance : Math.floor(q.items.length / 2);
+
+      renderQuizWizard();
+      showView('quiz');
+      startQuizTimer(_quizTotalTime);
+    } catch (e) { toast(e.message); }
+  }
+
+  function renderQuizWizard() {
+    const q = state.activeQuiz;
+    if (!q || !q.items || !q.items.length) return;
+    const items = q.items;
+    const currentItem = items[_quizStep];
+    const watermark = buildWatermarkHtml();
+    const inject = (t, i) => { const h = Math.floor(t.length / 2); return t.substring(0, h) + getAntiCheatInjections(i) + t.substring(h); };
+    const levelClass = (lvl) => 'level-badge ' + (lvl === 'LOTS' ? 'level-lots' : lvl === 'HOTS' ? 'level-hots' : 'level-mots');
+    const root = document.getElementById('quiz-content');
+    if (!root) return;
+
+    // Header with Sticky Timer & Pills
+    let pillsHtml = items.map((it, idx) => {
+      const answered = _quizAnswers[it.quiz_item_id] !== undefined && _quizAnswers[it.quiz_item_id] !== '';
+      const active = idx === _quizStep;
+      const cls = 'quiz-pill-btn' + (active ? ' active' : '') + (answered ? ' answered' : '');
+      return `<button type="button" class="${cls}" onclick="goToQuizStep(${idx})" title="Nomor ${idx + 1}">${idx + 1}</button>`;
+    }).join('');
+
+    const currentVal = _quizAnswers[currentItem.quiz_item_id] !== undefined ? _quizAnswers[currentItem.quiz_item_id] : '';
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+
+    let optionsHtml = `<option value="">-</option>` + currentItem.options.map((opt, oIdx) => {
+      const isSelected = String(currentVal) === String(oIdx);
+      const letter = letters[oIdx] || String(oIdx + 1);
+      return `<option value="${oIdx}" ${isSelected ? 'selected' : ''}>${letter}. ${escapeHtml(opt)}</option>`;
+    }).join('');
+
+    const isFirst = _quizStep === 0;
+    const isLast = _quizStep === items.length - 1;
+
+    root.innerHTML = `
+      <div class="anti-cheat-protected" style="position:relative;">
+        ${watermark}
+        
+        <div class="quiz-sticky-header">
+          <div class="quiz-timer-row">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="pill" style="font-size:0.8rem;padding:3px 8px;">PERCOBAAN ${q.attemptNumber}</span>
+              <span style="font-weight:700;color:#0f172a;font-size:0.95rem;">Soal ${_quizStep + 1} dari ${items.length}</span>
+              <span id="quiz-tab-counter" class="pill" style="font-size:0.75rem;padding:2px 8px;background:#f1f5f9;color:#64748b;">Alih Tab: ${_quizTabSwitchCount}/${_quizTabTolerance}</span>
+            </div>
+            <div id="quiz-timer-badge" class="quiz-timer-badge normal">⏱️ --:--</div>
+          </div>
+          <div class="quiz-progress-track">
+            <div id="quiz-progress-fill" class="quiz-progress-fill" style="width:100%;"></div>
+          </div>
+        </div>
+
+        <div class="quiz-pills-bar">
+          ${pillsHtml}
+        </div>
+
+        <div class="quiz-step-card">
+          <div class="quiz-step-header">
+            <span class="${levelClass(currentItem.level || 'MOTS')}">${escapeHtml(currentItem.level || 'MOTS')}</span>
+            <small style="color:#64748b;">90 detik/soal · Nilai tuntas ${window.PURWAVERSE_BOOTSTRAP.quizPassingScore || 70}</small>
+          </div>
+
+          <div class="quiz-step-prompt">
+            <b>${_quizStep + 1}. ${inject(escapeHtml(currentItem.prompt), _quizStep)}</b>
+          </div>
+
+          <div class="quiz-dropdown-box">
+            <label style="display:block;font-size:0.9rem;font-weight:700;color:#334155;margin-bottom:8px;">Pilih Jawaban:</label>
+            <select name="${currentItem.quiz_item_id}" class="quiz-dropdown" onchange="onQuizSelectAnswer('${currentItem.quiz_item_id}', this.value)">
+              ${optionsHtml}
+            </select>
+          </div>
+        </div>
+
+        <div class="quiz-wizard-footer">
+          <div>
+            ${!isFirst ? `<button type="button" class="secondary" onclick="goToQuizStep(${_quizStep - 1})">← Sebelumnya</button>` : ''}
+          </div>
+          <div style="display:flex;gap:10px;">
+            ${!isLast ? `<button type="button" class="primary" onclick="goToQuizStep(${_quizStep + 1})">Selanjutnya →</button>` : ''}
+            <button type="button" class="${isLast ? 'primary' : 'secondary'}" onclick="confirmSubmitQuiz()" style="${isLast ? 'background:#16a34a;border-color:#16a34a;' : ''}">Kirim Jawaban 🚀</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    updateQuizTimerDisplay();
+  }
+
+  function onQuizSelectAnswer(itemId, val) {
+    _quizAnswers[itemId] = val;
+    const pills = document.querySelectorAll('.quiz-pill-btn');
+    if (pills && pills[_quizStep]) {
+      if (val !== '') {
+        pills[_quizStep].classList.add('answered');
+      } else {
+        pills[_quizStep].classList.remove('answered');
+      }
+    }
+  }
+
+  function goToQuizStep(targetIndex) {
+    const q = state.activeQuiz;
+    if (!q || !q.items) return;
+    if (targetIndex < 0 || targetIndex >= q.items.length) return;
+    _quizStep = targetIndex;
+    renderQuizWizard();
+  }
+
+  function confirmSubmitQuiz() {
+    const q = state.activeQuiz;
+    if (!q || !q.items) return;
+    for (let i = 0; i < q.items.length; i++) {
+      const it = q.items[i];
+      const val = _quizAnswers[it.quiz_item_id];
+      if (val === undefined || val === '') {
+        toast('Soal nomor ' + (i + 1) + ' belum dipilih jawabannya!');
+        goToQuizStep(i);
+        return;
+      }
+    }
+    submitQuizAnswers(false);
+  }
+
+  async function submitQuizAnswers(forced) {
+    stopQuizTimer();
+    const q = state.activeQuiz;
+    if (!q || !q.items) return;
+
+    const answers = q.items.map(x => ({
+      itemId: x.quiz_item_id,
+      answer: _quizAnswers[x.quiz_item_id] !== undefined && _quizAnswers[x.quiz_item_id] !== '' ? Number(_quizAnswers[x.quiz_item_id]) : -1
+    }));
+
+    if (_quizForcedLocked || (_quizTabSwitchCount || 0) > _quizTabTolerance) {
+      try {
+        await callApi('saveProgress', {
+          token: state.studentToken,
+          activityId: state.activeUnit.quiz_activity_id,
+          status: 'completed',
+          evidence: { flag: '[PERINGATAN: Terindikasi AI / Pindah Tab ' + _quizTabSwitchCount + 'x]' }
+        });
+      } catch (err) {}
+    }
+
+    try {
+      const result = await callApi('submitQuiz', {
+        token: state.studentToken,
+        attemptId: q.attemptId,
+        answers,
+        timeRemaining: _quizRemainingSeconds,
+        tabSwitchCount: _quizTabSwitchCount,
+        forcedLocked: !!forced || _quizForcedLocked
+      });
+
+      state.activeQuiz = null;
+      state.learningHome = null;
+      if (typeof leaderboardState !== 'undefined') leaderboardState.data = null;
+
+      let msg = result.passed ? 'Kuis tuntas! Nilai: ' + result.score : 'Nilai: ' + result.score + '. Pelajari kembali lalu coba lagi.';
+      if (result.speedBonus > 0) msg += ' (Bonus Kecepatan: +' + result.speedBonus + ' ⚡)';
+      if (result.penalty > 0) msg += ' [Penalti Alih Tab: -' + result.penalty + ' ⚠️]';
+      toast(msg);
+
+      await openLearningUnit(state.activeUnit.unit_id);
+      renderQuizReview(result);
+    } catch (err) {
+      toast(err.message);
+    }
   }
 
   function renderQuizReview(result) {
-    const review = (result.reviewItems || []).slice(0, 6); if (!review.length) return;
-    const root = document.getElementById('learning-unit-content'); root.insertAdjacentHTML('afterbegin', '<aside class="quiz-review"><span class="pill">UMPAN BALIK KUIS</span><h3>Konsep yang perlu ditinjau</h3><p>Nilai ' + escapeHtml(result.score) + ' dari 100. Jawaban benar tidak ditampilkan agar kamu mencoba kembali dengan pemahaman sendiri.</p><ol>' + review.map(item => '<li><b>' + escapeHtml(item.prompt) + '</b><p>' + escapeHtml(item.feedback) + '</p></li>').join('') + '</ol></aside>');
+    const review = (result.reviewItems || []).slice(0, 8);
+    const root = document.getElementById('learning-unit-content');
+    if (!root) return;
+
+    let scoreBreakdown = '';
+    if (result.rawScore !== undefined) {
+      scoreBreakdown = '<div style="margin:10px 0;padding:12px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;gap:16px;flex-wrap:wrap;font-size:0.92rem;">' +
+        '<span>Skor Murni: <b>' + (result.rawScore || 0) + '</b></span>' +
+        (result.speedBonus ? '<span style="color:#059669;">Bonus Kecepatan: <b>+' + result.speedBonus + ' ⚡</b></span>' : '') +
+        (result.penalty ? '<span style="color:#dc2626;">Penalti Alih Tab: <b>-' + result.penalty + ' ⚠️</b></span>' : '') +
+        '<span style="font-weight:700;color:#1d4ed8;">Skor Akhir: ' + result.score + '</span>' +
+      '</div>';
+    }
+
+    root.insertAdjacentHTML('afterbegin', '<aside class="quiz-review"><span class="pill">UMPAN BALIK KUIS</span><h3>Hasil & Evaluasi Konsep</h3>' +
+      scoreBreakdown +
+      '<p>Nilai akhir: <b>' + escapeHtml(result.score) + '</b> / 100. Jawaban benar tidak ditampilkan langsung agar kamu dapat meninjau buku/rangkuman kembali.</p>' +
+      (review.length ? '<ol>' + review.map(item => '<li><b>' + escapeHtml(item.prompt) + '</b><p>' + escapeHtml(item.feedback) + '</p></li>').join('') + '</ol>' : '<p style="color:#059669;font-weight:600;">Semua soal dijawab dengan sempurna! Tidak ada konsep yang perlu diperbaiki. 👏</p>') +
+    '</aside>');
   }
 
   async function openPracticeGuide() {

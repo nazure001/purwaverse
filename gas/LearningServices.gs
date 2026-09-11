@@ -139,12 +139,12 @@ function teacherLearningUnit_(session,unitId){
 }
 
 function sampledQuizItemsForAttempt_(allItems, studentId, attemptNumber) {
-  if (!allItems || allItems.length <= 3) return allItems || [];
+  if (!allItems || allItems.length <= 5) return allItems || [];
   const seed = String(studentId) + '|' + String(attemptNumber) + '|' + String(allItems[0].activity_id);
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = ((hash * 31) + seed.charCodeAt(i)) >>> 0;
-  const minCount = Math.min(3, allItems.length);
-  const maxCount = Math.min(5, allItems.length);
+  const minCount = Math.min(5, allItems.length);
+  const maxCount = Math.min(8, allItems.length);
   const targetCount = minCount + (hash % (maxCount - minCount + 1));
   const catalog = typeof allQuizItems_ === 'function' ? allQuizItems_() : [];
   const levelMap = {};
@@ -156,7 +156,7 @@ function sampledQuizItemsForAttempt_(allItems, studentId, attemptNumber) {
       try { const fb = JSON.parse(item.feedback_json || '{}'); if (fb.level) lvl = fb.level; } catch(e) {}
     }
     if (!lvl) {
-      lvl = (idx === 0 || idx === 1) ? 'LOTS' : (idx === 2 || idx === 4) ? 'MOTS' : 'HOTS';
+      lvl = (idx === 0 || idx === 1 || idx === 6 || idx === 7) ? 'LOTS' : (idx === 2 || idx === 4 || idx === 8) ? 'MOTS' : 'HOTS';
     }
     item.level = lvl;
     if (lvl === 'LOTS') lots.push(item);
@@ -173,12 +173,14 @@ function sampledQuizItemsForAttempt_(allItems, studentId, attemptNumber) {
       selected.push(pool.shift());
     }
   }
-  if (targetCount === 3) {
-    pick(sLots); pick(sMots); pick(sHots);
+  if (targetCount >= 7) {
+    pick(sLots); pick(sLots); pick(sMots); pick(sMots); pick(sHots); pick(sHots);
+  } else if (targetCount >= 5) {
+    pick(sLots); pick(sLots); pick(sMots); pick(sMots); pick(sHots);
   } else if (targetCount === 4) {
     pick(sLots); pick(sMots); pick(sMots); pick(sHots);
   } else {
-    pick(sLots); pick(sLots); pick(sMots); pick(sMots); pick(sHots);
+    pick(sLots); pick(sMots); pick(sHots);
   }
   const remainder = sLots.concat(sMots).concat(sHots).concat(rest);
   while (selected.length < targetCount && remainder.length > 0) {
@@ -199,14 +201,21 @@ function startQuiz_(session,activityId){
     const unfinished=previous.filter(x=>!x.submitted_at).sort((a,b)=>Number(b.attempt_number)-Number(a.attempt_number))[0];
     const attemptNumber=unfinished?Number(unfinished.attempt_number):previous.length+1,attemptId=unfinished?unfinished.attempt_id:uid_('QAT');
     if(!unfinished)append_('QUIZ_ATTEMPTS',{attempt_id:attemptId,student_id:session.actor_id,activity_id:activityId,attempt_number:attemptNumber,score:'',passed:false,started_at:isoNow_(),submitted_at:''});
-    const allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+    let allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+    const catalogItems=allQuizItems_().filter(r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+    if(!allItems.length || allItems.length < catalogItems.length){
+      seedLearningData_();
+      allItems=findAll_('QUIZ_ITEMS',r=>r.activity_id===activityId&&String(r.active).toLowerCase()==='true');
+    }
     if(!allItems.length)throw new Error('Bank soal belum tersedia.');
     const sampled=sampledQuizItemsForAttempt_(allItems,session.actor_id,attemptNumber);
     const items=sampled.map(item=>{
       const {answer_json,feedback_json,options_json,...safe}=item;
       return Object.assign({},safe,{level:item.level||'MOTS',options:quizOptionsForAttempt_(item,session.actor_id,attemptNumber).map(option=>option.text)});
     });
-    return {attemptId,attemptNumber,items};
+    const timeLimitSeconds = items.length * 90;
+    const tabTolerance = Math.floor(items.length / 2);
+    return {attemptId,attemptNumber,items,timeLimitSeconds,tabTolerance};
   }finally{lock.releaseLock();}
 }
 
@@ -229,10 +238,33 @@ function submitQuiz_(session,payload){
       append_('QUIZ_RESPONSES',{response_id:attempt.attempt_id+'|'+item.quiz_item_id,attempt_id:attempt.attempt_id,quiz_item_id:item.quiz_item_id,answer_json:JSON.stringify(originalIndex),score:point,feedback_code:point?'correct':'review'});
       if(!point){const feedback=JSON.parse(item.feedback_json||'{}');reviewItems.push({itemId:item.quiz_item_id,prompt:item.prompt,feedback:feedback.default||'Pelajari kembali konsep yang terkait dengan soal ini.'});}
     });
-    const score=Math.round(earned/Math.max(1,total)*100),passed=score>=CONFIG.QUIZ_PASSING_SCORE;
-    upsert_('QUIZ_ATTEMPTS','attempt_id',Object.assign({},attempt,{score,passed,submitted_at:isoNow_()}));
-    audit_({type:'student',id:session.actor_id},'SUBMIT_QUIZ','quiz_attempt',attempt.attempt_id,{activity_id:attempt.activity_id,score,passed,itemCount:items.length});
-    return {score,passed,passingScore:CONFIG.QUIZ_PASSING_SCORE,reviewItems};
+    const rawScore=Math.round(earned/Math.max(1,total)*100);
+    const passed=rawScore>=CONFIG.QUIZ_PASSING_SCORE;
+
+    // Speed bonus calculation (accuracy scaled)
+    const timeRemaining = Math.max(0, Number(payload.timeRemaining || 0));
+    const totalTime = items.length * 90;
+    let speedBonus = 0;
+    if (passed && rawScore >= CONFIG.QUIZ_PASSING_SCORE && timeRemaining > 0 && totalTime > 0) {
+      speedBonus = Math.round((timeRemaining / totalTime) * 10 * (rawScore / 100));
+      speedBonus = Math.max(0, Math.min(10, speedBonus));
+    }
+
+    // Tab penalty calculation (20% penalty if tolerance exceeded or forced locked)
+    const tabTolerance = Math.floor(items.length / 2);
+    const tabSwitchCount = Number(payload.tabSwitchCount || 0);
+    const isPenalized = payload.forcedLocked || tabSwitchCount > tabTolerance;
+    let penalty = 0;
+    if (isPenalized) {
+      penalty = Math.round(rawScore * 0.20);
+    }
+
+    const finalScore = Math.max(0, Math.min(100, rawScore + speedBonus - penalty));
+    const finalPassed = finalScore >= CONFIG.QUIZ_PASSING_SCORE;
+
+    upsert_('QUIZ_ATTEMPTS','attempt_id',Object.assign({},attempt,{score:finalScore,passed:finalPassed,submitted_at:isoNow_()}));
+    audit_({type:'student',id:session.actor_id},'SUBMIT_QUIZ','quiz_attempt',attempt.attempt_id,{activity_id:attempt.activity_id,score:finalScore,rawScore,speedBonus,penalty,passed:finalPassed,itemCount:items.length});
+    return {score:finalScore,rawScore,speedBonus,penalty,passed:finalPassed,passingScore:CONFIG.QUIZ_PASSING_SCORE,reviewItems};
   }finally{lock.releaseLock();}
 }
 
