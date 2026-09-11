@@ -2035,7 +2035,7 @@
   </main>
   <button id="projection-exit" class="projection-exit" onclick="toggleProjectionMode(false)" hidden>Keluar Tayangan</button>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script>window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};</script>
+  <script>window.PURWAVERSE_BOOTSTRAP = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.appName) ? window.PURWAVERSE_BOOTSTRAP : {"appName":"Purwaverse IPA VIII","mode":"PRODUCTION","sourceStatus":"READY","currentSemester":1,"quizPassingScore":70,"classes":[{"class_id":"8A","class_name":"Kelas 8A","active":true},{"class_id":"8B","class_name":"Kelas 8B","active":true},{"class_id":"8C","class_name":"Kelas 8C","active":true},{"class_id":"8D","class_name":"Kelas 8D","active":true},{"class_id":"8E","class_name":"Kelas 8E","active":true}],"activities":[],"glossary":[]};</script>
   <script>
 const state={studentToken:'',teacherToken:'',activeRole:'',studentProgress:[],studentTeam:null,activeActivity:null,previewUnit:null,summaryReturnView:'student',practiceWorkspace:null,learningHome:null,studentPracticeGuide:null,teacherPracticeGuide:null,teacherMaterialCatalog:null,activeTeacherTab:'overview',teacherLearningCache:{},teacherDashboardCache:{},teacherTeamsCache:{}};
 
@@ -2911,13 +2911,27 @@ function clearDraft(form) {
 
 (async function initApp() {
   if (!window.PURWAVERSE_BOOTSTRAP || !window.PURWAVERSE_BOOTSTRAP.appName) {
+    const cachedBootstrap = SafeStorage.get('PURWAVERSE_BOOTSTRAP_CACHE');
+    if (cachedBootstrap) {
+      try {
+        const parsed = JSON.parse(cachedBootstrap);
+        if (parsed && parsed.appName) window.PURWAVERSE_BOOTSTRAP = parsed;
+      } catch(e){}
+    }
+  }
+
+  const bootstrapPromise = (async () => {
     try {
-      window.PURWAVERSE_BOOTSTRAP = await callApi('bootstrap');
+      const fresh = await callApi('bootstrap');
+      if (fresh && fresh.appName) {
+        window.PURWAVERSE_BOOTSTRAP = fresh;
+        SafeStorage.set('PURWAVERSE_BOOTSTRAP_CACHE', JSON.stringify(fresh));
+      }
     } catch(err) {
       console.warn('Bootstrap fetch fallback failed:', err);
       window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};
     }
-  }
+  })();
 
   const savedStudent = SafeStorage.get('studentToken');
   const savedTeacher = SafeStorage.get('teacherToken');
@@ -2953,6 +2967,8 @@ function clearDraft(form) {
   } else {
     loadPublicLeaderboard();
   }
+
+  await bootstrapPromise;
 })();
 </script>
 

@@ -109,6 +109,7 @@ function saveProgress_(session, payload) {
   try {
     const existing = findOne_('PROGRESS', r => r.progress_id === progressId);
     const record = upsert_('PROGRESS','progress_id',{progress_id:progressId,student_id:session.actor_id,activity_id:payload.activityId,status:payload.status || 'completed',score:payload.score === undefined ? (existing ? existing.score : '') : payload.score,evidence_json:JSON.stringify(payload.evidence || {}),updated_at:isoNow_(),updated_by:session.actor_id});
+    try { CacheService.getScriptCache().remove('PUBLIC_LEADERBOARD_DATA_V2'); } catch(e) {}
     audit_({type:'student',id:session.actor_id},'UPSERT_PROGRESS','progress',progressId,{activity_id:payload.activityId});
     return record;
   } finally { lock.releaseLock(); }
@@ -680,7 +681,7 @@ function publicLeaderboardData_(force) {
   };
 
   try {
-    cache.put('PUBLIC_LEADERBOARD_DATA_V2', JSON.stringify(result), 90);
+    cache.put('PUBLIC_LEADERBOARD_DATA_V2', JSON.stringify(result), 300);
   } catch(e) {}
 
   return result;

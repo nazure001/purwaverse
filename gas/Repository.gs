@@ -14,7 +14,7 @@ function ensureSchema_() {
   });
 }
 
-const CACHEABLE_SHEETS = new Set(['MASTER_CLASSES', 'MASTER_ACTIVITIES', 'SELF_MAP_ITEMS', 'DIAGNOSTIC_ITEMS', 'MASTER_STUDENTS']);
+const CACHEABLE_SHEETS = new Set(['MASTER_CLASSES', 'MASTER_ACTIVITIES', 'SELF_MAP_ITEMS', 'DIAGNOSTIC_ITEMS', 'MASTER_STUDENTS', 'QUIZ_ITEMS']);
 
 let _SHEET_CACHE_ = {};
 function clearSheetCache_(sheetName) {

@@ -33,8 +33,24 @@ function build() {
   indexHtml = indexHtml.replace(/<\?!=\s*include\(['"]Scripts['"]\);?\s*\?>/g, scripts);
   indexHtml = indexHtml.replace(/<\?!=\s*include\(['"]LearningScripts['"]\);?\s*\?>/g, learningScripts);
 
-  // Replace bootstrap script placeholder
-  indexHtml = indexHtml.replace(/<script>window\.PURWAVERSE_BOOTSTRAP\s*=\s*<\?!=\s*bootstrap\s*\?>;<\/script>/g, '<script>window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};</script>');
+  // Replace bootstrap script placeholder with baseline pre-seeded data
+  const defaultBootstrap = {
+    appName: "Purwaverse IPA VIII",
+    mode: "PRODUCTION",
+    sourceStatus: "READY",
+    currentSemester: 1,
+    quizPassingScore: 70,
+    classes: [
+      { class_id: "8A", class_name: "Kelas 8A", active: true },
+      { class_id: "8B", class_name: "Kelas 8B", active: true },
+      { class_id: "8C", class_name: "Kelas 8C", active: true },
+      { class_id: "8D", class_name: "Kelas 8D", active: true },
+      { class_id: "8E", class_name: "Kelas 8E", active: true }
+    ],
+    activities: [],
+    glossary: []
+  };
+  indexHtml = indexHtml.replace(/<script>window\.PURWAVERSE_BOOTSTRAP\s*=\s*<\?!=\s*bootstrap\s*\?>;<\/script>/g, '<script>window.PURWAVERSE_BOOTSTRAP = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.appName) ? window.PURWAVERSE_BOOTSTRAP : ' + JSON.stringify(defaultBootstrap) + ';</script>');
 
   const outputPath = path.join(PUBLIC_DIR, 'index.html');
   fs.writeFileSync(outputPath, indexHtml, 'utf8');

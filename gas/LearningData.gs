@@ -670,6 +670,7 @@ function learningDiagram_(key){
 }
 
 function seedLearningData_(){
+  clearSheetCache_('QUIZ_ITEMS');
   const quizItems=allQuizItems_(),expectedIds=new Set(quizItems.map(item=>item.quiz_item_id));
   allLearningUnits_().forEach(unit=>{
     upsert_('MASTER_ACTIVITIES','activity_id',{activity_id:unit.learn_activity_id,chapter_id:unit.chapter_id,unit_id:unit.unit_id,type:'learn',title:unit.title,max_score:100,required:true,public:false,active:true});
@@ -678,6 +679,7 @@ function seedLearningData_(){
   });
   findAll_('QUIZ_ITEMS',row=>String(row.active).toLowerCase()==='true'&&!expectedIds.has(String(row.quiz_item_id))).forEach(row=>upsert_('QUIZ_ITEMS','quiz_item_id',Object.assign({},row,{active:false})));
   quizItems.forEach(item=>upsert_('QUIZ_ITEMS','quiz_item_id',{quiz_item_id:item.quiz_item_id,activity_id:item.activity_id,question_type:item.question_type,prompt:item.prompt,options_json:JSON.stringify(item.options),answer_json:JSON.stringify(item.answer),feedback_json:JSON.stringify({default:item.feedback}),max_score:item.max_score,active:item.active}));
+  clearSheetCache_('QUIZ_ITEMS');
   const activeQuizItems=findAll_('QUIZ_ITEMS',row=>String(row.active).toLowerCase()==='true').length;
   return {units:allLearningUnits_().length,quizItems:quizItems.length,activeQuizItems};
 }

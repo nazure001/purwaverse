@@ -263,6 +263,7 @@ function submitQuiz_(session,payload){
     const finalPassed = finalScore >= CONFIG.QUIZ_PASSING_SCORE;
 
     upsert_('QUIZ_ATTEMPTS','attempt_id',Object.assign({},attempt,{score:finalScore,passed:finalPassed,submitted_at:isoNow_()}));
+    try { CacheService.getScriptCache().remove('PUBLIC_LEADERBOARD_DATA_V2'); } catch(e) {}
     audit_({type:'student',id:session.actor_id},'SUBMIT_QUIZ','quiz_attempt',attempt.attempt_id,{activity_id:attempt.activity_id,score:finalScore,rawScore,speedBonus,penalty,passed:finalPassed,itemCount:items.length});
     return {score:finalScore,rawScore,speedBonus,penalty,passed:finalPassed,passingScore:CONFIG.QUIZ_PASSING_SCORE,reviewItems};
   }finally{lock.releaseLock();}

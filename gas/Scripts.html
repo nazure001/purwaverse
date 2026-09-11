@@ -873,13 +873,27 @@ function clearDraft(form) {
 
 (async function initApp() {
   if (!window.PURWAVERSE_BOOTSTRAP || !window.PURWAVERSE_BOOTSTRAP.appName) {
+    const cachedBootstrap = SafeStorage.get('PURWAVERSE_BOOTSTRAP_CACHE');
+    if (cachedBootstrap) {
+      try {
+        const parsed = JSON.parse(cachedBootstrap);
+        if (parsed && parsed.appName) window.PURWAVERSE_BOOTSTRAP = parsed;
+      } catch(e){}
+    }
+  }
+
+  const bootstrapPromise = (async () => {
     try {
-      window.PURWAVERSE_BOOTSTRAP = await callApi('bootstrap');
+      const fresh = await callApi('bootstrap');
+      if (fresh && fresh.appName) {
+        window.PURWAVERSE_BOOTSTRAP = fresh;
+        SafeStorage.set('PURWAVERSE_BOOTSTRAP_CACHE', JSON.stringify(fresh));
+      }
     } catch(err) {
       console.warn('Bootstrap fetch fallback failed:', err);
       window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};
     }
-  }
+  })();
 
   const savedStudent = SafeStorage.get('studentToken');
   const savedTeacher = SafeStorage.get('teacherToken');
@@ -915,5 +929,7 @@ function clearDraft(form) {
   } else {
     loadPublicLeaderboard();
   }
+
+  await bootstrapPromise;
 })();
 </script>
