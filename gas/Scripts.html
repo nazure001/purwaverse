@@ -31,6 +31,31 @@ const ROLE_VIEW_ACCESS={teacher:['teacher','teacher-materials','teacher-material
 const ACTIVITY_IDS={learn:'CH08-01-U01-LRN01',lab:'CH08-01-U02-LAB01',challenge:'CH08-01-U03-CHL01',research:'CH08-01-U03-RSH01'};
 function activeClientRole(){return state.teacherToken?'teacher':state.studentToken?'student':'guest'}
 function allowedViewForRole(name){const role=activeClientRole(),allowed=ROLE_VIEW_ACCESS[role];if(allowed.includes(name))return name;return role==='teacher'?'teacher':role==='student'?'student':'home'}
+function getTeacherWaNumber() {
+  const raw = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.teacherWaNumber) || '085721215213';
+  let cleaned = String(raw).replace(/\D/g, '');
+  if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
+  return cleaned || '6285721215213';
+}
+
+function openTeacherWa(submateriTitle) {
+  const phone = getTeacherWaNumber();
+  let text = '';
+  if (state.student && state.student.name) {
+    const s = state.student;
+    text = 'Halo Pak Guru, saya ' + s.name + ' (Kelas ' + s.class_id + ', Absen ' + s.roll_no + ').\n\n' +
+      'Saya ingin mengirimkan foto rangkuman buku catatan IPA' + (submateriTitle ? ' untuk Submateri ' + submateriTitle : '') + '.\n\n[Silakan lampirkan foto rangkuman di sini]';
+  } else {
+    text = 'Halo Pak Guru, saya ingin mengirimkan foto rangkuman materi IPA Purwaverse.\n\n' +
+      'Nama Siswa: \n' +
+      'Kelas: \n' +
+      'Nomor Absen: \n' +
+      'Materi / Submateri: ' + (submateriTitle || '') + '\n\n[Silakan lampirkan foto rangkuman di sini]';
+  }
+  const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
 function showView(name){
   name=allowedViewForRole(name);
   document.querySelectorAll('main > section').forEach(v=>{
@@ -41,6 +66,13 @@ function showView(name){
   if(name==='chapter')updateChapterStatuses();
   if(name==='home')loadPublicLeaderboard();
   if(name==='student'&&state.student)renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile,team:state.studentTeam});
+
+  const waFloat = document.getElementById('wa-floating-btn');
+  if(waFloat){
+    const shouldShow = (name==='home' && !state.studentToken && !state.teacherToken);
+    waFloat.classList.toggle('hidden', !shouldShow);
+  }
+
   window.scrollTo(0,0);
 }
 

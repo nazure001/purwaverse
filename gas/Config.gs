@@ -10,6 +10,7 @@ const CONFIG = Object.freeze({
   LOGIN_MAX_ATTEMPTS: 5,
   LOGIN_BLOCK_SECONDS: 300,
   VERCEL_APP_URL: 'https://purwaverse.vercel.app',
+  TEACHER_WA_NUMBER: '085721215213',
   DIAGNOSTIC_BANK_IDS: ['D01','D02','D04','D05','D06','D07','D08','D09','D14','D24','D03','D11','D13','D15','D16','D12','D17','D18','D22','D23','D10','D19','D20','D21','D28'],
   QUICK_DIAGNOSTIC_ITEM_IDS: ['D01','D02','D04','D05','D06','D07','D08','D09','D14','D24','D03','D11','D13','D15','D16','D12','D17','D18','D22','D23','D10','D19','D20','D21','D28'],
   DIAGNOSTIC_SECONDS_PER_ITEM: 120, // 2 menit per butir (10 menit total untuk 5 butir)

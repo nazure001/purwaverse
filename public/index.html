@@ -1617,6 +1617,88 @@
             transform: rotate(360deg)
         }
     }
+
+    /* WhatsApp Floating Button & Action Styles */
+    .wa-floating-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 999;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #25D366, #128C7E);
+        color: #ffffff !important;
+        text-decoration: none !important;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 12px 20px;
+        border-radius: 50px;
+        box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35), 0 2px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+        cursor: pointer;
+        border: none;
+    }
+    .wa-floating-btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 28px rgba(37, 211, 102, 0.45);
+        color: #ffffff !important;
+    }
+    .wa-floating-btn:active {
+        transform: translateY(0) scale(0.98);
+    }
+    .wa-floating-btn svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+        flex-shrink: 0;
+    }
+    .wa-floating-btn.hidden {
+        display: none !important;
+    }
+
+    .btn-wa {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #16a34a !important;
+        color: #ffffff !important;
+        border: 1px solid #15803d !important;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 10px 18px;
+        text-decoration: none !important;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+        transition: all 0.15s ease;
+    }
+    .btn-wa:hover {
+        background: #15803d !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
+    }
+    .btn-wa svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+        .wa-floating-btn {
+            bottom: 18px;
+            right: 16px;
+            padding: 10px 16px;
+            font-size: 0.88rem;
+            gap: 8px;
+        }
+        .wa-floating-btn svg {
+            width: 19px;
+            height: 19px;
+        }
+    }
 </style>
   <style>
 .learning-chapter{margin:28px 0}.learning-chapter>header{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:14px}.unit-list{display:grid;gap:14px}.unit-card{background:#fff;border:1px solid #dbe4f3;border-radius:20px;padding:18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}.unit-card.locked{opacity:.58;background:#f4f6fa}.unit-card h3{margin:5px 0}.unit-card p{margin:0;color:#526079}.mini-status{font-size:.78rem;border-radius:999px;padding:6px 10px;background:#eef2ff;color:#3730a3;white-space:nowrap}.science-figure{margin:18px 0}.science-illustration{width:100%;height:auto;display:block;border-radius:24px}.science-figure figcaption{margin:8px 12px 0;color:#526079;font-size:.86rem;line-height:1.45}.science-figure figcaption span{color:#64748b}.learning-copy{font-size:1.05rem;line-height:1.75}.key-points{display:grid;gap:10px;margin:18px 0;padding:0}.key-points li{background:#f7f8ff;border-left:4px solid #6d5dfc;padding:12px 14px;border-radius:8px;list-style:none}.material-recap{margin:24px 0}.material-recap h3{margin-bottom:8px}.gate-panel{border:1px solid #dbe4f3;border-radius:18px;padding:16px;margin-top:18px}.gate-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #edf0f6}.gate-row:last-child{border-bottom:0}.check-ok{color:#087f5b;font-weight:700}.check-wait{color:#9a6700}.quiz-option{display:block;margin:10px 0;padding:12px;border:1px solid #dbe4f3;border-radius:12px}.semester-card{max-width:900px;margin:auto;background:white;border:2px solid #172554;border-radius:24px;padding:30px}.semester-card table{width:100%;border-collapse:collapse}.semester-card th,.semester-card td{border:1px solid #b8c2d8;padding:9px;text-align:left}.teacher-check-toolbar{background:#f8fafc;border:1px solid #dbe4f3;border-radius:16px;padding:16px;margin:16px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-items:end}.teacher-check-toolbar label{display:flex;flex-direction:column;gap:5px;font-size:.86rem;font-weight:600;color:#334155;margin:0}.teacher-check-toolbar select,.teacher-check-toolbar input{margin:0;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.9rem;background:#fff;width:100%;box-sizing:border-box}.teacher-check-toolbar .toolbar-buttons{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}.teacher-check-list input[type=checkbox]{width:20px;height:20px}.teacher-check-list tr.checked{background:#ecfdf5}.teacher-nav-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 16px;border-bottom:2px solid #e2e8f0;padding-bottom:10px}.teacher-tab-btn{background:#fff;border:1px solid #cbd5e1;color:#475569;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:all .18s ease}.teacher-tab-btn:hover{background:#f8fafc;border-color:#94a3b8}.teacher-tab-btn.active{background:#1e40af;color:#fff;border-color:#1e40af;box-shadow:0 3px 10px rgba(30,64,175,.2)}.teacher-tab-panel:not(.active){display:none!important}.teacher-tab-panel.active{display:block}.teacher-filter-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 16px}.teacher-filter-chip{background:#f1f5f9;border:1px solid #cbd5e1;color:#1e293b;padding:6px 13px;border-radius:999px;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .15s ease}.teacher-filter-chip:hover{background:#e2e8f0}.teacher-filter-chip.active{background:#2563eb;color:#fff;border-color:#2563eb}.teacher-filter-chip .count-badge{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:999px;font-size:.76rem;margin-left:5px}.teacher-filter-chip.active .count-badge{background:rgba(255,255,255,.25);color:#fff}.teacher-table-wrapper{overflow-x:auto;max-height:560px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:14px;background:#fff;margin:12px 0}.teacher-table-wrapper table{margin:0;border:none;width:100%}.teacher-table-wrapper thead th{position:sticky;top:0;background:#f8fafc;z-index:2;box-shadow:0 1px 2px rgba(0,0,0,.05)}@media(max-width:720px){.unit-card{grid-template-columns:1fr}.learning-chapter>header{align-items:start;flex-direction:column}.semester-card{padding:16px}.teacher-check-toolbar{grid-template-columns:1fr}}
@@ -1897,7 +1979,7 @@
 
     <section id="view-student" class="view" aria-hidden="true">
       <div id="student-welcome"></div>
-      <div class="actions"><button class="primary" onclick="openLearningPath()">Lanjutkan Jalur Belajar</button><button class="secondary" onclick="openPracticeGuide()">Panduan Praktik & LKPD</button><button class="secondary" onclick="openSemesterCard()">Kartu Semester</button><button class="secondary" onclick="openGlossary()">Kamus Sains</button><button class="secondary" onclick="showView('wiki')" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;">Wiki Purwaverse</button></div>
+      <div class="actions"><button class="primary" onclick="openLearningPath()">Lanjutkan Jalur Belajar</button><button class="secondary" onclick="openPracticeGuide()">Panduan Praktik & LKPD</button><button class="secondary" onclick="openSemesterCard()">Kartu Semester</button><button class="btn-wa" onclick="openTeacherWa()" title="Kirim foto rangkuman catatan IPA langsung ke WhatsApp Pak Guru"><svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg> Kirim Rangkuman (WA)</button><button class="secondary" onclick="openGlossary()">Kamus Sains</button><button class="secondary" onclick="showView('wiki')" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1;">Wiki Purwaverse</button></div>
       <div id="student-team-container" style="margin: 1.5rem 0;"></div>
       <div class="student-grid">
         <article class="mission-card"><span class="pill">MISSION 0</span><h3>Think Like a Scientist</h3><p>Profil cara berpikir sains, bukan ranking.</p><button onclick="loadDiagnostic()">Mulai Quick Diagnostic</button></article>
@@ -2035,7 +2117,8 @@
   </main>
   <button id="projection-exit" class="projection-exit" onclick="toggleProjectionMode(false)" hidden>Keluar Tayangan</button>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script>window.PURWAVERSE_BOOTSTRAP = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.appName) ? window.PURWAVERSE_BOOTSTRAP : {"appName":"Purwaverse IPA VIII","mode":"PRODUCTION","sourceStatus":"READY","currentSemester":1,"quizPassingScore":70,"classes":[{"class_id":"8A","class_name":"Kelas 8A","active":true},{"class_id":"8B","class_name":"Kelas 8B","active":true},{"class_id":"8C","class_name":"Kelas 8C","active":true},{"class_id":"8D","class_name":"Kelas 8D","active":true},{"class_id":"8E","class_name":"Kelas 8E","active":true}],"activities":[],"glossary":[]};</script>
+  <a id="wa-floating-btn" class="wa-floating-btn no-print" href="javascript:void(0)" onclick="openTeacherWa()" title="Kirim foto rangkuman catatan IPA langsung ke WhatsApp Pak Guru (0857-2121-5213)"><svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg><span>Kirim Rangkuman ke Guru (0857-2121-5213)</span></a>
+  <script>window.PURWAVERSE_BOOTSTRAP = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.appName) ? window.PURWAVERSE_BOOTSTRAP : {"appName":"Purwaverse IPA VIII","mode":"PRODUCTION","sourceStatus":"READY","currentSemester":1,"quizPassingScore":70,"teacherWaNumber":"085721215213","classes":[{"class_id":"8A","class_name":"Kelas 8A","active":true},{"class_id":"8B","class_name":"Kelas 8B","active":true},{"class_id":"8C","class_name":"Kelas 8C","active":true},{"class_id":"8D","class_name":"Kelas 8D","active":true},{"class_id":"8E","class_name":"Kelas 8E","active":true}],"activities":[],"glossary":[]};</script>
   <script>
 const state={studentToken:'',teacherToken:'',activeRole:'',studentProgress:[],studentTeam:null,activeActivity:null,previewUnit:null,summaryReturnView:'student',practiceWorkspace:null,learningHome:null,studentPracticeGuide:null,teacherPracticeGuide:null,teacherMaterialCatalog:null,activeTeacherTab:'overview',teacherLearningCache:{},teacherDashboardCache:{},teacherTeamsCache:{}};
 
@@ -2069,6 +2152,31 @@ const ROLE_VIEW_ACCESS={teacher:['teacher','teacher-materials','teacher-material
 const ACTIVITY_IDS={learn:'CH08-01-U01-LRN01',lab:'CH08-01-U02-LAB01',challenge:'CH08-01-U03-CHL01',research:'CH08-01-U03-RSH01'};
 function activeClientRole(){return state.teacherToken?'teacher':state.studentToken?'student':'guest'}
 function allowedViewForRole(name){const role=activeClientRole(),allowed=ROLE_VIEW_ACCESS[role];if(allowed.includes(name))return name;return role==='teacher'?'teacher':role==='student'?'student':'home'}
+function getTeacherWaNumber() {
+  const raw = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.teacherWaNumber) || '085721215213';
+  let cleaned = String(raw).replace(/\D/g, '');
+  if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
+  return cleaned || '6285721215213';
+}
+
+function openTeacherWa(submateriTitle) {
+  const phone = getTeacherWaNumber();
+  let text = '';
+  if (state.student && state.student.name) {
+    const s = state.student;
+    text = 'Halo Pak Guru, saya ' + s.name + ' (Kelas ' + s.class_id + ', Absen ' + s.roll_no + ').\n\n' +
+      'Saya ingin mengirimkan foto rangkuman buku catatan IPA' + (submateriTitle ? ' untuk Submateri ' + submateriTitle : '') + '.\n\n[Silakan lampirkan foto rangkuman di sini]';
+  } else {
+    text = 'Halo Pak Guru, saya ingin mengirimkan foto rangkuman materi IPA Purwaverse.\n\n' +
+      'Nama Siswa: \n' +
+      'Kelas: \n' +
+      'Nomor Absen: \n' +
+      'Materi / Submateri: ' + (submateriTitle || '') + '\n\n[Silakan lampirkan foto rangkuman di sini]';
+  }
+  const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
 function showView(name){
   name=allowedViewForRole(name);
   document.querySelectorAll('main > section').forEach(v=>{
@@ -2079,6 +2187,13 @@ function showView(name){
   if(name==='chapter')updateChapterStatuses();
   if(name==='home')loadPublicLeaderboard();
   if(name==='student'&&state.student)renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile,team:state.studentTeam});
+
+  const waFloat = document.getElementById('wa-floating-btn');
+  if(waFloat){
+    const shouldShow = (name==='home' && !state.studentToken && !state.teacherToken);
+    waFloat.classList.toggle('hidden', !shouldShow);
+  }
+
   window.scrollTo(0,0);
 }
 
@@ -3021,6 +3136,7 @@ function clearDraft(form) {
   function renderStudentGate(u, s) {
     const summaryStatus = s.summaryVerified ? 'Nilai ' + (s.summary.score || '-') : s.summary && s.summary.status === 'pending_review' ? 'Menunggu pemeriksaan guru' : s.summary && s.summary.status === 'needs_revision' ? 'Perlu diperbaiki' : 'Belum dilaporkan';
     const reportButton = s.summaryVerified ? '' : s.summary && s.summary.status === 'pending_review' ? '<button class="secondary" disabled>Sudah dilaporkan</button>' : '<button class="secondary" onclick="submitSummaryForReview()">' + (s.summary && s.summary.status === 'needs_revision' ? 'Laporkan perbaikan rangkuman' : 'Saya sudah merangkum di buku') + '</button>';
+    const waPhotoBtn = '<button class="btn-wa" onclick="openTeacherWa(\'' + escapeHtml(u.title).replace(/'/g, "\\'") + '\')" title="Kirim foto buku rangkuman ke WhatsApp guru"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;vertical-align:middle;margin-right:4px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg> Kirim Foto via WA</button>';
     const steps = [['1', 'Baca & rangkum', s.summaryVerified], ['2', 'Quick Quiz', s.quizPassed], ['3', u.practice_activity_id ? 'Praktik/LKPD' : 'Submateri tuntas', u.practice_activity_id ? s.practiceVerified : s.quizPassed]];
     let practiceStatus = '';
     if (u.practice_activity_id) {
@@ -3030,7 +3146,7 @@ function clearDraft(form) {
       else if (s.laggingMembers && s.laggingMembers.length > 0) practiceStatus = 'Menunggu tim tuntas: ' + s.laggingMembers.join(', ');
       else practiceStatus = 'Belum tergabung dalam tim (lapor guru)';
     }
-    return '<div class="gate-panel"><div class="stage-strip">' + steps.map(x => '<div class="stage ' + (x[2] ? 'done' : '') + '"><span>' + x[0] + '</span><small>' + x[1] + '</small></div>').join('') + '</div><h3>Progress submateri</h3>' + gateRow('Rangkuman diperiksa guru', s.summaryVerified, summaryStatus) + gateRow('Quick Quiz', s.quizPassed, s.quiz ? s.quiz.score + ' / 100' : 'Menunggu rangkuman') + (u.practice_activity_id ? gateRow(u.practice_required ? 'LKPD/Praktik wajib' : 'Tantangan praktik (opsional)', s.practiceVerified, practiceStatus) : '') + '<div class="actions">' + reportButton + '<button ' + (s.summaryVerified ? '' : 'disabled') + ' onclick="beginQuiz()">' + (s.quiz ? 'Ulangi Quick Quiz' : 'Mulai Quick Quiz') + '</button>' + (u.practice_activity_id ? '<button class="secondary" ' + (s.practiceUnlocked ? '' : 'disabled') + ' onclick="openPracticeSheet()">Buka ' + (u.practice_required ? 'LKPD Praktik' : 'Tantangan Opsional') + '</button>' : '') + '</div></div>';
+    return '<div class="gate-panel"><div class="stage-strip">' + steps.map(x => '<div class="stage ' + (x[2] ? 'done' : '') + '"><span>' + x[0] + '</span><small>' + x[1] + '</small></div>').join('') + '</div><h3>Progress submateri</h3>' + gateRow('Rangkuman diperiksa guru', s.summaryVerified, summaryStatus) + gateRow('Quick Quiz', s.quizPassed, s.quiz ? s.quiz.score + ' / 100' : 'Menunggu rangkuman') + (u.practice_activity_id ? gateRow(u.practice_required ? 'LKPD/Praktik wajib' : 'Tantangan praktik (opsional)', s.practiceVerified, practiceStatus) : '') + '<div class="actions">' + reportButton + waPhotoBtn + '<button ' + (s.summaryVerified ? '' : 'disabled') + ' onclick="beginQuiz()">' + (s.quiz ? 'Ulangi Quick Quiz' : 'Mulai Quick Quiz') + '</button>' + (u.practice_activity_id ? '<button class="secondary" ' + (s.practiceUnlocked ? '' : 'disabled') + ' onclick="openPracticeSheet()">Buka ' + (u.practice_required ? 'LKPD Praktik' : 'Tantangan Opsional') + '</button>' : '') + '</div></div>';
   }
 
   async function submitSummaryForReview() {

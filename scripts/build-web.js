@@ -40,6 +40,7 @@ function build() {
     sourceStatus: "READY",
     currentSemester: 1,
     quizPassingScore: 70,
+    teacherWaNumber: "085721215213",
     classes: [
       { class_id: "8A", class_name: "Kelas 8A", active: true },
       { class_id: "8B", class_name: "Kelas 8B", active: true },

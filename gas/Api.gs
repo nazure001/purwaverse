@@ -71,7 +71,7 @@ function include(filename) { return HtmlService.createHtmlOutputFromFile(filenam
 
 function publicBootstrap_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('PUBLIC_BOOTSTRAP_V2');
+  const cached = cache.get('PUBLIC_BOOTSTRAP_V3');
   if (cached) {
     try { return JSON.parse(cached); } catch(e) {}
   }
@@ -94,12 +94,13 @@ function publicBootstrap_() {
     sourceStatus:CONFIG.SOURCE_STATUS,
     currentSemester:CONFIG.CURRENT_SEMESTER,
     quizPassingScore:CONFIG.QUIZ_PASSING_SCORE,
+    teacherWaNumber:CONFIG.TEACHER_WA_NUMBER || '085721215213',
     classes:rows_('MASTER_CLASSES').filter(r=>String(r.active).toLowerCase()==='true'),
     activities:rows_('MASTER_ACTIVITIES').filter(r=>String(r.public).toLowerCase()==='true'&&String(r.active).toLowerCase()==='true'),
     glossary: glossaries
   };
   try {
-    cache.put('PUBLIC_BOOTSTRAP_V2', JSON.stringify(result), 7200); // 2 hours
+    cache.put('PUBLIC_BOOTSTRAP_V3', JSON.stringify(result), 7200); // 2 hours
   } catch(e) {}
   return result;
 }
