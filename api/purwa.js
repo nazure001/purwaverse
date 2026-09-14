@@ -56,12 +56,38 @@ export default async function handler(req, res) {
       redirect: 'follow'
     });
 
-    const responseText = await gasResponse.text();
+    let responseText = await gasResponse.text();
+
+    // Jika respons berupa HTML (Google Drive interstitial, bot check, atau quota rate-limit)
+    if (responseText.trim().startsWith('<')) {
+      console.warn('Vercel proxy received HTML response from GAS. Attempting immediate retry...');
+      await new Promise(r => setTimeout(r, 1200));
+      try {
+        const retryResponse = await fetchWithRetry(gasUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
+          },
+          body: payload,
+          redirect: 'follow'
+        }, 0);
+        responseText = await retryResponse.text();
+      } catch (retryErr) {
+        console.error('Proxy retry failed:', retryErr);
+      }
+    }
+
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (e) {
-      data = { ok: false, error: 'Respons backend tidak valid: ' + responseText.slice(0, 150) };
+      if (responseText.trim().startsWith('<')) {
+        data = { ok: false, error: 'Server Google sedang padat oleh akses bersamaan. Sedang menghubungkan kembali...' };
+      } else {
+        data = { ok: false, error: 'Respons backend tidak valid: ' + responseText.slice(0, 100) };
+      }
     }
 
     return res.status(200).json(data);
@@ -69,7 +95,7 @@ export default async function handler(req, res) {
     console.error('Vercel GAS proxy error:', error);
     const isTimeout = error && (error.name === 'AbortError' || String(error.message).includes('aborted'));
     const message = isTimeout
-      ? 'Koneksi ke Google Apps Script melampaui batas waktu (timeout 45d). Silakan coba kembali.'
+      ? 'Koneksi ke server melampaui batas waktu (timeout). Sedang mencoba ulang otomatis...'
       : 'Gagal menghubungi server Purwaverse: ' + (error ? error.message : 'Unknown error');
     return res.status(200).json({ ok: false, error: message });
   }

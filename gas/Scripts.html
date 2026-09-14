@@ -120,8 +120,19 @@ async function callApi(action, payload) {
         return json.data;
       }
 
-      // Jika error adalah pesan bisnis terverifikasi (bukan server/proxy failure), langsung lempar
-      if (json.error && !json.error.includes('Respons backend tidak valid') && !json.error.includes('<!doctype') && !json.error.includes('Gagal menghubungi') && !json.error.includes('melampaui batas waktu')) {
+      // Periksa apakah error merupakan kendala server/proxy yang layak di-retry
+      const isRetryableServerErr = json.error && (
+        json.error.includes('Server Google sedang padat') ||
+        json.error.includes('melampaui batas waktu') ||
+        json.error.includes('Respons backend tidak valid') ||
+        json.error.includes('<!doctype') ||
+        json.error.includes('Gagal menghubungi') ||
+        json.error.includes('Internal Server Error') ||
+        json.error.includes('timeout')
+      );
+
+      // Jika error adalah pesan bisnis pasti (misal PIN salah, kuis belum lulus), langsung lempar tanpa retry
+      if (!isRetryableServerErr && json.error) {
         throw new Error(json.error);
       }
 
@@ -130,7 +141,7 @@ async function callApi(action, payload) {
       lastError = err;
       // Jika error bisnis murni, jangan retry
       const errMsg = String(err.message || '');
-      if (errMsg.includes('Login guru tidak sesuai') || errMsg.includes('PIN salah') || errMsg.includes('Siswa tidak ditemukan') || errMsg.includes('Aksi API tidak dikenal') || errMsg.includes('Token sesi')) {
+      if (errMsg.includes('Login guru tidak sesuai') || errMsg.includes('PIN salah') || errMsg.includes('Siswa tidak ditemukan') || errMsg.includes('Aksi API tidak dikenal') || errMsg.includes('Token sesi') || errMsg.includes('Sesi berakhir')) {
         throw err;
       }
       if (attempt < 3) {
@@ -173,6 +184,9 @@ function renderStudentDashboard(d){
   state.studentProgress=d.progress||[];
   state.studentProfile=d.profile||null;
   if(d.team!==undefined)state.studentTeam=d.team;
+  if(state.studentToken) {
+    try { SafeStorage.set('studentCachedData_' + state.studentToken, JSON.stringify(d)); } catch(e){}
+  }
   const initial=d.student.name.charAt(0).toUpperCase();
   document.getElementById('student-welcome').innerHTML='<div class="dashboard-head" style="align-items:center; display:flex; gap:1.25rem; margin-bottom:1.5rem;"><div style="width:64px; height:64px; min-width:64px; background:linear-gradient(135deg, var(--blue), #4f46e5); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:bold; box-shadow:0 4px 10px rgba(21,94,239,0.2);">'+initial+'</div><div><span class="pill" style="margin-bottom:0.2rem; display:inline-block;">'+d.student.class_id+' · NO. '+d.student.roll_no+'</span><h2 style="margin:0; font-size:clamp(1.5rem,4vw,2.2rem); display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; word-break:break-word;">Halo, <span id="student-name-display" style="transition: color 0.3s ease, text-shadow 0.3s ease;">'+escapeHtml(d.student.name)+'</span> <span id="top-badge-slot"></span></h2><p style="margin:0.25rem 0 0 0; color:var(--muted); font-size:1.05rem;">Lanjutkan perjalanan sainsmu dari bukti yang tersimpan.</p></div></div>';
   renderStudentTeamCard(state.studentTeam);
@@ -270,6 +284,15 @@ async function refreshStudentTeam(showToast){
 
 async function loadStudent(forceRefresh){
   if(!state.studentToken)return;
+  if(!state.student && !forceRefresh){
+    const cached = SafeStorage.get('studentCachedData_' + state.studentToken);
+    if(cached){
+      try {
+        const d = JSON.parse(cached);
+        renderStudentDashboard(d);
+      } catch(e){}
+    }
+  }
   if(state.student&&!forceRefresh){
     renderStudentDashboard({student:state.student,progress:state.studentProgress,profile:state.studentProfile,team:state.studentTeam});
     callApi('studentHome',{token:state.studentToken}).then(d=>renderStudentDashboard(d)).catch(()=>{});
@@ -897,7 +920,7 @@ function updateAuthNavigation(){
  if(primary)primary.textContent='Jalur Belajar';if(secondary)secondary.textContent='LKPD';if(homePrimary)homePrimary.textContent='Mulai Belajar';if(homeSecondary)homeSecondary.textContent='Masuk ke Akun';
 }
 function handleAuthNavigation(){if(state.studentToken||state.teacherToken)logout();else showView('login')}
-async function logout(){const token=state.activeRole==='teacher'?state.teacherToken:state.studentToken;try{if(token)await callApi('logout',{token})}catch(e){toast('Sesi lokal ditutup. Server tidak dapat dihubungi.')}finally{state.studentToken='';state.teacherToken='';state.activeRole='';state.studentProgress=[];state.studentTeam=null;state.activeActivity=null;state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;state.activeUnit=null;state.activeQuiz=null;state.previewUnit=null;state.practiceWorkspace=null;state.teacherLearningCache={};state.teacherDashboardCache={};state.teacherTeamsCache={};state.activeTeacherTab='overview';SafeStorage.remove('studentToken');SafeStorage.remove('teacherToken');toggleProjectionMode(false);updateAuthNavigation();showView('home')}}
+async function logout(){const token=state.activeRole==='teacher'?state.teacherToken:state.studentToken;try{if(token)await callApi('logout',{token})}catch(e){toast('Sesi lokal ditutup. Server tidak dapat dihubungi.')}finally{if(state.studentToken){SafeStorage.remove('studentCachedData_'+state.studentToken);SafeStorage.remove('learningHomeCache_'+state.studentToken);}state.studentToken='';state.teacherToken='';state.activeRole='';state.studentProgress=[];state.studentTeam=null;state.activeActivity=null;state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;state.activeUnit=null;state.activeQuiz=null;state.previewUnit=null;state.practiceWorkspace=null;state.teacherLearningCache={};state.teacherDashboardCache={};state.teacherTeamsCache={};state.activeTeacherTab='overview';SafeStorage.remove('studentToken');SafeStorage.remove('teacherToken');toggleProjectionMode(false);updateAuthNavigation();showView('home')}}
 const draftState = { timer: null };
 function getDraftKey(form) {
   if (!state.studentToken) return null;
@@ -978,15 +1001,40 @@ function clearDraft(form) {
   if (savedStudent) {
     state.studentToken = savedStudent;
     state.activeRole = 'student';
+    // Render dashboard instantly from local cache if available
+    const cached = SafeStorage.get('studentCachedData_' + savedStudent);
+    if (cached) {
+      try {
+        const d = JSON.parse(cached);
+        renderStudentDashboard(d);
+        showView('student');
+      } catch(e){}
+    }
     try {
       await loadStudent();
       showView('student');
     } catch(e) {
-      toast('Gagal memulihkan sesi siswa: ' + e.message);
-      SafeStorage.remove('studentToken');
-      state.studentToken = '';
-      state.activeRole = '';
-      showView('home');
+      const errMsg = String(e && e.message || '');
+      const isAuthExpired = errMsg.includes('Sesi berakhir') || errMsg.includes('Akun siswa tidak aktif') || errMsg.includes('Token sesi tidak valid') || errMsg.includes('Siswa tidak ditemukan');
+      if (isAuthExpired) {
+        toast('Sesi telah berakhir. Silakan masuk kembali.');
+        SafeStorage.remove('studentToken');
+        SafeStorage.remove('studentCachedData_' + savedStudent);
+        SafeStorage.remove('learningHomeCache_' + savedStudent);
+        state.studentToken = '';
+        state.activeRole = '';
+        showView('home');
+      } else {
+        // Gangguan jaringan / timeout sementara: JANGAN mengeluarkan siswa dari sesi!
+        console.warn('Network issue restoring student session:', errMsg);
+        if (state.student) {
+          showView('student');
+          toast('Koneksi sedang lambat. Menggunakan data tersimpan (sesi tetap aktif).');
+        } else {
+          showView('student');
+          toast('Sedang menghubungkan ke server...');
+        }
+      }
     }
     updateAuthNavigation();
   } else if (savedTeacher) {
@@ -996,11 +1044,19 @@ function clearDraft(form) {
       await loadDashboard();
       showView('teacher');
     } catch(e) {
-      toast('Gagal memulihkan sesi guru: ' + e.message);
-      SafeStorage.remove('teacherToken');
-      state.teacherToken = '';
-      state.activeRole = '';
-      showView('home');
+      const errMsg = String(e && e.message || '');
+      const isAuthExpired = errMsg.includes('Sesi berakhir') || errMsg.includes('Token tidak valid') || errMsg.includes('Login guru tidak sesuai');
+      if (isAuthExpired) {
+        toast('Sesi guru berakhir: ' + errMsg);
+        SafeStorage.remove('teacherToken');
+        state.teacherToken = '';
+        state.activeRole = '';
+        showView('home');
+      } else {
+        console.warn('Network issue restoring teacher session:', errMsg);
+        showView('teacher');
+        toast('Koneksi lambat. Sesi guru tetap aktif.');
+      }
     }
     updateAuthNavigation();
   } else {

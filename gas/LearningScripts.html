@@ -3,9 +3,37 @@
 
   async function openLearningPath() {
     if (!state.studentToken) { toast('Masuk sebagai siswa untuk melihat progres pribadi.'); showView('login'); return }
-    if(state.learningHome) { renderLearningPath(); showView('learning'); return }
-    const root = document.getElementById('learning-path'); root.innerHTML = '<div class="concept-callout"><b>Memuat jalur belajar...</b></div>'; showView('learning');
-    try { state.learningHome = await callApi('learningHome', { token: state.studentToken }); renderLearningPath() } catch (e) { toast(e.message); showView('student') }
+    
+    // Check local storage cache for instant rendering
+    const cachedPath = SafeStorage.get('learningHomeCache_' + state.studentToken);
+    if (!state.learningHome && cachedPath) {
+      try {
+        state.learningHome = JSON.parse(cachedPath);
+        renderLearningPath();
+        showView('learning');
+      } catch (e) {}
+    } else if (state.learningHome) {
+      renderLearningPath();
+      showView('learning');
+    } else {
+      const root = document.getElementById('learning-path');
+      if (root) root.innerHTML = '<div class="concept-callout"><b>Memuat jalur belajar...</b></div>';
+      showView('learning');
+    }
+
+    try {
+      const freshHome = await callApi('learningHome', { token: state.studentToken });
+      state.learningHome = freshHome;
+      SafeStorage.set('learningHomeCache_' + state.studentToken, JSON.stringify(freshHome));
+      renderLearningPath();
+    } catch (e) {
+      if (!state.learningHome) {
+        toast(e.message);
+        showView('student');
+      } else {
+        console.warn('Silent learningPath background refresh:', e.message);
+      }
+    }
   }
 
   function renderLearningPath() {
@@ -17,11 +45,72 @@
 
   async function openLearningUnit(unitId) {
     if (!state.unitsCache) state.unitsCache = {};
-    if (state.unitsCache[unitId]) { state.activeUnit = state.unitsCache[unitId]; renderLearningUnit(); showView('learning-unit'); return }
+    if (state.unitsCache[unitId]) {
+      state.activeUnit = state.unitsCache[unitId];
+      renderLearningUnit();
+      showView('learning-unit');
+      return;
+    }
+
+    // Check if static curriculum unit is available locally (0 ms instant render)
+    const staticUnit = (window.PURWAVERSE_STATIC_UNITS && window.PURWAVERSE_STATIC_UNITS[unitId]) || null;
+    let s = null;
+    if (state.learningHome && state.learningHome.chapters) {
+      for (const ch of state.learningHome.chapters) {
+        const found = ch.units && ch.units.find(u => u.unit_id === unitId);
+        if (found && found.state) {
+          s = found.state;
+          break;
+        }
+      }
+    }
+
+    if (staticUnit) {
+      const fallbackState = s || {
+        learningStatus: 'reading',
+        contentUnlocked: true,
+        summaryVerified: false,
+        quizPassed: false,
+        practiceUnlocked: false,
+        practiceVerified: false,
+        summary: null,
+        quiz: null
+      };
+      const u = Object.assign({}, staticUnit, { state: fallbackState, confusion_signal: null });
+      state.activeUnit = u;
+      state.unitsCache[unitId] = u;
+      renderLearningUnit();
+      showView('learning-unit');
+
+      // Sync fresh gate state and confusion signal silently in the background
+      if (state.studentToken) {
+        callApi('learningUnit', { token: state.studentToken, unitId }).then(freshUnit => {
+          if (freshUnit && freshUnit.state) {
+            state.activeUnit = freshUnit;
+            state.unitsCache[unitId] = freshUnit;
+            if (state.currentView === 'learning-unit') {
+              renderLearningUnit();
+            }
+          }
+        }).catch(err => {
+          console.warn('Background sync for unit skipped:', err);
+        });
+      }
+      return;
+    }
+
     const root = document.getElementById('learning-unit-content');
     if (root) root.innerHTML = '<div class="concept-callout"><b>Memuat materi...</b></div>';
     showView('learning-unit');
-    try { const u = await callApi('learningUnit', { token: state.studentToken, unitId }); state.activeUnit = u; state.unitsCache[unitId] = u; renderLearningUnit(); } catch (e) { toast(e.message); showView('learning') }
+    try {
+      const u = await callApi('learningUnit', { token: state.studentToken, unitId });
+      state.activeUnit = u;
+      state.unitsCache[unitId] = u;
+      renderLearningUnit();
+    } catch (e) {
+      toast(e.message);
+      showView('learning');
+    }
   }
 
   function renderLearningUnit() {
@@ -68,11 +157,53 @@
   async function openTeacherMaterialPreview() {
     if (!state.teacherToken) { toast('Masuk sebagai guru terlebih dahulu.'); showView('teacher-login'); return }
     const root = document.getElementById('teacher-material-catalog'); showView('teacher-materials');
-    try { const data = state.teacherMaterialCatalog || (state.teacherMaterialCatalog = await callApi('teacherLearningCatalog', { token: state.teacherToken })); root.innerHTML = '<div class="dashboard-head"><div><span class="pill">MODE BACA SAJA</span><h2>Pratinjau Semua Materi</h2><p>Membuka halaman ini tidak membuat progres, nilai, atau percobaan kuis.</p></div></div>' + data.chapters.map(ch => '<section class="learning-chapter"><header><div><span class="pill">SEMESTER ' + ch.semester + ' - BAB ' + ch.order + '</span><h2>' + escapeHtml(ch.title) + '</h2><p>' + escapeHtml(ch.tagline) + '</p></div></header><div class="unit-list">' + ch.units.map(u => '<article class="unit-card"><div><small>SUBMATERI ' + u.order + '</small><h3>' + escapeHtml(u.title) + '</h3><p>' + escapeHtml(u.summary) + '</p></div><button onclick="openTeacherMaterialUnit(\'' + u.unit_id + '\')">Pratinjau</button></article>').join('') + '</div></section>').join('') } catch (e) { toast(e.message); showView('teacher') }
+    
+    // Check if static catalog is already available in memory or window
+    const staticCatalog = window.PURWAVERSE_STATIC_CATALOG;
+    if (staticCatalog && staticCatalog.chapters && staticCatalog.chapters.length > 0) {
+      state.teacherMaterialCatalog = staticCatalog;
+      renderTeacherMaterialCatalog(staticCatalog);
+      return;
+    }
+    
+    if (state.teacherMaterialCatalog) {
+      renderTeacherMaterialCatalog(state.teacherMaterialCatalog);
+      return;
+    }
+
+    root.innerHTML = '<div class="concept-callout"><b>Memuat katalog materi...</b></div>';
+    try {
+      const data = await callApi('teacherLearningCatalog', { token: state.teacherToken });
+      state.teacherMaterialCatalog = data;
+      renderTeacherMaterialCatalog(data);
+    } catch (e) {
+      toast(e.message);
+      showView('teacher');
+    }
+  }
+
+  function renderTeacherMaterialCatalog(data) {
+    const root = document.getElementById('teacher-material-catalog');
+    if (!root) return;
+    root.innerHTML = '<div class="dashboard-head"><div><span class="pill">MODE BACA SAJA</span><h2>Pratinjau Semua Materi</h2><p>Membuka halaman ini tidak membuat progres, nilai, atau percobaan kuis.</p></div></div>' + data.chapters.map(ch => '<section class="learning-chapter"><header><div><span class="pill">SEMESTER ' + ch.semester + ' - BAB ' + ch.order + '</span><h2>' + escapeHtml(ch.title) + '</h2><p>' + escapeHtml(ch.tagline) + '</p></div></header><div class="unit-list">' + ch.units.map(u => '<article class="unit-card"><div><small>SUBMATERI ' + u.order + '</small><h3>' + escapeHtml(u.title) + '</h3><p>' + escapeHtml(u.summary) + '</p></div><button onclick="openTeacherMaterialUnit(\'' + u.unit_id + '\')">Pratinjau</button></article>').join('') + '</div></section>').join('');
   }
 
   async function openTeacherMaterialUnit(unitId) {
-    try { const u = await callApi('teacherLearningUnit', { token: state.teacherToken, unitId }); state.previewUnit = u; document.getElementById('teacher-material-content').innerHTML = renderMaterialContent(u) + '<div class="concept-callout"><b>Mode guru:</b> halaman ini tidak menjalankan kuis dan tidak menulis progres siswa.</div>'; showView('teacher-material-unit') } catch (e) { toast(e.message) }
+    if (window.PURWAVERSE_STATIC_UNITS && window.PURWAVERSE_STATIC_UNITS[unitId]) {
+      const u = Object.assign({}, window.PURWAVERSE_STATIC_UNITS[unitId], { preview: true });
+      state.previewUnit = u;
+      document.getElementById('teacher-material-content').innerHTML = renderMaterialContent(u) + '<div class="concept-callout"><b>Mode guru:</b> halaman ini tidak menjalankan kuis dan tidak menulis progres siswa.</div>';
+      showView('teacher-material-unit');
+      return;
+    }
+    try {
+      const u = await callApi('teacherLearningUnit', { token: state.teacherToken, unitId });
+      state.previewUnit = u;
+      document.getElementById('teacher-material-content').innerHTML = renderMaterialContent(u) + '<div class="concept-callout"><b>Mode guru:</b> halaman ini tidak menjalankan kuis dan tidak menulis progres siswa.</div>';
+      showView('teacher-material-unit');
+    } catch (e) {
+      toast(e.message);
+    }
   }
 
   function gateRow(label, ok, detail) { return '<div class="gate-row"><span>' + escapeHtml(label) + '</span><span class="' + (ok ? 'check-ok' : 'check-wait') + '">' + escapeHtml(detail) + '</span></div>' }

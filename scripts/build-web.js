@@ -51,7 +51,61 @@ function build() {
     activities: [],
     glossary: []
   };
-  indexHtml = indexHtml.replace(/<script>window\.PURWAVERSE_BOOTSTRAP\s*=\s*<\?!=\s*bootstrap\s*\?>;<\/script>/g, '<script>window.PURWAVERSE_BOOTSTRAP = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.appName) ? window.PURWAVERSE_BOOTSTRAP : ' + JSON.stringify(defaultBootstrap) + ';</script>');
+  // Extract static curriculum units and catalog to eliminate GAS roundtrips during lesson viewing
+  let staticUnitsMap = {};
+  let staticCatalog = { chapters: [] };
+  try {
+    const vm = require('vm');
+    const sandbox = { console, setTimeout, clearTimeout };
+    vm.createContext(sandbox);
+
+    const configCode = readFile('Config.gs');
+    const practiceCode = readFile('PracticeData.gs');
+    const learningCode = readFile('LearningData.gs');
+
+    vm.runInContext(configCode, sandbox);
+    vm.runInContext(practiceCode, sandbox);
+    vm.runInContext(learningCode, sandbox);
+
+    if (typeof sandbox.allLearningUnits_ === 'function') {
+      const allUnits = sandbox.allLearningUnits_();
+      allUnits.forEach(u => {
+        staticUnitsMap[u.unit_id] = Object.assign({}, u, {
+          illustration_svg: sandbox.learningIllustration_(u.illustration),
+          practice_preview: sandbox.practiceCatalogItem_(u.practice_activity_id)
+        });
+      });
+      console.log(`Pre-bundled ${Object.keys(staticUnitsMap).length} static curriculum units into client build.`);
+    }
+
+    if (Array.isArray(sandbox.LEARNING_PATH_)) {
+      staticCatalog = {
+        chapters: sandbox.LEARNING_PATH_.map(chapter => ({
+          chapter_id: chapter.chapter_id,
+          semester: chapter.semester,
+          order: chapter.order,
+          title: chapter.title,
+          tagline: chapter.tagline,
+          units: chapter.units.map(unit => ({
+            unit_id: unit.unit_id,
+            order: unit.order,
+            title: unit.title,
+            summary: unit.summary,
+            illustration: unit.illustration,
+            practice_activity_id: unit.practice_activity_id,
+            learn_activity_id: unit.learn_activity_id,
+            quiz_activity_id: unit.quiz_activity_id
+          }))
+        }))
+      };
+    }
+  } catch (err) {
+    console.error('Failed to pre-bundle static curriculum units:', err);
+  }
+
+  const staticScripts = `\n<script>\nwindow.PURWAVERSE_STATIC_UNITS = ${JSON.stringify(staticUnitsMap)};\nwindow.PURWAVERSE_STATIC_CATALOG = ${JSON.stringify(staticCatalog)};\n</script>`;
+
+  indexHtml = indexHtml.replace(/<script>window\.PURWAVERSE_BOOTSTRAP\s*=\s*<\?!=\s*bootstrap\s*\?>;<\/script>/g, '<script>window.PURWAVERSE_BOOTSTRAP = (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.appName) ? window.PURWAVERSE_BOOTSTRAP : ' + JSON.stringify(defaultBootstrap) + ';</script>' + staticScripts);
 
   const outputPath = path.join(PUBLIC_DIR, 'index.html');
   fs.writeFileSync(outputPath, indexHtml, 'utf8');
