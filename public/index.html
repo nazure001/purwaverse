@@ -2655,7 +2655,7 @@ function renderDiagnosticForm(items, selfMap, durationSeconds) {
   root.dataset.selfIds = JSON.stringify(selfMap.map(x => x.item_id));
   root.scrollIntoView({ behavior: 'smooth' });
 
-  startDiagnosticTimer(durationSeconds || (items.length * 120));
+  startDiagnosticTimer(durationSeconds || (items.length * 210));
   if (typeof restoreDrafts === 'function') setTimeout(restoreDrafts, 50);
 }
 
@@ -2674,7 +2674,7 @@ async function loadDiagnostic() {
       callApi('selfMapItems', { token: state.studentToken })
     ]);
     const items = diagRes.items || diagRes;
-    const durationSeconds = diagRes.durationSeconds || (items.length * 120);
+    const durationSeconds = diagRes.durationSeconds || (items.length * 210);
     state.diagnosticData = { items, selfMap, durationSeconds };
     renderDiagnosticForm(items, selfMap, durationSeconds);
   } catch (e) {
@@ -2717,7 +2717,8 @@ async function submitDiagnostic(isAutoSubmit) {
       token: state.studentToken,
       responses,
       selfMapScore,
-      remainingSeconds: Math.max(0, _diagRemainingSeconds)
+      remainingSeconds: Math.max(0, _diagRemainingSeconds),
+      isTimeout: !!isAutoSubmit
     });
     clearDraft(root);
     state.diagnosticData = null;
@@ -2737,7 +2738,32 @@ async function submitDiagnostic(isAutoSubmit) {
 function renderProfile(p){document.getElementById('profile-card').innerHTML='<h3>Science Self Map</h3><p>Overall reasoning: <b>'+p.overall_reasoning+'/4</b></p><p>Research readiness: <b>'+p.research_readiness+'</b></p><small>Profil untuk dukungan belajar, bukan ranking.</small>'}
 async function teacherLogin(e){e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Memverifikasi...';}try{const s=await callApi('loginTeacher',{username:document.getElementById('teacher-user').value,password:document.getElementById('teacher-pass').value});state.teacherToken=s.token;state.studentToken='';state.activeRole='teacher';state.learningHome=null;state.studentPracticeGuide=null;state.teacherPracticeGuide=null;state.teacherMaterialCatalog=null;SafeStorage.set('teacherToken',s.token);SafeStorage.remove('studentToken');updateAuthNavigation();document.getElementById('teacher-pass').value='';showView('teacher');await loadDashboard()}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Masuk sebagai guru';}}}
 function renderDashboardContent(d){document.getElementById('dashboard-content').innerHTML='<div class="stat-grid"><div class="stat"><span>Siswa aktif</span><strong>'+d.studentCount+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">total siswa kelas</small></div><div class="stat"><span>Profil lengkap</span><strong>'+d.diagnosedCount+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">siswa tuntas M0</small></div><div class="stat"><span>Catatan progress</span><strong>'+d.progressCount+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">total rekaman aktivitas</small></div><div class="stat"><span>Belum lengkap</span><strong>'+d.students.filter(s=>!s.profile).length+'</strong><small style="display:block;font-size:0.75rem;color:#64748b;font-weight:normal;">belum lengkap M0</small></div></div><div class="student-table-wrapper"><table class="student-table"><thead><tr><th>No</th><th>Nama</th><th>Reasoning</th><th>Readiness</th><th>Progress</th></tr></thead><tbody>'+d.students.map(s=>'<tr><td>'+s.rollNo+'</td><td>'+escapeHtml(s.name)+'</td><td>'+(s.profile?s.profile.overall_reasoning:'-')+'</td><td>'+(s.profile?s.profile.research_readiness:'Belum dinilai lengkap')+'</td><td>'+s.progress.length+'</td></tr>').join('')+'</tbody></table></div>';const button=document.getElementById('generate-teams-button');if(button)button.disabled=!d.canGenerateTeams;const note=document.getElementById('team-gate-note');if(note)note.textContent=d.canGenerateTeams?'Minimal calon Science Leader tersedia. Team Builder siap digunakan.':'Team Builder membutuhkan minimal '+Math.min(8,d.studentCount)+' profil Mission 0 lengkap; saat ini '+d.diagnosedCount+'.';}
-async function loadDashboard(){if(!state.teacherToken)return;const classId=document.getElementById('teacher-class').value;state.teacherDashboardCache=state.teacherDashboardCache||{};if(state.teacherDashboardCache[classId]){renderDashboardContent(state.teacherDashboardCache[classId])}try{const d=await callApi('dashboard',{token:state.teacherToken,classId});state.teacherDashboardCache[classId]=d;renderDashboardContent(d)}catch(e){toast(e.message)}}
+async function loadDashboard(forceRefresh){
+  if(!state.teacherToken)return;
+  const classId=document.getElementById('teacher-class')?.value||'8A';
+  state.teacherDashboardCache=state.teacherDashboardCache||{};
+  if(!state.teacherDashboardCache[classId]){
+    const localCached=SafeStorage.get('teacherDashboardCache_'+classId);
+    if(localCached){try{state.teacherDashboardCache[classId]=JSON.parse(localCached);}catch(e){}}
+  }
+  if(state.teacherDashboardCache[classId]){
+    renderDashboardContent(state.teacherDashboardCache[classId]);
+    if(!forceRefresh){
+      callApi('dashboard',{token:state.teacherToken,classId}).then(d=>{
+        state.teacherDashboardCache[classId]=d;
+        try{SafeStorage.set('teacherDashboardCache_'+classId,JSON.stringify(d));}catch(e){}
+        renderDashboardContent(d);
+      }).catch(()=>{});
+      return;
+    }
+  }
+  try{
+    const d=await callApi('dashboard',{token:state.teacherToken,classId});
+    state.teacherDashboardCache[classId]=d;
+    try{SafeStorage.set('teacherDashboardCache_'+classId,JSON.stringify(d));}catch(e){}
+    renderDashboardContent(d);
+  }catch(e){toast(e.message)}
+}
 
 async function loadDiagnosticReview() {
   const root = document.getElementById('diagnostic-review');
@@ -3107,18 +3133,17 @@ function clearDraft(form) {
     }
   }
 
-  const bootstrapPromise = (async () => {
-    try {
-      const fresh = await callApi('bootstrap');
+  // Hanya fetch bootstrap jika data belum ada di HTML bundle atau storage
+  if (!window.PURWAVERSE_BOOTSTRAP || !window.PURWAVERSE_BOOTSTRAP.appName) {
+    callApi('bootstrap').then(fresh => {
       if (fresh && fresh.appName) {
         window.PURWAVERSE_BOOTSTRAP = fresh;
         SafeStorage.set('PURWAVERSE_BOOTSTRAP_CACHE', JSON.stringify(fresh));
       }
-    } catch(err) {
-      console.warn('Bootstrap fetch fallback failed:', err);
-      window.PURWAVERSE_BOOTSTRAP = window.PURWAVERSE_BOOTSTRAP || {};
-    }
-  })();
+    }).catch(err => {
+      console.warn('Bootstrap background fetch failed:', err);
+    });
+  }
 
   const savedStudent = SafeStorage.get('studentToken');
   const savedTeacher = SafeStorage.get('teacherToken');
@@ -3187,8 +3212,6 @@ function clearDraft(form) {
   } else {
     loadPublicLeaderboard();
   }
-
-  await bootstrapPromise;
 })();
 </script>
 

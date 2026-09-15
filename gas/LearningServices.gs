@@ -83,7 +83,7 @@ function learningHome_(session){
   const studentId=session.actor_id,units=allLearningUnits_(),context=studentLearningContext_(studentId),teamContext=teamLearningContext_(studentId);
   const chapters=LEARNING_PATH_.map(chapter=>Object.assign({},chapter,{units:chapter.units.map(unit=>{
     const globalIndex=units.findIndex(x=>x.unit_id===unit.unit_id),state=unitState_(studentId,unit,globalIndex,units,context,teamContext);
-    return Object.assign({},unit,{illustration_svg:learningIllustration_(unit.illustration),state});
+    return Object.assign({},unit,{state});
   })}));
   return {chapters,outline:SEMESTER_OUTLINE_,semesterCard:semesterCardData_(studentId,CONFIG.CURRENT_SEMESTER,context),teamProgress:studentTeamProgress_(studentId)};
 }

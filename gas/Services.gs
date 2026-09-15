@@ -134,27 +134,45 @@ function diagnosticItemsForStudent_(studentId) {
     if (!selectedIds || selectedIds.length < 5) {
       selectedIds = [];
       const usedIds = new Set();
-      // 1 butir per domain secara deterministik acak (5 domain)
-      CONFIG.DOMAINS.forEach((domain, idx) => {
+
+      // Hitung target jumlah butir acak (5 s.d. 9 butir) secara deterministik per siswa
+      let seedVal = 0;
+      const seedStr = studentId + '|diag_count|v4';
+      for (let i = 0; i < seedStr.length; i++) seedVal = (seedVal * 31 + seedStr.charCodeAt(i)) >>> 0;
+      const targetCount = 5 + (seedVal % 5); // menghasilkan 5, 6, 7, 8, atau 9 butir
+
+      // 1 butir per domain secara acak (5 domain utama wajib terwakili)
+      CONFIG.DOMAINS.forEach((domain) => {
         const domainItems = allItems.filter(i => i.domain === domain);
         if (domainItems.length > 0) {
-          const shuffled = stableShuffle_(domainItems, studentId + '|' + domain + '|v3');
+          const shuffled = stableShuffle_(domainItems, studentId + '|' + domain + '|v4');
           selectedIds.push(shuffled[0].item_id);
           usedIds.add(shuffled[0].item_id);
         }
       });
-      // 1 butir tantangan acak dari butir yang tersisa (total 6 butir)
-      const remaining = allItems.filter(i => !usedIds.has(i.item_id));
-      if (remaining.length > 0) {
-        const shuffledRemaining = stableShuffle_(remaining, studentId + '|EXTRA|v3');
-        selectedIds.push(shuffledRemaining[0].item_id);
+
+      // Jika targetCount > 5, ambil butir tantangan ekstra dari butir bank yang tersisa
+      if (targetCount > selectedIds.length) {
+        const remaining = allItems.filter(i => !usedIds.has(i.item_id));
+        if (remaining.length > 0) {
+          const extraNeeded = targetCount - selectedIds.length;
+          const shuffledRemaining = stableShuffle_(remaining, studentId + '|EXTRA|v4');
+          shuffledRemaining.slice(0, extraNeeded).forEach(item => {
+            selectedIds.push(item.item_id);
+            usedIds.add(item.item_id);
+          });
+        }
       }
+
+      // Acak penuh urutan tampil soal agar tidak selalu sekuensial per domain
+      selectedIds = stableShuffle_(selectedIds, studentId + '|DISPLAY_ORDER|v4');
+
       upsert_('SETTINGS', 'key', { key: sessionKey, value: JSON.stringify(selectedIds), updated_at: isoNow_() });
     }
   }
 
   const items = selectedIds.map(id => itemMap[id]).filter(Boolean).map(({ rubric_json, ...safe }) => safe);
-  const durationSeconds = items.length * (CONFIG.DIAGNOSTIC_SECONDS_PER_ITEM || 120);
+  const durationSeconds = items.length * (CONFIG.DIAGNOSTIC_SECONDS_PER_ITEM || 210);
   return { items, durationSeconds, totalCount: items.length };
 }
 
@@ -168,21 +186,26 @@ function submitDiagnostic_(session, payload) {
     throw new Error('Semua butir tantangan Mission 0 harus dikerjakan lengkap.');
   }
 
+  const isTimeout = payload.isTimeout === true;
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     responses.forEach(response => {
       if (!byId[response.itemId]) throw new Error('Butir diagnostik tidak dikenal: ' + response.itemId);
-      if (!String(response.answer || '').trim()) throw new Error('Jawaban diagnostik tidak boleh kosong.');
+      const ansText = String(response.answer || '').trim();
+      if (!ansText && !isTimeout) {
+        throw new Error('Jawaban diagnostik tidak boleh kosong.');
+      }
+      const finalAnswer = ansText || (isTimeout ? '[Waktu habis - belum sempat dijawab]' : '');
       const responseId = session.actor_id + '|' + response.itemId;
       const existing = findOne_('DIAGNOSTIC_RESPONSES', r => r.response_id === responseId);
-      if (existing && existing.score !== '' && existing.score !== null && String(existing.answer) !== String(response.answer || '')) {
+      if (existing && existing.score !== '' && existing.score !== null && String(existing.answer) !== finalAnswer) {
         throw new Error('Jawaban yang sudah dinilai tidak dapat diubah. Hubungi guru bila perlu koreksi.');
       }
       upsert_('DIAGNOSTIC_RESPONSES', 'response_id', {
         response_id: responseId,
         student_id: session.actor_id,
         item_id: response.itemId,
-        answer: String(response.answer || ''),
+        answer: finalAnswer,
         score: existing ? existing.score : '',
         scored_by: existing ? existing.scored_by : '',
         submitted_at: isoNow_()
