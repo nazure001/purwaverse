@@ -1,0 +1,78 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const request = require('supertest');
+const app = require('../src/server');
+const { getDatabase, closeDatabase } = require('../src/database/db');
+
+test('Backend Skeleton & RPC Router Test Suite', async (t) => {
+
+  await t.test('1. GET / harus mengembalikan status online', async () => {
+    const res = await request(app)
+      .get('/')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    assert.equal(res.body.status, 'online');
+    assert.equal(res.body.service, 'purwaverse');
+  });
+
+  await t.test('2. POST /api/purwa dengan action bootstrap harus mengembalikan ok: true', async () => {
+    const res = await request(app)
+      .post('/api/purwa')
+      .send({
+        action: 'bootstrap',
+        payload: {}
+      })
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    assert.equal(res.body.ok, true);
+    assert.ok(res.body.data);
+    assert.equal(res.body.data.appName, 'Purwaverse IPA VIII');
+    assert.equal(res.body.data.mode, 'VPS-MIGRATION');
+    assert.equal(res.body.data.status, 'ONLINE');
+  });
+
+  await t.test('3. POST /api/purwa dengan action belum dimigrasikan harus mengembalikan ok: false', async () => {
+    const res = await request(app)
+      .post('/api/purwa')
+      .send({
+        action: 'unmigratedActionX',
+        payload: { sample: 123 }
+      })
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    assert.equal(res.body.ok, false);
+    assert.match(res.body.error, /belum dimigrasikan/);
+  });
+
+  await t.test('4. POST /api/purwa tanpa action harus mengembalikan error validasi', async () => {
+    const res = await request(app)
+      .post('/api/purwa')
+      .send({})
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    assert.equal(res.body.ok, false);
+    assert.match(res.body.error, /Action wajib disertakan/);
+  });
+
+  await t.test('5. Database SQLite connection & pragmas terverifikasi', async () => {
+    const db = getDatabase(':memory:');
+    assert.ok(db, 'Instance database SQLite harus terinisialisasi');
+
+    const journalMode = db.pragma('journal_mode', { simple: true });
+    // Pada :memory:, SQLite selalu menetapkan 'memory'
+    assert.ok(journalMode, 'Pragma journal_mode harus aktif');
+
+    const foreignKeys = db.pragma('foreign_keys', { simple: true });
+    assert.equal(foreignKeys, 1, 'Foreign keys harus bernilai ON (1)');
+
+    const busyTimeout = db.pragma('busy_timeout', { simple: true });
+    assert.equal(busyTimeout, 5000, 'Busy timeout harus bernilai 5000ms');
+
+    closeDatabase();
+  });
+
+});

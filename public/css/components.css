@@ -1,0 +1,961 @@
+/* ==========================================================================
+   PURWAVERSE SCIENCE ENGINE - COMPONENTS DESIGN SYSTEM
+   IndustrialCard, BlueprintPanel, GearIcon, AchievementBadge, CourseProgress,
+   LabConsole, ModuleCard, ExperimentPanel, StudentProgressBoard, QuizChamber
+   ========================================================================== */
+
+/* ==========================================================================
+   1. LOADING SCREEN & CONNECTING MODULE
+   ========================================================================== */
+.loading-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(circle at center, #101c2e 0%, #060b12 80%);
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.loading-reactor-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: url('../assets/laboratory_core.jpg') no-repeat center center;
+  background-size: cover;
+  opacity: 0.28;
+  filter: blur(2px) contrast(1.1);
+  pointer-events: none;
+}
+
+.loading-modal-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  background: rgba(13, 22, 38, 0.95);
+  border: 1.5px solid var(--brass-main);
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px var(--brass-glow);
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
+.loading-brand-sub {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--brass-light);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.loading-brand-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: var(--brass-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.loading-sub-badge {
+  display: inline-block;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--holo-cyan);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+}
+
+.loading-status-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+  text-align: left;
+  background: rgba(8, 14, 24, 0.7);
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--steel-border);
+}
+
+.loading-check-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.loading-check-item span.check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-check-item span.check-icon {
+  color: var(--status-online);
+  font-weight: 700;
+}
+
+.loading-check-item span.status-badge {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  color: var(--status-online);
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.loading-progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid var(--steel-border);
+}
+
+.loading-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--brass-gradient);
+  box-shadow: 0 0 12px var(--brass-main);
+  transition: width 0.4s ease;
+}
+
+.loading-footer-motto {
+  font-size: 11px;
+  color: var(--text-sub);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   2. LOGIN SCREEN (ACCESS PURWAVERSE LABORATORY)
+   ========================================================================== */
+.auth-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #080e18;
+  position: relative;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.auth-bg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('../assets/bg_blueprint_wide.jpg') no-repeat center center;
+  background-size: cover;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.auth-container-grid {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 960px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 28px;
+  background: rgba(13, 21, 36, 0.94);
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(14px);
+}
+
+.auth-form-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-header {
+  margin-bottom: 24px;
+}
+
+.auth-logo-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.auth-logo-badge img {
+  width: 36px;
+  height: 36px;
+}
+
+.auth-role-tabs {
+  display: flex;
+  background: rgba(8, 14, 24, 0.8);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: 24px;
+  border: 1px solid var(--steel-border);
+}
+
+.auth-role-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth-role-tab.active {
+  background: var(--brass-gradient);
+  color: #1a1402;
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+}
+
+.auth-form-group {
+  margin-bottom: 18px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input {
+  width: 100%;
+  background: rgba(9, 16, 28, 0.9);
+  border: 1.5px solid var(--steel-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--brass-main);
+  box-shadow: 0 0 12px var(--brass-glow);
+  background: rgba(14, 24, 42, 0.95);
+}
+
+.auth-quote-card {
+  background: linear-gradient(145deg, rgba(20, 32, 54, 0.8) 0%, rgba(10, 18, 30, 0.9) 100%);
+  border: 1px solid var(--brass-border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-quote-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 160px;
+  height: 160px;
+  background: url('../assets/gear_large_brass.jpg') no-repeat center center;
+  background-size: contain;
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.auth-quote-body {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #cbd5e1;
+  font-weight: 500;
+  position: relative;
+  z-index: 2;
+}
+
+.auth-quote-author {
+  margin-top: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--brass-light);
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   3. STUDENT DASHBOARD & MODUL AKTIF
+   ========================================================================== */
+.dashboard-layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+.dashboard-sidebar {
+  width: var(--sidebar-width);
+  background: rgba(9, 15, 26, 0.95);
+  border-right: 1px solid var(--steel-border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar-nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.sidebar-nav-item:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-nav-item.active {
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--brass-light);
+  border-color: var(--brass-border);
+}
+
+.dashboard-main-content {
+  flex: 1;
+  padding: 28px 32px 60px;
+  overflow-y: auto;
+  max-width: 1300px;
+}
+
+/* Welcome Student Banner */
+.student-welcome-banner {
+  background: linear-gradient(135deg, rgba(17, 28, 48, 0.9) 0%, rgba(10, 18, 30, 0.95) 100%);
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.student-identity-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.student-avatar-frame {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2px solid var(--brass-main);
+  background: radial-gradient(circle, #253852 0%, #0d1624 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 0 16px var(--brass-glow);
+}
+
+.student-avatar-frame img {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.student-greeting-text h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.class-badge {
+  font-size: 11px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--holo-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.student-greeting-motto {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.student-level-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(8, 14, 24, 0.6);
+  border: 1px solid var(--steel-border);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  min-width: 190px;
+}
+
+.level-rank-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brass-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.xp-progress-meta {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-sub);
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.xp-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: var(--brass-gradient);
+}
+
+/* Dashboard Split Grid: Modul Aktif & Objektif */
+.dashboard-grid-split {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.active-module-card {
+  background: rgba(14, 23, 38, 0.9);
+  border: 1.5px solid var(--brass-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.card-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sub);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.module-card-body {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.module-artwork-thumb {
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--steel-border);
+  background: #0f1b2b;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.module-artwork-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.module-card-details h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.module-card-details p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.objectives-card {
+  background: rgba(14, 23, 38, 0.9);
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.objectives-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.objective-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(8, 14, 24, 0.6);
+  border: 1px solid var(--steel-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.objective-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--brass-light);
+}
+
+/* ==========================================================================
+   4. QUIZ CHAMBER
+   ========================================================================== */
+.quiz-chamber-view {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  width: 100%;
+}
+
+.quiz-chamber-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.quiz-chamber-heading h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: var(--brass-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.quiz-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(18, 28, 46, 0.9);
+  border: 1.5px solid var(--brass-border);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--brass-light);
+  box-shadow: 0 0 12px var(--brass-glow);
+}
+
+.quiz-timer-badge.warning {
+  border-color: var(--status-danger);
+  color: var(--status-danger);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.quiz-chamber-body-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+}
+
+.quiz-question-card {
+  background: rgba(14, 23, 38, 0.94);
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.quiz-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.quiz-step-tag {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.quiz-hots-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.quiz-point-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--brass-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--brass-border);
+}
+
+.quiz-question-prompt {
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.quiz-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.quiz-option-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(8, 14, 24, 0.7);
+  border: 1.5px solid var(--steel-border);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quiz-option-pill:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  background: rgba(18, 29, 48, 0.9);
+}
+
+.quiz-option-pill.selected {
+  border-color: var(--brass-main);
+  background: linear-gradient(135deg, rgba(28, 43, 68, 0.9) 0%, rgba(18, 29, 48, 0.9) 100%);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.25);
+}
+
+.quiz-option-key {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--steel-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.quiz-option-pill.selected .quiz-option-key {
+  background: var(--brass-gradient);
+  color: #1a1402;
+  border-color: #fce38a;
+}
+
+.quiz-schematic-side {
+  background: rgba(10, 18, 30, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: inset 0 0 25px rgba(56, 189, 248, 0.05);
+}
+
+/* ==========================================================================
+   5. TEAM WORKSHOP (LKPD KELOMPOK)
+   ========================================================================== */
+.team-workshop-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  width: 100%;
+}
+
+.team-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.team-badge-pill {
+  background: rgba(212, 175, 55, 0.15);
+  border: 1.5px solid var(--brass-main);
+  color: var(--brass-light);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+}
+
+.team-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.team-member-card {
+  background: rgba(14, 23, 38, 0.88);
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-md);
+  padding: 16px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-member-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--brass-border);
+  background: #18283f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--brass-light);
+}
+
+.team-member-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.team-member-role {
+  font-size: 10.5px;
+  color: var(--text-sub);
+}
+
+/* ==========================================================================
+   6. TEACHER COMMAND CENTER
+   ========================================================================== */
+.teacher-command-view {
+  max-width: 1350px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  width: 100%;
+}
+
+.teacher-stats-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.teacher-stat-card {
+  background: rgba(14, 23, 38, 0.9);
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.teacher-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid var(--brass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--brass-light);
+}
+
+.stat-number-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.stat-label-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* Responsive Overrides */
+@media (max-width: 960px) {
+  .auth-container-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-quote-card {
+    display: none;
+  }
+  .dashboard-layout {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    min-height: auto;
+    height: auto;
+    padding: 8px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--steel-border);
+    justify-content: flex-start;
+  }
+  .dashboard-sidebar > div:last-child {
+    display: none;
+  }
+  .sidebar-nav-list {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    width: 100%;
+  }
+  .sidebar-nav-item {
+    padding: 6px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .dashboard-grid-split {
+    grid-template-columns: 1fr;
+  }
+  .student-welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .student-level-card {
+    width: 100%;
+  }
+  .quiz-chamber-body-grid {
+    grid-template-columns: 1fr;
+  }
+  .teacher-stats-deck {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dashboard-main-content {
+    padding: 14px 12px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .teacher-stats-deck {
+    grid-template-columns: 1fr;
+  }
+  .team-members-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .engine-topbar {
+    padding: 0 12px;
+  }
+  .brand-sub-title {
+    display: none;
+  }
+}

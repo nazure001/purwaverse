@@ -1,0 +1,428 @@
+/* ==========================================================================
+   PURWAVERSE SCIENCE ENGINE - INDUSTRIAL THEME
+   A Module by IZZI Workshop
+   Industrial Knowledge Laboratory Design System
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Color Palette: Dark Industrial & Slate */
+  --bg-core: #070c14;
+  --bg-surface: #0e1624;
+  --bg-surface-elevated: #152238;
+  --bg-surface-card: rgba(16, 26, 44, 0.88);
+  --bg-panel: rgba(14, 22, 38, 0.94);
+
+  /* Metallic Accents: Brass & Gold */
+  --brass-light: #fbe69e;
+  --brass-main: #d4af37;
+  --brass-dark: #9a781a;
+  --brass-gradient: linear-gradient(135deg, #fae28b 0%, #d4af37 45%, #8f6c12 100%);
+  --brass-border: rgba(212, 175, 55, 0.45);
+  --brass-glow: rgba(212, 175, 55, 0.25);
+
+  /* Copper & Bronze */
+  --copper-main: #b86231;
+  --copper-light: #d88352;
+  --copper-gradient: linear-gradient(135deg, #d88352 0%, #b86231 60%, #7d3b14 100%);
+
+  /* Steel & Technical Grays */
+  --steel-border: #23354d;
+  --steel-border-light: #344c6e;
+  --steel-dark: #121c2c;
+  --text-main: #e2e8f0;
+  --text-muted: #8ba0bd;
+  --text-sub: #627794;
+
+  /* Hologram & Indicator Colors */
+  --holo-cyan: #38bdf8;
+  --holo-cyan-glow: rgba(56, 189, 248, 0.35);
+  --status-online: #10b981;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+
+  /* Dimensions & Spacing */
+  --topbar-height: 64px;
+  --sidebar-width: 250px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --shadow-metal: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Base Reset & Typography */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--bg-core);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+code, pre, .mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-core);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--steel-border-light);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brass-dark);
+}
+
+/* Animations */
+@keyframes gearSpinClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gearSpinCounter {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes pulseGoldGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px var(--brass-glow);
+    border-color: rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(212, 175, 55, 0.55);
+    border-color: rgba(212, 175, 55, 0.85);
+  }
+}
+
+@keyframes holoPulse {
+  0%, 100% { opacity: 0.92; filter: drop-shadow(0 0 8px var(--holo-cyan-glow)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.65)); }
+}
+
+@keyframes progressStripe {
+  from { background-position: 40px 0; }
+  to { background-position: 0 0; }
+}
+
+.spin-slow {
+  animation: gearSpinClockwise 20s linear infinite;
+}
+
+.spin-counter-slow {
+  animation: gearSpinCounter 24s linear infinite;
+}
+
+/* Layout Primitives */
+#app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.view-container {
+  display: none !important;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+}
+
+.view-container.active {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.view-container.active.dashboard-layout {
+  display: flex !important;
+  flex-direction: row;
+}
+
+/* Topbar Header */
+.engine-topbar {
+  height: var(--topbar-height);
+  background: rgba(11, 19, 32, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--steel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.brand-helm-icon {
+  width: 38px;
+  height: 38px;
+  background: radial-gradient(circle, #2a3c54 0%, #101c2e 100%);
+  border: 1.5px solid var(--brass-main);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px var(--brass-glow);
+}
+
+.brand-helm-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--brass-light);
+}
+
+.brand-text-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-main-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  background: var(--brass-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.brand-sub-title {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--text-sub);
+  text-transform: uppercase;
+}
+
+.topbar-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-nav-button {
+  background: transparent;
+  border: 1px solid var(--steel-border);
+  color: var(--text-muted);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar-nav-button:hover,
+.topbar-nav-button.active {
+  border-color: var(--brass-main);
+  color: var(--brass-light);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.topbar-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--steel-border);
+}
+
+.topbar-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--brass-main);
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brass-light);
+}
+
+.topbar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.topbar-user-role {
+  font-size: 10.5px;
+  background: var(--brass-glow);
+  color: var(--brass-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--brass-border);
+}
+
+/* Industrial Buttons */
+.btn-brass {
+  background: var(--brass-gradient);
+  color: #1a1402;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 11px 22px;
+  border: 1px solid #fce38a;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.btn-brass:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  filter: brightness(1.06);
+}
+
+.btn-brass:active {
+  transform: translateY(0);
+}
+
+.btn-steel {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 11px 22px;
+  border: 1px solid var(--steel-border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-steel:hover {
+  border-color: var(--text-muted);
+  background: #1c2b45;
+  color: #fff;
+}
+
+.btn-steel:disabled,
+.btn-brass:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Floating WhatsApp Quick Link */
+.wa-floating-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #111d2e;
+  border: 1px solid #25d366;
+  color: #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(37, 211, 102, 0.25);
+  z-index: 1000;
+  transition: all 0.2s ease;
+}
+
+.wa-floating-btn:hover {
+  background: #162a3f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+.wa-floating-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: #25d366;
+}
+
+/* Toast Notification */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--brass-main);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 15px var(--brass-glow);
+  color: var(--text-main);
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9999;
+}
+
+#toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+#toast.error {
+  border-color: var(--status-danger);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(239, 68, 68, 0.35);
+}
+
+#toast.success {
+  border-color: var(--status-online);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(16, 185, 129, 0.35);
+}
+
+/* Responsive Media Queries */
+@media (max-width: 900px) {
+  .engine-topbar {
+    padding: 0 16px;
+  }
+  .brand-sub-title {
+    display: none;
+  }
+}

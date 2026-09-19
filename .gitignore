@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+package-lock.json.backup
+
+# Environment Variables (Secrets)
+.env
+.env.local
+.env.production
+.env.development
+!.env.example
+server/.env
+server/.env.local
+server/.env.production
+server/.env.development
+
+# SQLite Database & Storage Engine
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+server/data/
+server/tests/*.db
+server/tests/*.db-journal
+
+# Temporary & Build Dumps
+tmp/
+.temp/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.system_generated/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# Large Local Textbooks & Reference Media
+*.pdf
+docs/Kelas*/

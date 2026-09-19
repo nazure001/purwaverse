@@ -5,6 +5,11 @@
   "description": "Purwaverse IPA VIII - Media Pembelajaran IPA Kelas VIII SMP",
   "scripts": {
     "build": "node scripts/build-web.js",
-    "start": "npx serve public"
+    "start": "npx serve public",
+    "preview": "node scripts/dev-preview.js",
+    "server:start": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
+    "server:test": "npm --prefix server test",
+    "server:seed": "npm --prefix server run db:seed"
   }
 }
