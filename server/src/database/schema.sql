@@ -292,3 +292,146 @@ CREATE TABLE IF NOT EXISTS pin_issuance (
     issued_at TEXT DEFAULT (datetime('now')),
     rotated_at TEXT
 );
+
+-- =========================================================================
+-- CONTENT ENGINEERING & CURRICULUM ARCHITECTURE (Phase 2 Preparation)
+-- Mendukung hierarki: Course -> Unit -> Lesson -> Concept -> Activity -> Evidence -> Assessment
+-- Non-breaking / Zero disruption ke 23 tabel KBM existing
+-- =========================================================================
+
+-- 24. COURSES (Jalur Kurikulum: IPA VII, VIII, IX, OSN, Riset)
+CREATE TABLE IF NOT EXISTS courses (
+    course_id TEXT PRIMARY KEY,          -- e.g. 'CUR-IPA-VIII-KBM'
+    code TEXT UNIQUE NOT NULL,           -- e.g. 'IPA-8-KBM'
+    title TEXT NOT NULL,                 -- e.g. 'IPA Terpadu Kelas VIII (Fase D)'
+    grade_level INTEGER NOT NULL,        -- 7, 8, atau 9
+    curriculum_type TEXT NOT NULL,       -- 'school_private', 'competition', 'research_track', 'public_knowledge'
+    description TEXT,
+    academic_year TEXT DEFAULT '2024/2025',
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_courses_grade ON courses(grade_level);
+
+-- 25. LEARNING UNITS (Unit Pembelajaran / Bab KBM)
+CREATE TABLE IF NOT EXISTS learning_units (
+    unit_id TEXT PRIMARY KEY,            -- e.g. 'CH08-01-U01'
+    course_id TEXT NOT NULL REFERENCES courses(course_id) ON DELETE RESTRICT,
+    chapter_id TEXT NOT NULL,            -- e.g. 'CH08-01'
+    title TEXT NOT NULL,                 -- e.g. 'Pengenalan Sel & Mikroskop'
+    sequence_order INTEGER NOT NULL,
+    description TEXT,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_units_course ON learning_units(course_id);
+CREATE INDEX IF NOT EXISTS idx_units_chapter ON learning_units(chapter_id);
+
+-- 26. CONCEPTS (Taksonomi Konsep Sains Spiral & Interdisipliner)
+CREATE TABLE IF NOT EXISTS concepts (
+    concept_id TEXT PRIMARY KEY,         -- e.g. 'CON-BIO-CELL-THEORY'
+    name TEXT NOT NULL,                  -- e.g. 'Teori Sel & Karakteristik Hidup'
+    domain TEXT NOT NULL,                -- 'biology', 'physics', 'chemistry', 'earth_space', 'methodology'
+    fase TEXT DEFAULT 'D',               -- 'D' untuk SMP
+    description TEXT,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_concepts_domain ON concepts(domain);
+
+-- 27. LESSONS (Submateri Pembelajaran Terstruktur)
+CREATE TABLE IF NOT EXISTS lessons (
+    lesson_id TEXT PRIMARY KEY,          -- e.g. 'LSN-080101-01'
+    unit_id TEXT NOT NULL REFERENCES learning_units(unit_id) ON DELETE RESTRICT,
+    title TEXT NOT NULL,                 -- e.g. 'Sel sebagai Unit Struktural Kehidupan'
+    sequence_order INTEGER NOT NULL,
+    learning_objective TEXT NOT NULL,   -- Capaian / Tujuan Pembelajaran
+    content_markdown TEXT NOT NULL,      -- Materi, teori, koreksi miskonsepsi
+    assets_json TEXT,                    -- Array aset: [{ asset_id, type, caption, url }]
+    tables_json TEXT,                    -- Array tabel data: [{ table_id, title, headers, rows }]
+    reading_time_minutes INTEGER DEFAULT 5,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_lessons_unit ON lessons(unit_id);
+
+-- 28. LESSON_CONCEPTS (Relasi M:N: Lesson <-> Concept)
+CREATE TABLE IF NOT EXISTS lesson_concepts (
+    lesson_id TEXT NOT NULL REFERENCES lessons(lesson_id) ON DELETE CASCADE,
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id) ON DELETE RESTRICT,
+    weight REAL DEFAULT 1.0,             -- Bobot keterkaitan konsep (0.1 - 1.0)
+    PRIMARY KEY (lesson_id, concept_id)
+);
+CREATE INDEX IF NOT EXISTS idx_lesson_concepts_c ON lesson_concepts(concept_id);
+
+-- 29. RUBRICS (Rubrik Penilaian Kinerja, Resume, & Praktik Laboratorium)
+CREATE TABLE IF NOT EXISTS rubrics (
+    rubric_id TEXT PRIMARY KEY,          -- e.g. 'RUB-NOTEBOOK-01', 'RUB-LAB-INQUIRY'
+    title TEXT NOT NULL,
+    criteria_json TEXT NOT NULL,         -- Level 0 - 4 atau indikator kompetensi
+    instructions_for_teacher TEXT,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 30. ASSESSMENTS (Master Asesmen: Kuis Formatif, Rubrik Resume, Praktikum)
+CREATE TABLE IF NOT EXISTS assessments (
+    assessment_id TEXT PRIMARY KEY,      -- e.g. 'ASM-080101-QZ', 'ASM-080101-LAB'
+    lesson_id TEXT REFERENCES lessons(lesson_id) ON DELETE SET NULL,
+    unit_id TEXT NOT NULL REFERENCES learning_units(unit_id) ON DELETE RESTRICT,
+    assessment_type TEXT NOT NULL,       -- 'formative_quiz', 'physical_notebook', 'performance_lab', 'diagnostic'
+    title TEXT NOT NULL,
+    passing_score REAL DEFAULT 70.0,     -- Standar KKM
+    max_score REAL DEFAULT 100.0,
+    is_deterministic INTEGER DEFAULT 1,  -- 1 untuk kuis kunci pasti, 0 untuk penilaian manual guru
+    rubric_id TEXT REFERENCES rubrics(rubric_id) ON DELETE SET NULL,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_assessments_unit ON assessments(unit_id);
+CREATE INDEX IF NOT EXISTS idx_assessments_lesson ON assessments(lesson_id);
+
+-- 31. ASSESSMENT_CONCEPTS (Relasi M:N: Concept <-> Assessment)
+CREATE TABLE IF NOT EXISTS assessment_concepts (
+    assessment_id TEXT NOT NULL REFERENCES assessments(assessment_id) ON DELETE CASCADE,
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id) ON DELETE RESTRICT,
+    weight REAL DEFAULT 1.0,
+    PRIMARY KEY (assessment_id, concept_id)
+);
+CREATE INDEX IF NOT EXISTS idx_asm_concepts_c ON assessment_concepts(concept_id);
+
+-- 32. LEARNING_ACTIVITIES (Aktivitas Belajar Mandiri & Penyelidikan Nyata)
+CREATE TABLE IF NOT EXISTS learning_activities (
+    activity_id TEXT PRIMARY KEY,        -- e.g. 'ACT-080101-NOTE', 'ACT-080101-OBS'
+    lesson_id TEXT NOT NULL REFERENCES lessons(lesson_id) ON DELETE CASCADE,
+    activity_type TEXT NOT NULL,         -- 'reading_summary', 'observation', 'lab_experiment', 'group_discussion'
+    title TEXT NOT NULL,
+    instructions TEXT NOT NULL,          -- Panduan kerja nyata siswa
+    evidence_type TEXT NOT NULL,         -- 'physical_notebook', 'lab_data_table', 'photo_artifact', 'peer_report'
+    requires_teacher_check INTEGER DEFAULT 1,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_activities_lesson ON learning_activities(lesson_id);
+
+-- 33. ACTIVITY_CONCEPTS (Relasi M:N: Concept <-> Activity)
+CREATE TABLE IF NOT EXISTS activity_concepts (
+    activity_id TEXT NOT NULL REFERENCES learning_activities(activity_id) ON DELETE CASCADE,
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id) ON DELETE RESTRICT,
+    weight REAL DEFAULT 1.0,
+    PRIMARY KEY (activity_id, concept_id)
+);
+CREATE INDEX IF NOT EXISTS idx_act_concepts_c ON activity_concepts(concept_id);
+
+-- 34. ACTIVITY_EVIDENCE_RULES (Relasi Activity <-> Evidence: Standar Bukti Nyata)
+CREATE TABLE IF NOT EXISTS activity_evidence_rules (
+    rule_id TEXT PRIMARY KEY,            -- e.g. 'EVR-NOTE-080101'
+    activity_id TEXT NOT NULL REFERENCES learning_activities(activity_id) ON DELETE CASCADE,
+    evidence_name TEXT NOT NULL,         -- e.g. 'Rangkuman 6 Bagian di Buku Tulis Fisik'
+    format_description TEXT NOT NULL,    -- e.g. 'Catatan tangan, minimal 1 halaman, ada tanggal & tanda tangan ortu/guru'
+    verification_method TEXT NOT NULL,   -- 'teacher_physical_inspection', 'teacher_photo_review'
+    rubric_id TEXT REFERENCES rubrics(rubric_id) ON DELETE SET NULL,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_evidence_rules_act ON activity_evidence_rules(activity_id);

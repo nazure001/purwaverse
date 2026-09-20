@@ -1,0 +1,137 @@
+{
+  "$comment": "PURWAVERSE CONTENT INGESTION SCHEMA (Fase D SMP) - JSON Template",
+  "course_id": "CUR-IPA-VIII-KBM",
+  "unit_id": "CH08-01-U01",
+  "lesson_id": "LSN-080101-01",
+  "lesson_title": "Contoh: Sel sebagai Unit Struktural dan Fungsional Kehidupan",
+  "sequence_order": 1,
+  "learning_objective": "Peserta didik dapat menganalisis perbedaan struktur dan fungsi organel antara sel tumbuhan dan sel hewan serta mengamati preparat menggunakan mikroskop cahaya secara tepat.",
+  "concept_ids": [
+    "CON-BIO-CELL-THEORY",
+    "CON-MET-MICROSCOPY",
+    "CON-PHYS-ENERGY-TRANSFORM"
+  ],
+  "content": "### 1. Tujuan & Konteks Pembelajaran\nPenjelasan mengenai pentingnya mempelajari sel dalam kehidupan sehari-hari...\n\n### 2. Uraian Materi Mendalam\nSemua makhluk hidup tersusun atas unit mikroskopis terkecil yang disebut sel. Sel memuat organel-organel fungsional...\n\n### 3. Contoh Kontekstual Dunia Nyata\nBagaimana sel daun elodea melakukan fotosintesis menghasilkan energi bagi ekosistem...\n\n### 4. Koreksi Miskonsepsi Sains\nMiskonsepsi: 'Semua sel tumbuhan pasti berwarna hijau.' Klarifikasi: Klorofil hanya terdapat pada kloroplas sel yang terkena sinar matahari...\n\n### 5. Rangkuman Inti & Istilah Kunci\n- Sel Eukariotik: Sel yang memiliki membran inti sejati.\n- Dinding Sel: Lapisan selulosa pembentuk kekakuan sel tumbuhan...\n\n### 6. Panduan Catatan Buku Tulis Fisik\nSiswa diwajibkan menggambar sketsa sel tumbuhan dan sel hewan lengkap dengan bagian organel pada buku catatan fisik sebelum meminta verifikasi guru.",
+  "assets": [
+    {
+      "asset_id": "AST-080101-01",
+      "type": "svg_diagram",
+      "caption": "Diagram Perbandingan Sel Hewan dan Sel Tumbuhan",
+      "url_or_path": "assets/diagrams/cell_comparison.svg",
+      "alt_text": "Ilustrasi anatomi organel sel tumbuhan dan sel hewan dengan label beranotasi"
+    }
+  ],
+  "tables": [
+    {
+      "table_id": "TBL-080101-01",
+      "title": "Tabel Perbedaan Karakteristik Organel Sel Tumbuhan vs Sel Hewan",
+      "headers": [
+        "Organel / Struktur",
+        "Sel Tumbuhan",
+        "Sel Hewan",
+        "Peran Fisiologis"
+      ],
+      "rows": [
+        [
+          "Dinding Sel",
+          "Ada (Selulosa)",
+          "Tidak Ada",
+          "Memberi bentuk tetap & perlindungan mekanik"
+        ],
+        [
+          "Kloroplas",
+          "Ada (Tempat Fotosintesis)",
+          "Tidak Ada",
+          "Mengubah energi cahaya menjadi energi kimia"
+        ],
+        [
+          "Vakuola",
+          "Besar (Tunggal Sentral)",
+          "Kecil / Tidak Ada",
+          "Menjaga turgor dan menyimpan cadangan makanan"
+        ],
+        [
+          "Sentriol",
+          "Tidak Ada",
+          "Ada",
+          "Membantu pembelahan mitosis sel"
+        ]
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "activity_id": "ACT-080101-NOTE",
+      "type": "reading_summary",
+      "title": "Resume 6 Bagian di Buku Tulis Fisik",
+      "instructions": "Setelah menelaah uraian materi di atas, tuliskan rangkuman 6 bagian di buku catatan IPA fisik Anda secara mandiri dan rapi. Bawa buku catatan ke meja guru untuk mendapatkan stempel/paraf verifikasi sebelum mengakses Quiz Chamber.",
+      "evidence_type": "physical_notebook",
+      "requires_teacher_check": true,
+      "evidence_rule": {
+        "rule_id": "EVR-080101-NOTE",
+        "evidence_name": "Buku Catatan Fisik Tertanda Guru",
+        "format_description": "Tulisan tangan asli siswa di buku catatan, memuat tanggal, 6 komponen telaah, dan sketsa perbandingan sel berlabel.",
+        "verification_method": "teacher_physical_inspection"
+      }
+    },
+    {
+      "activity_id": "ACT-080101-LAB",
+      "type": "lab_experiment",
+      "title": "LKPD Praktikum: Pengamatan Preparat Sel Bawang Merah & Sel Epitel Pipi",
+      "instructions": "Lakukan praktikum bersama tim laboratorium Anda. Buat preparat basah sel epidermis Allium cepa, amati di bawah mikroskop cahaya pembesaran 400x, lalu catat tabel pengamatan asli pada form LKPD tim.",
+      "evidence_type": "lab_data_table",
+      "requires_teacher_check": true,
+      "evidence_rule": {
+        "rule_id": "EVR-080101-LAB",
+        "evidence_name": "Tabel Data Pengamatan Mikroskop Tim",
+        "format_description": "Data asli hasil pengamatan lapangan tanpa rekayasa angka, menyertakan perbesaran lensa dan deskripsi lapang pandang.",
+        "verification_method": "teacher_physical_inspection"
+      }
+    }
+  ],
+  "assessments": [
+    {
+      "assessment_id": "ASM-080101-QZ",
+      "type": "formative_quiz",
+      "title": "Quiz Chamber: Uji Penguasaan Konsep Sel (KKM 70)",
+      "passing_score": 70.0,
+      "max_score": 100.0,
+      "is_deterministic": true,
+      "quiz_items": [
+        {
+          "quiz_item_id": "QZ-080101-01",
+          "question_type": "single_choice",
+          "prompt": "Seorang siswa mengamati sel tumbuhan di bawah mikroskop dan mendapati bahwa bentuk sel tersebut cenderung kaku dan teratur dibandingkan sel hewan. Struktur utama yang bertanggung jawab terhadap fenomena tersebut adalah...",
+          "options": [
+            { "id": "A", "text": "Membran plasma yang elastis" },
+            { "id": "B", "text": "Dinding sel yang tersusun atas serat selulosa" },
+            { "id": "C", "text": "Mitokondria yang menghasilkan energi gerak" },
+            { "id": "D", "text": "Vakuola kecil yang berpindah-pindah" }
+          ],
+          "correct_answer": "B",
+          "explanation": "Dinding sel yang tebal dan kaku dari selulosa memberikan perlindungan struktural dan mempertahankan bentuk sel tumbuhan secara teratur.",
+          "score_weight": 1.0
+        }
+      ]
+    },
+    {
+      "assessment_id": "ASM-080101-RUB",
+      "type": "performance_lab",
+      "title": "Rubrik Penilaian Kinerja Praktikum Mikroskopik Tim",
+      "passing_score": 75.0,
+      "max_score": 100.0,
+      "is_deterministic": false,
+      "rubric": {
+        "rubric_id": "RUB-LAB-MICROSCOPY",
+        "title": "Rubrik Keterampilan Pembuatan Preparat & Fokus Mikroskop",
+        "criteria": {
+          "level_4": "Sangat Terampil (Skor 4): Mengatur pencahayaan cermin tepat, preparat bebas gelembung udara, fokus bayangan tajam pada pembesaran 400x.",
+          "level_3": "Terampil (Skor 3): Pengamatan berhasil, fokus jelas, namun preparat masih sedikit bergelembung.",
+          "level_2": "Cukup (Skor 2): Mampu menemukan bayangan sel pada pembesaran lemah (100x), namun kesulitan pada pembesaran kuat.",
+          "level_1": "Perlu Bimbingan (Skor 1): Belum mampu mengoperasikan sekrup fokus mikroskop, memerlukan pendampingan intensif guru."
+        },
+        "instructions_for_teacher": "Lakukan observasi langsung saat praktikum berlangsung dan masukkan skor rubrik pada panel Teacher Command Center."
+      }
+    }
+  ]
+}

@@ -1,38 +1,68 @@
-# Schema Google Sheets
+# 🗄️ Skema Database Purwaverse
+**Spesifikasi Relasional SQLite Modern (VPS) & Pemetaan Legacy Google Sheets**
 
-Semua ID bersifat stabil. Timestamp disimpan sebagai ISO-8601.
+Seluruh data transaksi dan konten Purwaverse menggunakan standar ISO-8601 untuk timestamp, foreign key integrity (`PRAGMA foreign_keys = ON`), dan mode penulisan konkurensi tinggi (`PRAGMA journal_mode = WAL`).
 
-| Sheet | Kunci | Fungsi |
+---
+
+## 1. Skema Modern SQLite (VPS Mandiri)
+
+Database produksi SQLite terdiri atas **34 tabel relasional** yang terbagi dalam dua domain utama:
+
+### Domain A: 23 Tabel Inti KBM & Operasional Sekolah
+| Tabel SQLite | Primary Key | Fungsi Utama |
 |---|---|---|
-| `SETTINGS` | `key` | konfigurasi non-rahasia dan sinyal pemahaman per siswa-unit |
-| `MASTER_CLASSES` | `class_id` | kelas 8A-8E |
-| `MASTER_STUDENTS` | `student_id` | roster, nomor absen, PIN hash, status aktif |
-| `MASTER_ACTIVITIES` | `activity_id` | aktivitas Bab 1 dan Mission 0 |
-| `DIAGNOSTIC_ITEMS` | `item_id` | subset Mission 0 dan rubrik 0-4 |
-| `SELF_MAP_ITEMS` | `item_id` | disposisi/minat sains |
-| `SESSIONS` | `session_id` | sesi siswa/guru dengan kedaluwarsa |
-| `PROGRESS` | `progress_id` | status dan skor per siswa-aktivitas |
-| `DIAGNOSTIC_RESPONSES` | `response_id` | jawaban dan skor item |
-| `DIAGNOSTIC_PROFILES` | `profile_id` | profil lima domain, overall, leader, readiness |
-| `TEAMS` | `team_id` | tim tersimpan per kelas |
-| `TEAM_MEMBERS` | `membership_id` | anggota, leader, peran, lock, override |
-| `PIN_ISSUANCE` | `student_id` | PIN awal privat untuk distribusi; sheet disembunyikan otomatis |
-| `GROUP_LAB` | `lab_result_id` | draft, laporan terisi, status, dan penilaian aktivitas tim |
-| `STUDENT_ACTIVITY_STATE` | `state_id` | cache status dan penguncian jalur belajar siswa |
-| `TEACHER_CHECKS` | `check_id` | riwayat pemeriksaan rangkuman, LKPD, praktik, dan refleksi |
-| `QUIZ_ITEMS` | `quiz_item_id` | bank soal tanpa mengekspos kunci ke browser |
-| `QUIZ_ATTEMPTS` | `attempt_id` | percobaan, nilai, dan ketuntasan kuis |
-| `QUIZ_RESPONSES` | `response_id` | jawaban item per percobaan kuis |
-| `SKILL_EVIDENCE` | `evidence_id` | bukti keterampilan siswa dari aktivitas individu/tim |
-| `UNLOCK_OVERRIDES` | `override_id` | pengecualian akses yang diberikan guru dengan alasan |
-| `AUDIT_LOG` | `event_id` | jejak aksi penting tanpa menyimpan PIN mentah |
+| `master_classes` | `class_id` | Rombel kelas (fleksibel hingga rombel K, e.g. 8A s.d. 8K) |
+| `master_students` | `student_id` | Roster resmi, NIS, NISN, nomor absen, Argon2id PIN hash |
+| `master_activities` | `activity_id` | Katalog aktivitas KBM, tipe (`learn`, `quiz`, `lab`), bobot skor |
+| `diagnostic_items` | `item_id` | 25 Butir soal diagnostik resmi Mission 0 & rubrik 0-4 |
+| `self_map_items` | `item_id` | Butir angket Peta Diri Sains (disposisi & minat) |
+| `sessions` | `session_id` | Token sesi siswa/guru (8 jam kedaluwarsa) |
+| `progress` | `progress_id` | Status & skor per siswa-aktivitas (`student_id\|activity_id`) |
+| `diagnostic_responses`| `response_id` | Jawaban diagnostik siswa & penilaian manual guru |
+| `diagnostic_profiles` | `profile_id` | Agregasi 5 domain nalar, leader index, research readiness |
+| `teams` | `team_id` | Header tim laboratorium per kelas (Snake Draft + 2-Opt) |
+| `team_members` | `membership_id` | Anggota tim, peran (Leader, Deputy, Operator, Checker) |
+| `group_lab` | `lab_result_id` | Laporan LKPD tim terisi, status verifikasi guru, skor kelompok |
+| `student_activity_state`| `state_id` | Cache status gerbang belajar siswa (`locked`, `reading`, dll.) |
+| `teacher_checks` | `check_id` | Log append-only pemeriksaan guru (resume buku, LKPD, remedial) |
+| `quiz_items` | `quiz_item_id` | Bank butir kuis per submateri (terproteksi di server) |
+| `quiz_attempts` | `attempt_id` | Percobaan kuis siswa, skor capaian, status lulus KKM 70 |
+| `quiz_responses` | `response_id` | Log jawaban per butir kuis per percobaan |
+| `skill_evidence` | `evidence_id` | Bukti keterampilan inkuiri Kurikulum Merdeka siswa |
+| `unlock_overrides` | `override_id` | Pengecualian pembukaan materi oleh guru dengan alasan |
+| `attendance` | `attendance_id` | Presensi otomatis harian siswa saat login (`student_id\|YYYY-MM-DD`) |
+| `settings` | `key` | Konfigurasi non-rahasia dan sinyal kebingungan siswa |
+| `audit_log` | `event_id` | Jejak forensik aksi penting pengguna tanpa menyimpan PIN |
+| `pin_issuance` | `student_id` | Data PIN awal privat untuk pencetakan kartu fisik siswa |
 
-Roster dinormalisasi menjadi:
+---
+
+### Domain B: 11 Tabel Content Engineering & Kurikulum Terstruktur
+Mendukung hierarki: **Course ➔ Unit ➔ Lesson ➔ Concept ➔ Activity ➔ Evidence ➔ Assessment**:
+
+| Tabel SQLite | Primary Key | Relasi & Fungsi |
+|---|---|---|
+| `courses` | `course_id` | Master kurikulum: IPA VII, VIII, IX, OSN, Riset (`grade_level`, `type`) |
+| `learning_units` | `unit_id` | Bab KBM (`course_id`, `chapter_id`, `sequence_order`) |
+| `concepts` | `concept_id` | Taksonomi konsep sains spiral (`domain`, `fase: D`) |
+| `lessons` | `lesson_id` | Submateri terstruktur (`unit_id`, `learning_objective`, `content_markdown`, `assets_json`, `tables_json`) |
+| `lesson_concepts` | `(lesson_id, concept_id)` | Relasi M:N Lesson ↔ Concept |
+| `learning_activities` | `activity_id` | Aktivitas belajar mandiri & inkuiri (`lesson_id`, `evidence_type`) |
+| `activity_concepts` | `(activity_id, concept_id)`| Relasi M:N Concept ↔ Activity |
+| `activity_evidence_rules`| `rule_id` | Standar bukti fisik nyata (Relasi Activity ↔ Evidence) |
+| `rubrics` | `rubric_id` | Kriteria penilaian kualitatif bertingkat skor 0 - 4 |
+| `assessments` | `assessment_id` | Kuis formatif, rubrik resume, praktikum lab (`rubric_id`) |
+| `assessment_concepts` | `(assessment_id, concept_id)`| Relasi M:N Concept ↔ Assessment |
+
+---
+
+## 2. Pemetaan Kompatibilitas Legacy Google Sheets
+
+Bagi lingkungan Google Apps Script, skema di atas dipetakan ke dalam sheet dengan nama UPPERCASE. Detail normalisasi roster:
 
 `student_id | nis | nisn | name | gender | class_id | roll_no | pin_hash | active | source_row | updated_at`
 
-`student_id` tidak bergantung pada nama atau NIS. Import produksi harus mengutamakan NISN, lalu menghasilkan ID internal stabil. Satu siswa 8D yang NIS-nya kosong tetap valid selama identitas internal/NISN tersedia.
-
-Sheet lama tidak dihapus atau diganti. Pemeriksaan guru disimpan append-only dengan nomor revisi agar perubahan nilai tidak menimpa riwayat. `PROGRESS` dipertahankan untuk kompatibilitas MVP, sedangkan jalur baru memakai status turunan dari pemeriksaan guru, percobaan kuis, dan bukti praktik.
-
-Tidak ada penambahan sheet untuk laporan tim. `GROUP_LAB.result_json` menyimpan `{report, meta}`; bidang laporan dibatasi oleh server, sedangkan status dan nilai tetap berada pada kolom tersendiri. Sinyal pemahaman memakai kunci `confusion|student_id|unit_id` pada `SETTINGS` dan tidak memengaruhi nilai atau kunci progres.
+* `student_id` tidak bergantung pada nama atau NIS. Import produksi mengutamakan NISN untuk menghasilkan ID internal stabil.
+* Pemeriksaan guru disimpan secara append-only dengan nomor revisi agar perubahan nilai tidak menimpa riwayat asli.
+* Sinyal pemahaman memakai kunci `confusion|student_id|unit_id` pada `settings` dan tidak memengaruhi nilai atau kunci progres.

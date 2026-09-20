@@ -14,8 +14,13 @@ docs/
 │
 ├── architecture/                        # Spesifikasi Arsitektur, Skema, & Kurikulum
 │   ├── FUTURE_ARCHITECTURE.md           # Blueprint masa depan (Fase D SMP 7-8-9, Rombel K, RBAC)
-│   ├── SCHEMA.md                        # Struktur skema database SQLite modern & relasi tabel
+│   ├── CONTENT_ARCHITECTURE.md          # Arsitektur rekayasa konten 7 tingkat (Course->Unit->Lesson->Concept)
+│   ├── SCHEMA.md                        # Struktur skema database SQLite modern 34 tabel & relasi
 │   └── CONTENT_STANDARD.md              # Standar penulisan materi IPA, taksonomi, & LKPD
+│
+├── templates/                           # Template Impor Konten & Format Data
+│   ├── content_import_template.json     # Template JSON siap pakai impor materi dari knowledge base
+│   └── CONTENT_IMPORT_GUIDE.md          # Panduan teknis pengisian format impor konten
 │
 ├── deployment/                          # Panduan Rilis VPS & Handover Migrasi
 │   ├── PANDUAN_MIGRASI_VPS.md           # Panduan instalasi VPS (Ubuntu, Nginx, PM2, SSL, WAL)
@@ -50,12 +55,20 @@ docs/
 ### 1. 🏛️ Arsitektur & Standar Kurikulum (`docs/architecture/`)
 * **[FUTURE_ARCHITECTURE.md](architecture/FUTURE_ARCHITECTURE.md)**  
   Pedoman arsitektur masa depan untuk ekspansi spektrum lengkap **Fase D SMP (Kelas 7, 8, dan 9)**, fleksibilitas rombel hingga **K** (`7A-7K`, `8A-8K`, `9A-9K`), diferensiasi 4 User Type (`STUDENT`, `PUBLIC_USER`, `TEACHER`, `ADMIN`), multi-track kurikulum, transisi ke *Spiral Concept Mapping*, serta checklist anti-pattern database.
+* **[CONTENT_ARCHITECTURE.md](architecture/CONTENT_ARCHITECTURE.md)**  
+  Spesifikasi rekayasa konten 7 tingkat: **Course ➔ Learning Unit ➔ Lesson ➔ Concept ➔ Learning Activity ➔ Evidence ➔ Assessment**. Memetakan relasi M:N konsep, standar bukti fisik, dan rubrik penilaian kualitatif.
 * **[SCHEMA.md](architecture/SCHEMA.md)**  
-  Struktur relasional tabel database modern SQLite (`master_students`, `master_activities`, `user_progress`, `quiz_attempts`, `sessions`, `teacher_validations`, `science_teams`), indeks performa, dan relasi integritas data.
+  Struktur relasional 34 tabel database SQLite modern VPS (23 tabel operasional KBM + 11 tabel content engineering), indeks performa, dan pemetaan ke legacy Google Sheets.
 * **[CONTENT_STANDARD.md](architecture/CONTENT_STANDARD.md)**  
-  Pedoman penyusunan konten materi IPA VIII berstandar saintifik: struktur uraian materi, klarifikasi miskonsepsi, rubrik resume buku fisik, dan protokol LKPD tim lab.
+  Pedoman penyusunan konten materi IPA VIII berstandar saintifik: struktur uraian materi 6 bagian, klarifikasi miskonsepsi, rubrik resume buku fisik, dan protokol LKPD tim lab.
 
-### 2. 🚀 Deployment & Migrasi (`docs/deployment/`)
+### 2. 📥 Template & Impor Konten (`docs/templates/`)
+* **[content_import_template.json](templates/content_import_template.json)**  
+  Template standar JSON terstruktur untuk mengimpor materi, aset, tabel, aktivitas fisik, kuis, dan rubrik dari basis pengetahuan (*knowledge base*).
+* **[CONTENT_IMPORT_GUIDE.md](templates/CONTENT_IMPORT_GUIDE.md)**  
+  Petunjuk komprehensif pengisian data impor konten, kaidah pemetaan relasi, dan standar uraian materi sains.
+
+### 3. 🚀 Deployment & Migrasi (`docs/deployment/`)
 * **[PANDUAN_MIGRASI_VPS.md](deployment/PANDUAN_MIGRASI_VPS.md)**  
   Langkah demi langkah teknis menyiapkan server Ubuntu VPS mandiri: konfigurasi Node.js LTS, systemd/PM2, reverse proxy Nginx, optimasi SQLite WAL mode, SSL Let's Encrypt, firewall UFW, dan rotasi backup harian.
 * **[PURWAVERSE_MIGRATION_HANDOVER.md](deployment/PURWAVERSE_MIGRATION_HANDOVER.md)**  
