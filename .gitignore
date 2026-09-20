@@ -2,39 +2,79 @@
 node_modules/
 package-lock.json.backup
 
-# Environment Variables (Secrets)
+# Environment Variables & Secrets
 .env
-.env.local
-.env.production
-.env.development
+.env.*
 !.env.example
 server/.env
-server/.env.local
-server/.env.production
-server/.env.development
+server/.env.*
+!server/.env.example
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+credentials.json
+service-account*.json
+client_secret*.json
 
 # SQLite Database & Storage Engine
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
 server/data/
 server/tests/*.db
 server/tests/*.db-journal
 
-# Temporary & Build Dumps
+# Temporary, Build Dumps & Logs
 tmp/
 .temp/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+coverage/
+.nyc_output/
 .system_generated/
 
-# OS Specific
-.DS_Store
-Thumbs.db
+# Office, Working Spreadsheets & Raw Data Files
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+*.ods
+*.odt
+~$*
+*.tmp
+*.bak
+*.old
+* (1).*
+* (2).*
+* (3).*
 
 # Large Local Textbooks & Reference Media
 *.pdf
 docs/Kelas*/
+
+# IDE & Editor Configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# OS Specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
