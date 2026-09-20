@@ -63,63 +63,111 @@ Saat ini, sistem berjalan untuk lingkungan tertutup sekolah (`STUDENT` dan `TEAC
 
 ---
 
-## 3. Curriculum Layer (Multi-Track Architecture)
+## 3. Curriculum Layer (Multi-Track & Multi-Grade Architecture)
 
-Sistem saat ini melayani kurikulum tunggal: **IPA VIII KBM (Semester 1 & 2)**.  
-Ke depan, engine Purwaverse akan mampu menaungi beberapa *track* secara berdampingan dalam satu database tanpa percampuran logika penilaian:
+Sistem saat ini aktif melayani satu jenjang: **IPA VIII KBM (Semester 1 & 2)** sebagai MVP produksi.  
+Ke depan, engine Purwaverse disiapkan untuk menaungi seluruh spektrum **Fase D SMP Terpadu (Kelas 7, 8, dan 9)** serta multi-track peminatan sains berdampingan dalam satu database tanpa percampuran logika penilaian:
 
 ```
                                     ┌──────────────────────┐
                                     │   CURRICULUM LAYER   │
                                     └──────────┬───────────┘
                                                │
-         ┌─────────────────────┬───────────────┴───────────────┬─────────────────────┐
-         ▼                     ▼                               ▼                     ▼
-   [ KBM SEKOLAH ]       [ OLIMPIADE ]                 [ RESEARCH ACADEMY ]    [ PURWAWIKI ]
-   IPA VIII Terpadu      OSN / Sains Prestasi          KTI / OPSI / KIR        Knowledge Base
-   type: school_private  type: competition             type: research_track    type: public_knowledge
+          ┌────────────────────────────────────┴───┬──────────────────────┬──────────────────────┐
+          ▼                                        ▼                      ▼                      ▼
+    [ KBM SEKOLAH ]                          [ OLIMPIADE ]          [ RESEARCH ACADEMY ]   [ PURWAWIKI ]
+    Fase D SMP Terpadu                       OSN / Sains Prestasi   KTI / OPSI / KIR       Knowledge Base
+    type: school_private                     type: competition      type: research_track   type: public_knowledge
+          │
+    ┌─────┴──────────────────┬──────────────────────┐
+    ▼                        ▼                      ▼
+  [ KELAS 7 ]              [ KELAS 8 ]            [ KELAS 9 ]
+  Fondasi & Observasi      Inti & Eksplorasi      Sintesis & Lanjutan
+  `CUR-IPA-VII-KBM`        `CUR-IPA-VIII-KBM`     `CUR-IPA-IX-KBM`
+  (BSE Kls 7: 18 PDF)      (BSE Kls 8: 14 PDF)    (BSE Kls 9: 10 PDF)
 ```
 
-### Konsep Skema Data Kurikulum Masa Depan:
+### Matriks Rencana Jenjang Fase D SMP (Kelas 7, 8, 9):
+
+| Jenjang | Kurikulum ID | Karakteristik & Fokus Pembelajaran | Sumber Literatur Repo | Status |
+|---|---|---|---|---|
+| **Kelas 7**<br>*(Fase D Awal)* | `CUR-IPA-VII-KBM` | **Fondasi Sains & Observasi Nyata:**<br>• Hakikat sains, keselamatan kerja, & pengukuran alat lab fisik.<br>• Zat dan perubahannya (wujud, suhu, kalor, pemuaian).<br>• Gerak lurus & gaya dasar.<br>• Klasifikasi makhluk hidup & mikroskop dasar.<br>• Ekologi, interaksi makhluk hidup, & keanekaragaman hayati.<br>• Bumi dan tata surya. | [`docs/Kelas 7/`](../Kelas%207/)<br>*(18 Buku BSE K13/KTSP)* | *Future Ready (Skema Siap)* |
+| **Kelas 8**<br>*(Fase D Menengah)* | `CUR-IPA-VIII-KBM` | **Inti Penyelidikan & Mekanika Tubuh/Benda (MVP):**<br>• Pengenalan sel & mikroskop lanjutan.<br>• Struktur & fungsi tubuh (pencernaan, sirkulasi, pernapasan, ekskresi).<br>• Usaha, energi, & pesawat sederhana.<br>• Getaran, gelombang, & cahaya (optik).<br>• Unsur, senyawa, campuran, & zat aditif/adiktif.<br>• Struktur bumi, lempeng tektonik, & kebencanaan. | [`docs/Kelas 8/`](../Kelas%208/)<br>*(14 Buku BSE K13/KTSP)* | **Aktif Berjalan (Production MVP)** |
+| **Kelas 9**<br>*(Fase D Akhir)* | `CUR-IPA-IX-KBM` | **Sintesis Abstrak & Transisi Fase E (SMA):**<br>• Sistem reproduksi manusia & perkembangbiakan makhluk hidup.<br>• Pewarisan sifat (genetika Mendel, DNA, & bioteknologi dasar).<br>• Listrik statis & dinamis (arus, tegangan, hambatan, daya).<br>• Kemagnetan & induksi elektromagnetik.<br>• Bioteknologi pangan konvensional & modern.<br>• Partikel penyusun materi (atom, ion, molekul) & tanah bagi kehidupan. | [`docs/Kelas 9/`](../Kelas%209/)<br>*(10 Buku BSE K13/KTSP)* | *Future Ready (Skema Siap)* |
+
+### Konsep Skema Data Kurikulum Multi-Grade:
 ```sql
 -- TABEL PERSIAPAN MASA DEPAN (Belum perlu dibuat sekarang)
 CREATE TABLE IF NOT EXISTS curricula (
-    curriculum_id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,           -- 'school_private', 'competition', 'research_track', 'public_knowledge'
+    curriculum_id TEXT PRIMARY KEY,       -- e.g. 'CUR-IPA-VII-KBM', 'CUR-IPA-VIII-KBM', 'CUR-IPA-IX-KBM'
+    name TEXT NOT NULL,                  -- e.g. 'IPA Terpadu Kelas 7 (Fase D)'
+    grade_level INTEGER NOT NULL,        -- 7, 8, atau 9
+    type TEXT NOT NULL,                  -- 'school_private', 'competition', 'research_track', 'public_knowledge'
     description TEXT,
-    access_level TEXT DEFAULT 'enrolled', -- 'public', 'enrolled', 'invitation_only'
+    access_level TEXT DEFAULT 'enrolled',-- 'public', 'enrolled', 'invitation_only'
     icon_asset TEXT,
     active INTEGER DEFAULT 1
 );
 ```
 
-### Strategi Partisi Progres:
-Aktivitas pembelajaran pada tabel `master_activities` dapat diperluas dengan menambahkan kolom nullable:
-```sql
-ALTER TABLE master_activities ADD COLUMN curriculum_id TEXT DEFAULT 'CUR-IPA-VIII-KBM';
-```
-Dengan demikian:
-* Siswa KBM hanya melihat aktivitas `CUR-IPA-VIII-KBM`.
-* Peringkat (*leaderboard*) dan rapor progres tidak akan tercampur antar-kurikulum.
+### Konvensi Penamaan ID Modul per Jenjang:
+Untuk mencegah benturan data, format ID bab dirancang berstandar:
+* **Kelas 7:** Bab `CH07-01` s.d. `CH07-06`, Unit `CH07-01-U01`, dsb.
+* **Kelas 8:** Bab `CH08-01` s.d. `CH08-06`, Unit `CH08-01-U01`, dsb. *(Format aktif MVP saat ini tetap dipertahankan utuh)*.
+* **Kelas 9:** Bab `CH09-01` s.d. `CH09-06`, Unit `CH09-01-U01`, dsb.
+
+### Strategi Partisi Progres & Roster:
+1. **Isolasi Kelas (Class Cohorts):**
+   * Siswa Kelas 7 terikat pada rombel `7A`–`7E`.
+   * Siswa Kelas 8 terikat pada rombel `8A`–`8E`.
+   * Siswa Kelas 9 terikat pada rombel `9A`–`9E`.
+2. **Multi-Class Teaching Authorization:**
+   * Guru IPA yang mengajar beberapa jenjang (misal mengajar kelas 8C dan 9A) diberikan akses via array `teacher_classes`: `["8C", "9A"]` tanpa merusak isolasi data antar-tingkatan.
+3. **Pemisahan Leaderboard:**
+   * Papan peringkat KBM difilter per `grade_level`. Nilai kuis siswa kelas 7 tidak akan dibandingkan atau menggeser posisi siswa kelas 8 atau 9.
 
 ---
 
-## 4. Struktur Materi: Dari Hierarki Bab ke Concept Mapping
+## 4. Struktur Materi: Dari Hierarki Bab ke Spiral Concept Mapping
 
-### Kondisi Saat Ini (Hierarki Bab KBM):
+### Kondisi Saat Ini (Hierarki Bab KBM Kelas 8):
 `Semester → Bab (Chapter) → Unit Pembelajaran → Aktivitas (Learn / Quiz / Lab)`
 
-### Desain Masa Depan (Lesson → Concept Mapping):
-Kurikulum Merdeka dan asesmen sains modern menuntut pemahaman lintas disiplin. Satu topik tidak boleh terisolasi hanya dalam satu bab kaku.
+### Desain Masa Depan: Kurikulum Spiral Fase D (Kelas 7 ➔ 8 ➔ 9)
+Sesuai prinsip Kurikulum Merdeka, sains diajarkan secara **spiral**: konsep yang sama diperkenalkan secara konkret di Kelas 7, diperdalam mekanismenya di Kelas 8, dan disintesis secara abstrak di Kelas 9.
 
 ```
-       [ Lesson: Fotosintesis ]
-                  │
-        ┌─────────┼─────────┬─────────┐
-        ▼         ▼         ▼         ▼
-     [ Sel ] [Kloroplas] [ Energi ] [Reaksi Kimia]
-   (Bio Sel)  (Organel)  (Fisika)    (Kimia Zat)
+                    SPIRAL CONCEPT CONTINUITY (FASE D)
+                   ═══════════════════════════════════
+
+   [ TEMA ]               [ KELAS 7 ]            [ KELAS 8 ]              [ KELAS 9 ]
+  ───────────────────────────────────────────────────────────────────────────────────────
+   Biologi          →  Klasifikasi Makhluk   →  Struktur & Fungsi    →  Pewarisan Sifat &
+                       & Sel Mikroskopik        Organ Tubuh Manusia     Genetika / Reproduksi
+                                
+   Fisika           →  Gerak Lurus, Gaya,    →  Usaha, Energi, &     →  Listrik Statis/Dinamis
+                       Suhu, & Kalor            Gelombang/Optik         & Kemagnetan
+
+   Kimia            →  Wujud Zat, Unsur,     →  Zat Aditif/Adiktif   →  Partikel Materi
+                       Senyawa, Campuran        & Larutan Nutrisi       (Atom, Ion, Molekul)
+
+   Bumi & Antariksa →  Tata Surya & Posisi   →  Litosfer, Gempa, &   →  Struktur Tanah &
+                       Bumi di Semesta          Gunung Berapi           Kelestarian Hayati
+```
+
+### Contoh Keterhubungan Node Konsep Lintas Jenjang:
+Sebuah node konsep, misalnya **"Transformasi Energi"**, dapat terhubung ke berbagai unit di ketiga jenjang:
+* **Kelas 7:** Kalor & Pemuaian (Fisika Zat).
+* **Kelas 8:** Fotosintesis Tumbuhan & Respirasi Seluler (Biologi Tubuh), serta Usaha & Pesawat Sederhana (Mekanika).
+* **Kelas 9:** Energi Listrik, Daya, & Pemanfaatan Energi Ramah Lingkungan (Elektro & Teknologi).
+
+```
+                            [ Concept: Transformasi Energi ]
+                                          │
+            ┌─────────────────────────────┼─────────────────────────────┐
+            ▼                             ▼                             ▼
+    [ Kelas 7: Kalor ]          [ Kelas 8: Fotosintesis ]      [ Kelas 9: Listrik & Daya ]
+     (CH07-02-U03)                 (CH08-01-U03)                  (CH09-03-U02)
 ```
 
 ### Jembatan Skema Konsep Masa Depan:

@@ -44,7 +44,7 @@ docs/
 
 ### 1. 🏛️ Arsitektur & Standar Kurikulum (`docs/architecture/`)
 * **[FUTURE_ARCHITECTURE.md](architecture/FUTURE_ARCHITECTURE.md)**  
-  Pedoman non-breaking untuk pengembangan Purwaverse ke depan: diferensiasi 4 User Type (`STUDENT`, `PUBLIC_USER`, `TEACHER`, `ADMIN`), multi-track kurikulum (KBM Sekolah, OSN, Riset, PurwaWiki), transisi ke *Concept Mapping*, serta checklist anti-pattern database.
+  Pedoman arsitektur masa depan untuk ekspansi spektrum lengkap **Fase D SMP (Kelas 7, 8, dan 9)**, diferensiasi 4 User Type (`STUDENT`, `PUBLIC_USER`, `TEACHER`, `ADMIN`), multi-track kurikulum (KBM Sekolah, OSN, Riset, PurwaWiki), transisi ke *Spiral Concept Mapping*, serta checklist anti-pattern database.
 * **[SCHEMA.md](architecture/SCHEMA.md)**  
   Struktur relasional tabel database modern SQLite (`master_students`, `master_activities`, `user_progress`, `quiz_attempts`, `sessions`, `teacher_validations`, `science_teams`), indeks performa, dan relasi integritas data.
 * **[CONTENT_STANDARD.md](architecture/CONTENT_STANDARD.md)**  
