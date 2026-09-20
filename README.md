@@ -222,11 +222,24 @@ Guru tidak hanya melihat angka statistik, tetapi dibekali alat bantu intervensi 
 
 ## 📂 Dokumentasi Teknis Terkait
 
-* [Wiki dan SOP Operasional Guru](docs/WIKI_OPERASIONAL.md)
-* [Standar Konten & Kurikulum](docs/CONTENT_STANDARD.md)
-* [Checklist Integrasi & Regresi](docs/INTEGRATION_CHECKLIST.md)
-* [Dokumentasi Khusus Google Apps Script](gas/README.md)
-* [Laporan Handover Migrasi VPS](PURWAVERSE_MIGRATION_HANDOVER.md)
+Seluruh dokumentasi telah dikategorisasikan di direktori **[`docs/`](docs/README.md)**:
+
+* **[Katalog Lengkap Dokumentasi (Docs Hub)](docs/README.md)**
+* **Arsitektur & Standar**:
+  * [Spesifikasi Arsitektur Future-Ready & Multi-Kurikulum](docs/architecture/FUTURE_ARCHITECTURE.md)
+  * [Skema Database Modern SQLite](docs/architecture/SCHEMA.md)
+  * [Standar Penulisan Konten IPA & Rubrik](docs/architecture/CONTENT_STANDARD.md)
+* **Deployment & Migrasi**:
+  * [Panduan Instalasi & Migrasi VPS Mandiri](docs/deployment/PANDUAN_MIGRASI_VPS.md)
+  * [Dokumen Spesifikasi Teknis Handover Migrasi](docs/deployment/PURWAVERSE_MIGRATION_HANDOVER.md)
+  * [Status & Checklist Kesiapan Migrasi VPS](docs/deployment/PURWAVERSE_VPS_MIGRATION_STATUS.md)
+* **Operasional Guru & QA**:
+  * [Wiki dan SOP Operasional Guru](docs/operations/WIKI_OPERASIONAL.md)
+  * [Checklist Audit Integrasi & Anti-Regresi](docs/operations/INTEGRATION_CHECKLIST.md)
+* **Laporan Tahapan Perkembangan**:
+  * [Koleksi Laporan Milestone Phase 1 s.d. 5](docs/reports/)
+* **Legacy Google Apps Script**:
+  * [Dokumentasi Khusus Google Apps Script](gas/README.md)
 
 ---
 

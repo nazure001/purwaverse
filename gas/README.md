@@ -2,7 +2,7 @@
 
 MVP Google Apps Script + Google Sheets untuk pembelajaran IPA kelas VIII yang ringan, mobile-first, dan tetap memiliki jalur cetak.
 
-Dokumen ini berfokus pada instalasi teknis. Untuk penggunaan harian, sosialisasi siswa, Mission 0, pembentukan tim, praktik, penilaian, pencetakan, dan pemecahan masalah, baca [`docs/WIKI_OPERASIONAL.md`](../docs/WIKI_OPERASIONAL.md).
+Dokumen ini berfokus pada instalasi teknis. Untuk penggunaan harian, sosialisasi siswa, Mission 0, pembentukan tim, praktik, penilaian, pencetakan, dan pemecahan masalah, baca [`docs/operations/WIKI_OPERASIONAL.md`](../docs/operations/WIKI_OPERASIONAL.md).
 
 ## Status sumber data
 
@@ -65,13 +65,13 @@ Menu **Panduan Praktik & LKPD** memuat SOP, pembagian peran, contoh eksperimen b
 
 Setiap praktik mempunyai misi, konteks, waktu fleksibel, alat utama, alternatif sederhana, keselamatan, langkah, kolom data, kriteria berhasil, serta hubungan bukti dengan materi. Penyesuaian alat oleh guru diperbolehkan selama tujuan, keselamatan, dan data yang dicari tetap terjaga.
 
-CP/ATP menentukan konsep dan keterampilan yang wajib tampil; buku pemerintah/BSE serta literatur resmi melengkapi kedalaman materi tanpa mengubah urutan bab guru. Seluruh 21 submateri memuat minimal enam bagian uraian, tujuan belajar, contoh kontekstual, koreksi miskonsepsi, rangkuman inti, istilah penting, panduan catatan buku, pengayaan opsional yang tidak memengaruhi progres, serta literatur sampai judul, bab, dan halaman. Standar dan matriks cakupan seluruh bab dicatat dalam `docs/CONTENT_STANDARD.md`. Ilustrasi SVG digambar ulang, diberi label dan keterangan, serta tidak diklaim sebagai salinan gambar buku. Akun guru mempunyai **Pratinjau Materi** untuk membaca semua unit tanpa membuka kunci siswa serta tanpa membuat progres atau percobaan kuis.
+CP/ATP menentukan konsep dan keterampilan yang wajib tampil; buku pemerintah/BSE serta literatur resmi melengkapi kedalaman materi tanpa mengubah urutan bab guru. Seluruh 21 submateri memuat minimal enam bagian uraian, tujuan belajar, contoh kontekstual, koreksi miskonsepsi, rangkuman inti, istilah penting, panduan catatan buku, pengayaan opsional yang tidak memengaruhi progres, serta literatur sampai judul, bab, dan halaman. Standar dan matriks cakupan seluruh bab dicatat dalam [`docs/architecture/CONTENT_STANDARD.md`](../docs/architecture/CONTENT_STANDARD.md). Ilustrasi SVG digambar ulang, diberi label dan keterangan, serta tidak diklaim sebagai salinan gambar buku. Akun guru mempunyai **Pratinjau Materi** untuk membaca semua unit tanpa membuka kunci siswa serta tanpa membuat progres atau percobaan kuis.
 
 Menu utama mengikuti peran yang sedang masuk. Akun guru melihat **Dashboard Guru** dan **Pratinjau Materi**, sedangkan akun siswa melihat **Jalur Belajar** dan **LKPD**.
 
 ## Struktur sheet
 
-Lihat `docs/SCHEMA.md`. Header dibuat otomatis oleh `setupPurwaverse()`.
+Lihat [`docs/architecture/SCHEMA.md`](../docs/architecture/SCHEMA.md). Header dibuat otomatis oleh `setupPurwaverse()`.
 
 ## Verifikasi
 

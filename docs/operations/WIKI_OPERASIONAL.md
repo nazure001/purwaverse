@@ -525,10 +525,12 @@ Keterbatasan ini tidak menghalangi sosialisasi atau dimulainya materi. Fitur tim
 | Dokumen/file | Fungsi |
 |---|---|
 | `README.md` | Pintu masuk proyek |
-| `docs/WIKI_OPERASIONAL.md` | Pedoman guru dan penggunaan harian |
-| `docs/CONTENT_STANDARD.md` | Standar isi materi dan praktik |
-| `docs/INTEGRATION_CHECKLIST.md` | Pemeriksaan regresi |
-| `docs/SCHEMA.md` | Struktur dan kepemilikan data |
+| `docs/README.md` | Katalog master dokumentasi |
+| `docs/operations/WIKI_OPERASIONAL.md` | Pedoman guru dan penggunaan harian |
+| `docs/architecture/CONTENT_STANDARD.md` | Standar isi materi dan praktik |
+| `docs/operations/INTEGRATION_CHECKLIST.md` | Pemeriksaan regresi & integrasi |
+| `docs/architecture/SCHEMA.md` | Struktur dan kepemilikan data |
+| `docs/deployment/PANDUAN_MIGRASI_VPS.md` | Panduan instalasi VPS |
 | `gas/README.md` | Instalasi dan deployment Apps Script |
 | `gas/LearningData.gs` | Sumber materi dan kuis |
 | `gas/PracticeData.gs` | SOP dan katalog praktik |
