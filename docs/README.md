@@ -10,9 +10,10 @@ Selamat datang di direktori dokumentasi Purwaverse. Seluruh dokumen teknis, pand
 ```
 docs/
 ├── README.md                            # Dokumen Hub & Katalog Indeks (Halaman ini)
+├── PRODUCT_VISION.md                    # Filosofi Inti Purwaverse: Evidence-Based Real Learning
 │
 ├── architecture/                        # Spesifikasi Arsitektur, Skema, & Kurikulum
-│   ├── FUTURE_ARCHITECTURE.md           # Blueprint masa depan (Multi-Curriculum, RBAC, Concept Map)
+│   ├── FUTURE_ARCHITECTURE.md           # Blueprint masa depan (Fase D SMP 7-8-9, Rombel K, RBAC)
 │   ├── SCHEMA.md                        # Struktur skema database SQLite modern & relasi tabel
 │   └── CONTENT_STANDARD.md              # Standar penulisan materi IPA, taksonomi, & LKPD
 │
@@ -42,9 +43,13 @@ docs/
 
 ## 📂 Katalog Dokumen Berdasarkan Kategori
 
+### ⭐ Visi Produk & Filosofi Inti
+* **[PRODUCT_VISION.md](PRODUCT_VISION.md)**  
+  **Fondasi Filosofi Purwaverse:** *"Technology supports learning. Technology does not replace learning."* Menjelaskan mengapa Purwaverse bukan kuis scrolling instan atau AI chatbot, melainkan platform yang memperkuat aktivitas saintifik di dunia nyata (buku rangkuman fisik, eksperimen laboratorium, validasi human-in-the-loop oleh guru, dan data asli). Wajib dibaca oleh setiap developer atau agent baru.
+
 ### 1. 🏛️ Arsitektur & Standar Kurikulum (`docs/architecture/`)
 * **[FUTURE_ARCHITECTURE.md](architecture/FUTURE_ARCHITECTURE.md)**  
-  Pedoman arsitektur masa depan untuk ekspansi spektrum lengkap **Fase D SMP (Kelas 7, 8, dan 9)**, diferensiasi 4 User Type (`STUDENT`, `PUBLIC_USER`, `TEACHER`, `ADMIN`), multi-track kurikulum (KBM Sekolah, OSN, Riset, PurwaWiki), transisi ke *Spiral Concept Mapping*, serta checklist anti-pattern database.
+  Pedoman arsitektur masa depan untuk ekspansi spektrum lengkap **Fase D SMP (Kelas 7, 8, dan 9)**, fleksibilitas rombel hingga **K** (`7A-7K`, `8A-8K`, `9A-9K`), diferensiasi 4 User Type (`STUDENT`, `PUBLIC_USER`, `TEACHER`, `ADMIN`), multi-track kurikulum, transisi ke *Spiral Concept Mapping*, serta checklist anti-pattern database.
 * **[SCHEMA.md](architecture/SCHEMA.md)**  
   Struktur relasional tabel database modern SQLite (`master_students`, `master_activities`, `user_progress`, `quiz_attempts`, `sessions`, `teacher_validations`, `science_teams`), indeks performa, dan relasi integritas data.
 * **[CONTENT_STANDARD.md](architecture/CONTENT_STANDARD.md)**  

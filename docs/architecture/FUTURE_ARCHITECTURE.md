@@ -25,6 +25,7 @@ Purwaverse didesain secara fundamental sebagai **Immersive Learning Management S
 1. **Edukasi Mengarahkan Teknologi (80% Edukasi, 20% Industrial Atmosphere)**: Desain visual industrial blueprint berfungsi sebagai wadah inspiratif dan penguat fokus belajar, bukan gimik game.
 2. **Human-in-the-Loop (Peran Guru Sentral)**: Kelulusan unit, pengesahan tim, dan evaluasi eksperimen tetap berada di tangan instruktur/guru, bukan digantikan oleh AI otomatis.
 3. **Stabilitas KBM Prioritas Tertinggi**: Segala bentuk penambahan di masa depan tidak boleh mendestabilisasi operasional KBM kelas harian.
+4. **Filosofi Belajar Nyata**: Gawai (HP) adalah alat bantu penunjang, bukan pusat belajar. Aktivitas fisik di buku catatan dan penyelidikan laboratorium tetap menjadi inti kompetensi. Selengkapnya tertuang pada **[`docs/PRODUCT_VISION.md`](../PRODUCT_VISION.md)**.
 
 ---
 
@@ -117,14 +118,14 @@ Untuk mencegah benturan data, format ID bab dirancang berstandar:
 * **Kelas 9:** Bab `CH09-01` s.d. `CH09-06`, Unit `CH09-01-U01`, dsb.
 
 ### Strategi Partisi Progres & Roster:
-1. **Isolasi Kelas (Class Cohorts):**
-   * Siswa Kelas 7 terikat pada rombel `7A`–`7E`.
-   * Siswa Kelas 8 terikat pada rombel `8A`–`8E`.
-   * Siswa Kelas 9 terikat pada rombel `9A`–`9E`.
+1. **Isolasi Rombel Fleksibel (Cohorts hingga Rombel K):**
+   * Di lingkungan sekolah nyata, rombel kelas tidak dibatasi hanya A–E, melainkan dapat mencapai rombel **K** (misal `7A` s.d. `7K`, `8A` s.d. `8K`, `9A` s.d. `9K`).
+   * Skema database `master_classes.class_id` bertipe `TEXT PRIMARY KEY` tanpa pembatasan regex alfabetis, sehingga mampu menampung rombel dinamis secara native.
+   * Siswa KBM terikat pada rombelnya masing-masing secara independen.
 2. **Multi-Class Teaching Authorization:**
-   * Guru IPA yang mengajar beberapa jenjang (misal mengajar kelas 8C dan 9A) diberikan akses via array `teacher_classes`: `["8C", "9A"]` tanpa merusak isolasi data antar-tingkatan.
+   * Guru IPA yang mengajar beberapa jenjang dan banyak rombel diberikan akses via konfigurasi `TEACHER_CLASSES` (misal: `TEACHER_CLASSES=8A,8B,8C,8D,8E,8F,8G,8H,8I,8J,8K`) atau array dinamis tanpa merusak isolasi data antar-tingkatan.
 3. **Pemisahan Leaderboard:**
-   * Papan peringkat KBM difilter per `grade_level`. Nilai kuis siswa kelas 7 tidak akan dibandingkan atau menggeser posisi siswa kelas 8 atau 9.
+   * Papan peringkat KBM difilter per `grade_level` dan dapat difilter per rombel kelas. Nilai kuis siswa kelas 7 tidak akan dibandingkan atau menggeser posisi siswa kelas 8 atau 9.
 
 ---
 
@@ -235,9 +236,11 @@ Untuk memastikan kode saat ini ramah pengembangan masa depan (*future-proof*), h
 3. **JANGAN membatasi tipe aktivitas secara mutlak di SQL CHECK Constraint.**
    * *Alasan*: Jika tabel `master_activities` diberi `CHECK(type IN ('learn', 'quiz', 'lab'))`, maka penambahan tipe `wiki_ref`, `case_study`, atau `simulation` di masa depan akan memerlukan migrasi tabel destruktif.
 4. **JANGAN menggabungkan leaderboard publik dengan leaderboard KBM.**
-   * *Alasan*: Siswa KBM sekolah membutuhkan evaluasi berbasis kelas internal (8A-8E). User publik tidak boleh menggeser posisi akademik siswa sekolah.
+   * *Alasan*: Siswa KBM sekolah membutuhkan evaluasi berbasis kelas internal. User publik tidak boleh menggeser posisi akademik siswa sekolah.
 5. **JANGAN memasukkan logika AI ke dalam critical path evaluasi kuis.**
    * *Alasan*: Penilaian kuis KBM IPA VIII harus deterministik, terverifikasi kunci jawabannya, dan bebas halusinasi LLM. AI hanya boleh digunakan sebagai asisten guru atau pemberi umpan balik formatif opsional di Phase 2.
+6. **JANGAN mengasumsikan rombel kelas dibatasi secara kaku hanya A s.d. E.**
+   * *Alasan*: Di sekolah pengguna dan sekolah menengah negeri/swasta besar, rombel satu angkatan jamak mencapai rombel **K** (misal `7A` s.d. `7K`, `8A` s.d. `8K`, `9A` s.d. `9K`). Seluruh query, filter antarmuka, dan konfigurasi guru wajib memperlakukan `class_id` sebagai string dinamis, bukan regex atau enum kaku `[A-E]`.
 
 ---
 

@@ -225,6 +225,7 @@ Guru tidak hanya melihat angka statistik, tetapi dibekali alat bantu intervensi 
 Seluruh dokumentasi telah dikategorisasikan di direktori **[`docs/`](docs/README.md)**:
 
 * **[Katalog Lengkap Dokumentasi (Docs Hub)](docs/README.md)**
+* **[Filosofi Produk & Nilai Inti Purwaverse](docs/PRODUCT_VISION.md)** *(Wajib dibaca kontributor/developer baru)*
 * **Arsitektur & Standar**:
   * [Spesifikasi Arsitektur Future-Ready & Multi-Kurikulum](docs/architecture/FUTURE_ARCHITECTURE.md)
   * [Skema Database Modern SQLite](docs/architecture/SCHEMA.md)
