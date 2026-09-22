@@ -121,11 +121,11 @@
     const savedRole = SafeStorage.getItem('purwa_role');
     if (savedToken && savedRole) {
       try {
-        const res = await callApi('validate_session', { session_token: savedToken });
+        const res = await callApi('verifySession', { token: savedToken, session_token: savedToken });
         if (res && res.valid) {
           AppState.sessionToken = savedToken;
           AppState.currentRole = savedRole;
-          AppState.currentUser = res.user;
+          AppState.currentUser = res.user || res.student;
           if (savedRole === 'student') {
             await loadStudentDashboardData();
             showView('view-student-dashboard');
@@ -180,16 +180,29 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Menghubungkan...';
 
+    let classId = '8A';
+    let rollNo = 1;
+    if (studentId.includes('-')) {
+      const parts = studentId.split('-');
+      classId = parts[0].trim().toUpperCase();
+      rollNo = parseInt(parts[1].trim(), 10);
+    } else {
+      classId = AppState.selectedClass || '8A';
+      rollNo = parseInt(studentId, 10) || 1;
+    }
+
     try {
-      const res = await callApi('student_login', { student_id: studentId, pin });
-      AppState.sessionToken = res.session_token;
-      AppState.currentUser = res.student;
+      const res = await callApi('loginStudent', { classId, rollNo, pin, student_id: studentId });
+      const token = res.token || res.session_token;
+      const user = res.student || res.user || { name: 'Siswa ' + studentId, class_id: classId, roll_no: rollNo };
+      AppState.sessionToken = token;
+      AppState.currentUser = user;
       AppState.currentRole = 'student';
 
-      SafeStorage.setItem('purwa_token', res.session_token);
+      SafeStorage.setItem('purwa_token', token);
       SafeStorage.setItem('purwa_role', 'student');
 
-      toast('Akses Lab Diberikan. Selamat datang, ' + res.student.name, 'success');
+      toast('Akses Lab Diberikan. Selamat datang, ' + (user.name || 'Siswa'), 'success');
       await loadStudentDashboardData();
       showView('view-student-dashboard');
     } catch (err) {
@@ -214,11 +227,12 @@
     submitBtn.textContent = 'Memvalidasi...';
 
     try {
-      const res = await callApi('teacher_login', { password });
-      AppState.sessionToken = res.session_token;
+      const res = await callApi('loginTeacher', { username: 'guru', password });
+      const token = res.token || res.session_token;
+      AppState.sessionToken = token;
       AppState.currentRole = 'teacher';
 
-      SafeStorage.setItem('purwa_token', res.session_token);
+      SafeStorage.setItem('purwa_token', token);
       SafeStorage.setItem('purwa_role', 'teacher');
 
       toast('Command Center Aktif.', 'success');
@@ -235,7 +249,7 @@
   async function handleLogout() {
     if (AppState.sessionToken) {
       try {
-        await callApi('logout', { session_token: AppState.sessionToken });
+        await callApi('logout', { token: AppState.sessionToken, session_token: AppState.sessionToken });
       } catch (e) {}
     }
     SafeStorage.removeItem('purwa_token');
@@ -250,12 +264,22 @@
   // --- 4. Student Dashboard Data Loader & Renderer ---
   async function loadStudentDashboardData() {
     try {
-      const res = await callApi('learning_home', {
-        session_token: AppState.sessionToken,
-        student_id: AppState.currentUser ? AppState.currentUser.student_id : null
+      const res = await callApi('learningHome', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken
       });
 
-      AppState.studentProgress = res.progress_map || {};
+      if (res && res.chapters) {
+        const progressMap = {};
+        res.chapters.forEach(ch => {
+          (ch.units || []).forEach(u => {
+            progressMap[u.unit_id] = u.state || { status: 'reading' };
+          });
+        });
+        AppState.studentProgress = progressMap;
+      } else {
+        AppState.studentProgress = res.progress_map || {};
+      }
       renderStudentDashboard(res);
       renderLearningMap();
     } catch (err) {
@@ -385,20 +409,17 @@
   // --- 6. Teacher Command Center Data Loader & Renderer ---
   async function loadTeacherOverviewData() {
     try {
-      const res = await callApi('teacher_overview', {
+      const res = await callApi('dashboard', {
+        token: AppState.sessionToken,
         session_token: AppState.sessionToken,
+        classId: AppState.selectedClass,
         class_id: AppState.selectedClass
       });
       AppState.teacherOverview = res;
       renderTeacherDashboard(res);
     } catch (err) {
-      console.warn('Fallback local teacher overview', err);
-      renderTeacherDashboard({
-        active_students: 207,
-        avg_progress: 82,
-        pending_review_count: 12,
-        attention_count: 3
-      });
+      console.warn('Gagal memuat overview instruktur:', err);
+      toast('Gagal memuat data overview instruktur.', 'error');
     }
   }
 

@@ -587,7 +587,14 @@ function sampledQuizItemsForAttempt_(allItems, studentId, attemptNumber) {
  */
 function startQuiz(session, activityId) {
   const units = allLearningUnits_();
-  const index = units.findIndex(x => x.quiz_activity_id === activityId);
+  let targetActivityId = activityId;
+  let index = units.findIndex(x => x.quiz_activity_id === targetActivityId);
+  if (index < 0) {
+    index = units.findIndex(x => x.unit_id === targetActivityId);
+    if (index >= 0) {
+      targetActivityId = units[index].quiz_activity_id;
+    }
+  }
   if (index < 0) throw new Error('Kuis tidak ditemukan.');
 
   const unit = units[index];
@@ -595,11 +602,11 @@ function startQuiz(session, activityId) {
   if (!state.contentUnlocked) {
     throw new Error('Kuis belum dapat dibuka karena submateri sebelumnya belum selesai.');
   }
-  if (!verifiedCheck_(session.actor_id, unit.learn_activity_id, 'summary') && unlockOverride_(session.actor_id, activityId) !== true) {
+  if (!verifiedCheck_(session.actor_id, unit.learn_activity_id, 'summary') && unlockOverride_(session.actor_id, targetActivityId) !== true) {
     throw new Error('Kuis terbuka setelah rangkuman diperiksa guru.');
   }
 
-  const previous = findAll_('quiz_attempts', r => r.student_id === session.actor_id && r.activity_id === activityId);
+  const previous = findAll_('quiz_attempts', r => r.student_id === session.actor_id && r.activity_id === targetActivityId);
   const unfinished = previous.filter(x => !x.submitted_at).sort((a, b) => Number(b.attempt_number) - Number(a.attempt_number))[0];
   const attemptNumber = unfinished ? Number(unfinished.attempt_number) : previous.length + 1;
   const attemptId = unfinished ? unfinished.attempt_id : uid_('QAT');
@@ -608,7 +615,7 @@ function startQuiz(session, activityId) {
     append_('quiz_attempts', {
       attempt_id: attemptId,
       student_id: session.actor_id,
-      activity_id: activityId,
+      activity_id: targetActivityId,
       attempt_number: attemptNumber,
       score: null,
       passed: 0,
@@ -617,10 +624,10 @@ function startQuiz(session, activityId) {
     });
   }
 
-  let allItems = findAll_('quiz_items', r => r.activity_id === activityId && (r.active === 1 || String(r.active).toLowerCase() === 'true'));
+  let allItems = findAll_('quiz_items', r => r.activity_id === targetActivityId && (r.active === 1 || String(r.active).toLowerCase() === 'true'));
   if (!allItems.length) {
     // Muat dari catalog jika tabel belum terisi
-    const catalogItems = allQuizItems_().filter(r => r.activity_id === activityId && (r.active === true || r.active === 1));
+    const catalogItems = allQuizItems_().filter(r => r.activity_id === targetActivityId && (r.active === true || r.active === 1));
     allItems = catalogItems.map(item => ({
       quiz_item_id: item.quiz_item_id,
       activity_id: item.activity_id,
@@ -1007,6 +1014,15 @@ function saveTeamPracticeReport(session, payload, submit) {
     throw new Error('Draft berubah di perangkat lain. Muat ulang sebelum menyimpan.');
   }
 
+  const isFallback = workspace.editorRole === 'deputy';
+  const fallbackReason = isFallback && submit
+    ? String(payload.fallbackReason || '').trim()
+    : '';
+
+  if (submit && isFallback && !fallbackReason) {
+    throw new Error('Alasan pengalihan (fallbackReason) wajib diisi jika laporan dikirimkan oleh wakil ketua.');
+  }
+
   const report = cleanPracticeReport_(payload.report);
   const required = ['prediction', 'tools', 'trial1', 'data', 'evidence', 'conclusion', 'memberRoles'];
   if (submit) {
@@ -1016,9 +1032,15 @@ function saveTeamPracticeReport(session, payload, submit) {
 
   const now = isoNow_();
   const status = submit ? 'submitted' : 'draft';
+  const currentStored = practiceReportFromRow_(current);
+  const currentMeta = currentStored.meta || {};
+
   const meta = {
-    submittedBy: submit ? session.actor_id : '',
-    submittedAt: submit ? now : '',
+    submittedBy: submit ? session.actor_id : (currentMeta.submittedBy || ''),
+    submittedRole: submit ? workspace.editorRole : (currentMeta.submittedRole || ''),
+    isFallback: submit ? isFallback : Boolean(currentMeta.isFallback),
+    fallbackReason: submit ? fallbackReason : (currentMeta.fallbackReason || ''),
+    submittedAt: submit ? now : (currentMeta.submittedAt || ''),
     lastEditor: session.actor_id,
     editorRole: workspace.editorRole
   };
@@ -1039,10 +1061,19 @@ function saveTeamPracticeReport(session, payload, submit) {
   upsert_('group_lab', 'lab_result_id', row);
   audit_({ type: 'student', id: session.actor_id }, submit ? 'SUBMIT_TEAM_PRACTICE' : 'SAVE_TEAM_PRACTICE_DRAFT', 'group_lab', id, {
     unit_id: payload.unitId,
-    editor_role: workspace.editorRole
+    editor_role: workspace.editorRole,
+    is_fallback: isFallback,
+    fallback_reason: fallbackReason
   });
 
-  return { status, updatedAt: now, submitted: submit };
+  return {
+    status,
+    updatedAt: now,
+    submitted: submit,
+    isFallback,
+    editorRole: workspace.editorRole,
+    meta
+  };
 }
 
 /**
@@ -1159,14 +1190,20 @@ function groupLabDashboard(session, classId, activityId) {
     classId,
     activityId,
     activities: allLearningUnits_().filter(u => u.practice_activity_id).map(u => ({ activityId: u.practice_activity_id, title: u.title })),
-    teams: teams.map(t => ({
-      teamId: t.team_id,
-      result: findOne_('group_lab', { team_id: t.team_id, activity_id: activityId }),
-      members: findAll_('team_members', m => m.team_id === t.team_id).map(m => ({
-        ...m,
-        name: students[m.student_id] ? students[m.student_id].name : m.student_id
-      }))
-    }))
+    teams: teams.map(t => {
+      const res = findOne_('group_lab', { team_id: t.team_id, activity_id: activityId });
+      const stored = practiceReportFromRow_(res);
+      return {
+        teamId: t.team_id,
+        result: res,
+        report: stored.report,
+        meta: stored.meta,
+        members: findAll_('team_members', m => m.team_id === t.team_id).map(m => ({
+          ...m,
+          name: students[m.student_id] ? students[m.student_id].name : m.student_id
+        }))
+      };
+    })
   };
 }
 

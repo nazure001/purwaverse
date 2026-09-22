@@ -13,7 +13,7 @@ node_modules/
 *.db-shm
 *.sqlite
 *.sqlite3
-data/
+/data/
 tests/*.db
 tests/*.db-journal
 tests/*.db-wal

@@ -172,7 +172,15 @@ async function studentLogin(classId, rollNo, pin) {
     timestamp: isoNow_()
   });
 
-  return createSession('student', student.student_id, student.class_id);
+  const session = createSession('student', student.student_id, student.class_id);
+  session.student = {
+    student_id: student.student_id,
+    name: student.name,
+    class_id: student.class_id,
+    roll_no: student.roll_no
+  };
+  session.user = session.student;
+  return session;
 }
 
 /**
@@ -221,7 +229,14 @@ async function teacherLogin(username, password) {
 
   const allowedClasses = process.env.TEACHER_CLASSES || '8A,8B,8C,8D,8E';
   const actorId = `TEACHER-${hash_(identity).slice(0, 12)}`;
-  return createSession('teacher', actorId, allowedClasses);
+  const session = createSession('teacher', actorId, allowedClasses);
+  session.user = {
+    teacher_id: actorId,
+    name: 'Instruktur Laboratorium',
+    role: 'teacher',
+    allowedClasses
+  };
+  return session;
 }
 
 /**
@@ -229,7 +244,7 @@ async function teacherLogin(username, password) {
  * @param {'student'|'teacher'|'admin'} type
  * @param {string} id - actor_id (student_id atau teacher_id)
  * @param {string} classId - '8A' atau '8A,8B,...'
- * @returns {{ token: string, actorType: string, actorId: string, classId: string, expiresAt: string }}
+ * @returns {{ token: string, session_token: string, actorType: string, actorId: string, classId: string, expiresAt: string }}
  */
 function createSession(type, id, classId) {
   const token = uid_('SES');
@@ -249,6 +264,7 @@ function createSession(type, id, classId) {
 
   return {
     token,
+    session_token: token,
     actorType: type,
     actorId: id,
     classId: classId || '',

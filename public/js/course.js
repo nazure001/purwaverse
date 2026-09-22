@@ -27,9 +27,10 @@
     let unit = (window.AppState && window.AppState.staticUnits[unitId]);
     if (!unit && window.AppState && window.AppState.sessionToken) {
       try {
-        unit = await callApi('learning_unit_for_student', {
+        unit = await callApi('learningUnit', {
+          token: window.AppState.sessionToken,
           session_token: window.AppState.sessionToken,
-          unit_id: unitId
+          unitId: unitId
         });
       } catch (e) {
         toast('Gagal memuat materi unit: ' + e.message, 'error');
@@ -98,15 +99,16 @@
     }
 
     try {
-      await callApi('submit_learning_summary', {
+      await callApi('submitSummaryForReview', {
+        token: window.AppState.sessionToken,
         session_token: window.AppState.sessionToken,
-        unit_id: unitId || window.AppState.activeUnitId,
-        summary_text: text
+        unitId: unitId || window.AppState.activeUnitId
       });
-      toast('Rangkuman berhasil dikirim untuk verifikasi instruktur!', 'success');
+      toast('Rangkuman berhasil dilaporkan untuk verifikasi instruktur!', 'success');
       if (window.showView) window.showView('view-student-dashboard');
+      if (window.loadStudentDashboardData) window.loadStudentDashboardData();
     } catch (e) {
-      toast(e.message || 'Gagal mengirim rangkuman.', 'error');
+      toast(e.message || 'Gagal melaporkan rangkuman.', 'error');
     }
   }
 
@@ -117,46 +119,29 @@
     QuizState.answers = {};
     QuizState.timeRemaining = 180;
     QuizState.tabSwitchCount = 0;
+    QuizState.attemptId = null;
 
-    QuizState.items = [
-      {
-        item_id: 'Q1',
-        question: 'Bagian sel yang berfungsi sebagai pusat pengendali seluruh aktivitas sel dan tempat materi genetik adalah ...',
-        options: [
-          { key: 'A', text: 'Mitokondria' },
-          { key: 'B', text: 'Nukleus (Inti Sel)' },
-          { key: 'C', text: 'Ribosom' },
-          { key: 'D', text: 'Badan Golgi' }
-        ]
-      },
-      {
-        item_id: 'Q2',
-        question: 'Organel sel tumbuhan yang berperan menghasilkan energi kimia melalui fotosintesis adalah ...',
-        options: [
-          { key: 'A', text: 'Kloroplas' },
-          { key: 'B', text: 'Dinding Sel' },
-          { key: 'C', text: 'Vakuola Besar' },
-          { key: 'D', text: 'Sentrosom' }
-        ]
+    if (window.AppState && window.AppState.sessionToken) {
+      try {
+        const res = await callApi('startQuiz', {
+          token: window.AppState.sessionToken,
+          session_token: window.AppState.sessionToken,
+          activityId: QuizState.unitId
+        });
+        if (res && res.items && res.items.length) {
+          QuizState.attemptId = res.attemptId;
+          QuizState.items = res.items;
+          QuizState.timeRemaining = res.timeLimitSeconds || 180;
+        }
+      } catch (e) {
+        toast('Gagal memulai sesi kuis: ' + (e.message || 'Materi/rangkuman belum tuntas.'), 'error');
+        return;
       }
-    ];
+    }
 
     startQuizTimer();
     renderCurrentQuestion();
     if (window.showView) window.showView('view-quiz-chamber');
-
-    if (window.AppState && window.AppState.sessionToken) {
-      try {
-        const res = await callApi('student_quiz_items', {
-          session_token: window.AppState.sessionToken,
-          unit_id: QuizState.unitId
-        });
-        if (res && res.items && res.items.length) {
-          QuizState.items = res.items;
-          renderCurrentQuestion();
-        }
-      } catch (e) {}
-    }
   }
 
   function startQuizTimer() {
@@ -205,16 +190,21 @@
     const nextBtn = document.getElementById('btn-quiz-next');
 
     if (stepEl) stepEl.textContent = `Pertanyaan ${QuizState.currentIndex + 1} dari ${QuizState.items.length}`;
-    if (promptEl) promptEl.textContent = item.question;
+    if (promptEl) promptEl.textContent = item.prompt || item.question;
 
-    if (optionsContainer) {
+    const itemId = item.quiz_item_id || item.item_id || String(QuizState.currentIndex);
+    const optionLetters = ['A', 'B', 'C', 'D', 'E'];
+
+    if (optionsContainer && Array.isArray(item.options)) {
       let html = '';
-      item.options.forEach(opt => {
-        const isSelected = QuizState.answers[item.item_id] === opt.key;
+      item.options.forEach((opt, idx) => {
+        const key = typeof opt === 'object' && opt.key ? opt.key : optionLetters[idx];
+        const text = typeof opt === 'object' && opt.text ? opt.text : String(opt);
+        const isSelected = QuizState.answers[itemId] === idx;
         html += `
-          <div class="quiz-option-pill ${isSelected ? 'selected' : ''}" onclick="selectQuizOption('${item.item_id}', '${opt.key}')">
-            <span class="quiz-option-key">${opt.key}</span>
-            <span class="quiz-option-text">${escapeHtml(opt.text)}</span>
+          <div class="quiz-option-pill ${isSelected ? 'selected' : ''}" onclick="selectQuizOption('${itemId}', ${idx})">
+            <span class="quiz-option-key">${key}</span>
+            <span class="quiz-option-text">${escapeHtml(text)}</span>
           </div>
         `;
       });
@@ -233,8 +223,8 @@
     }
   }
 
-  function selectQuizOption(itemId, key) {
-    QuizState.answers[itemId] = key;
+  function selectQuizOption(itemId, optionIndex) {
+    QuizState.answers[itemId] = Number(optionIndex);
     renderCurrentQuestion();
   }
 
@@ -260,28 +250,38 @@
       submitBtn.textContent = 'Mengevaluasi...';
     }
 
+    const formattedAnswers = Object.entries(QuizState.answers).map(([itemId, answer]) => ({
+      itemId,
+      answer: Number(answer)
+    }));
+
     try {
-      const res = await callApi('submit_student_quiz', {
+      const res = await callApi('submitQuiz', {
+        token: window.AppState.sessionToken,
         session_token: window.AppState.sessionToken,
-        unit_id: QuizState.unitId,
-        answers: QuizState.answers,
-        elapsed_time: 180 - QuizState.timeRemaining,
-        tab_switches: QuizState.tabSwitchCount
+        attemptId: QuizState.attemptId,
+        answers: formattedAnswers,
+        timeRemaining: QuizState.timeRemaining,
+        tabSwitchCount: QuizState.tabSwitchCount
       });
 
-      const score = res.score || 85;
-      const passed = score >= 70;
+      const score = Number(res.score !== undefined ? res.score : res.finalScore || 0);
+      const passed = Boolean(res.passed || score >= 70);
 
       if (passed) {
         toast(`Lulus Quiz Chamber! Nilai: ${score}/100 (+50 XP). Unit berikutnya terbuka.`, 'success');
       } else {
-        toast(`Nilai: ${score}/100. Di bawah KKM (70). Silakan coba lagi.`, 'error');
+        toast(`Nilai: ${score}/100. Di bawah KKM (70). Silakan pelajari kembali dan coba lagi.`, 'error');
       }
 
       if (window.showView) window.showView('view-student-dashboard');
+      if (window.loadStudentDashboardData) window.loadStudentDashboardData();
     } catch (e) {
-      toast('Kuis selesai: Skor 85/100 (KKM 70 Terpenuhi).', 'success');
-      if (window.showView) window.showView('view-student-dashboard');
+      toast('Gagal mengirim jawaban kuis: ' + (e.message || 'Terjadi kesalahan sistem.'), 'error');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Kirim Jawaban ✓';
+      }
     }
   }
 
@@ -295,21 +295,46 @@
     const text = notesEl ? notesEl.value.trim() : '';
 
     if (text.length < 20) {
-      toast('Isi laporan data hasil observasi tim terlebih dahulu.', 'error');
+      toast('Isi laporan data hasil observasi tim terlebih dahulu (minimal 20 karakter).', 'error');
       return;
     }
 
+    const fallbackInput = document.getElementById('input-team-fallback-reason');
+    const fallbackReason = fallbackInput ? fallbackInput.value.trim() : '';
+
+    const submitBtn = document.getElementById('btn-submit-team-worksheet');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Mengirim...';
+    }
+
     try {
-      await callApi('submit_group_lab', {
+      await callApi('submitTeamPractice', {
+        token: window.AppState.sessionToken,
         session_token: window.AppState.sessionToken,
-        class_id: window.AppState.currentUser ? window.AppState.currentUser.class_id : '8A',
-        worksheet_data: { observation_notes: text }
+        unitId: window.AppState.activeUnitId,
+        report: {
+          prediction: 'Prediksi tim',
+          tools: 'Peralatan praktikum',
+          trial1: 'Percobaan 1',
+          data: text,
+          evidence: text,
+          conclusion: text,
+          memberRoles: 'Scientist Leader dan Tim'
+        },
+        fallbackReason,
+        clientVersion: window.AppState.teamLabClientVersion || ''
       });
       toast('Laporan LKPD Tim berhasil dikirim ke Instruktur!', 'success');
       if (window.showView) window.showView('view-student-dashboard');
+      if (window.loadStudentDashboardData) window.loadStudentDashboardData();
     } catch (e) {
-      toast('Laporan LKPD Tim tercatat (Pending Review).', 'success');
-      if (window.showView) window.showView('view-student-dashboard');
+      toast('Gagal mengirim laporan LKPD: ' + (e.message || 'Terjadi kesalahan.'), 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Kirim Laporan Tim';
+      }
     }
   }
 
