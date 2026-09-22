@@ -60,6 +60,9 @@ coverage/
 *.pdf
 docs/Kelas*/
 
+# AI Generated Reports
+docs/reports/*.md
+
 # IDE & Editor Configurations
 .vscode/
 .idea/
