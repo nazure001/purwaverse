@@ -12,13 +12,18 @@ const CONFIG = Object.freeze({
   STUDENT_PIN_PEPPER: process.env.STUDENT_PIN_PEPPER || '',
   TEACHER_PASSWORD_SALT: process.env.TEACHER_PASSWORD_SALT || '',
 
+  ALLOWED_ORIGIN: process.env.ALLOWED_ORIGIN || '',
+  BASE_URL: process.env.BASE_URL || '',
+  TRUST_PROXY: process.env.TRUST_PROXY || '',
+  TEACHER_USERNAME: process.env.TEACHER_USERNAME || 'guru',
+
   // Domain Config (Sesuai Config.gs)
   APP_NAME: process.env.APP_NAME || 'Purwaverse IPA VIII',
   APP_MODE: process.env.APP_MODE || 'VPS-MIGRATION',
   SOURCE_STATUS: 'READY',
   SCHOOL_YEAR: process.env.SCHOOL_YEAR || '2026/2027',
   CURRENT_SEMESTER: parseInt(process.env.CURRENT_SEMESTER || '1', 10),
-  SESSION_HOURS: 8,
+  SESSION_HOURS: Math.max(1, parseInt(process.env.SESSION_TTL_HOURS || '8', 10) || 8),
   TEAM_COUNT: 8,
   QUIZ_PASSING_SCORE: parseInt(process.env.QUIZ_PASSING_SCORE || '70', 10),
   LOGIN_MAX_ATTEMPTS: 5,

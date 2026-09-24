@@ -19,7 +19,8 @@ const {
   teacherLogin,
   validateSession,
   verifyPin,
-  logout
+  logout,
+  hashArgon2
 } = require('../src/services/securityService');
 const { requireSession, requireRole } = require('../src/middleware/authMiddleware');
 const { seedClasses } = require('../src/database/seed');
@@ -56,7 +57,7 @@ test('Security & Authentication Migration Test Suite', async (t) => {
 
   // Siapkan data siswa uji 2: Format Argon2id
   const argonPin = '5678';
-  const modernHash = await argon2.hash(argonPin);
+  const modernHash = await hashArgon2(argonPin);
   append_('master_students', {
     student_id: 'STD-AUTH-002',
     nis: '002',

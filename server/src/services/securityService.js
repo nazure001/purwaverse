@@ -13,6 +13,17 @@ const {
   uid_
 } = require('../database/repository');
 
+const ARGON2_CONFIG = {
+  type: argon2.argon2id,
+  memoryCost: process.env.NODE_ENV === 'test' ? 4096 : (process.env.ARGON2_MEMORY_COST ? parseInt(process.env.ARGON2_MEMORY_COST, 10) : 16384),
+  timeCost: 2,
+  parallelism: 1
+};
+
+async function hashArgon2(value) {
+  return argon2.hash(String(value), ARGON2_CONFIG);
+}
+
 // Cache in-memory untuk throttling / rate limiting login
 const loginFailures = new Map();
 
@@ -104,11 +115,7 @@ async function verifyPin(student, pin) {
   if (isPeppredMatch || isLegacyMatch) {
     // Upgrade otomatis transparan ke Argon2id tanpa mereset PIN siswa!
     try {
-      const modernHash = await argon2.hash(pinStr, {
-        type: argon2.argon2id,
-        memoryCost: 2 ** 16, // 64MB
-        timeCost: 3
-      });
+      const modernHash = await hashArgon2(pinStr);
 
       upsert_('master_students', 'student_id', {
         student_id: student.student_id,
@@ -193,10 +200,10 @@ async function teacherLogin(username, password) {
   assertLoginAllowed('teacher', identity);
 
   // Kredensial guru diambil dari konfigurasi environment
-  const expectedUsername = (process.env.TEACHER_USERNAME || 'guru').toLowerCase();
+  const expectedUsername = (CONFIG.TEACHER_USERNAME || process.env.TEACHER_USERNAME || 'guru').toLowerCase();
   const salt = process.env.TEACHER_PASSWORD_SALT || CONFIG.TEACHER_PASSWORD_SALT || '';
   const storedHash = process.env.TEACHER_PASSWORD_HASH || '';
-  const devPassword = process.env.TEACHER_DEV_PASSWORD || ''; // Kemudahan pengujian dev lokal jika hash belum diset
+  const devPassword = process.env.TEACHER_DEV_PASSWORD || '';
 
   if (identity !== expectedUsername) {
     recordLoginFailure('teacher', identity);
@@ -266,9 +273,13 @@ function createSession(type, id, classId) {
     token,
     session_token: token,
     actorType: type,
+    actor_type: type,
     actorId: id,
+    actor_id: id,
     classId: classId || '',
-    expiresAt
+    class_id: classId || '',
+    expiresAt,
+    expires_at: expiresAt
   };
 }
 
@@ -347,11 +358,7 @@ async function generateTeacherHash(username, password) {
   if (!username || String(password).length < 10) {
     throw new Error('Nama pengguna wajib diisi dan kata sandi minimal 10 karakter.');
   }
-  const hash = await argon2.hash(password, {
-    type: argon2.argon2id,
-    memoryCost: 2 ** 16,
-    timeCost: 3
-  });
+  const hash = await argon2.hash(password, ARGON2_CONFIG);
   return { username, hash };
 }
 
@@ -363,6 +370,8 @@ module.exports = {
   validateSession,
   logout,
   generateTeacherHash,
+  hashArgon2,
+  ARGON2_CONFIG,
   // Helper internal untuk testing
   assertLoginAllowed,
   recordLoginFailure,

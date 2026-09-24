@@ -10,6 +10,7 @@
     "server:start": "npm --prefix server start",
     "server:dev": "npm --prefix server run dev",
     "server:test": "npm --prefix server test",
-    "server:seed": "npm --prefix server run db:seed"
+    "server:seed": "npm --prefix server run db:seed",
+    "test": "npm --prefix server test"
   }
 }

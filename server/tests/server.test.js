@@ -75,4 +75,36 @@ test('Backend Skeleton & RPC Router Test Suite', async (t) => {
     closeDatabase();
   });
 
+  await t.test('6. Health check endpoints (/healthz & /api/healthz) harus mengembalikan status online', async () => {
+    const res1 = await request(app)
+      .get('/healthz')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    assert.equal(res1.body.status, 'online');
+    assert.equal(res1.body.service, 'purwaverse');
+
+    const res2 = await request(app)
+      .get('/api/healthz')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    assert.equal(res2.body.status, 'online');
+    assert.equal(res2.body.service, 'purwaverse');
+  });
+
+  await t.test('7. Kontrak ALLOWED_ORIGIN dan TRUST_PROXY terkonfigurasi pada Express app', async () => {
+    const CONFIG = require('../src/config');
+    assert.ok(typeof CONFIG.ALLOWED_ORIGIN === 'string', 'ALLOWED_ORIGIN harus berupa string');
+    assert.ok(typeof CONFIG.TRUST_PROXY === 'string', 'TRUST_PROXY harus berupa string');
+
+    // Menguji respons OPTIONS dengan header CORS
+    const resCors = await request(app)
+      .options('/api/purwa')
+      .set('Origin', 'http://localhost:5210')
+      .expect(204);
+
+    assert.ok(resCors.headers['access-control-allow-origin']);
+  });
+
 });
