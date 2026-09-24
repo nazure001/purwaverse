@@ -231,6 +231,7 @@
       const token = res.token || res.session_token;
       AppState.sessionToken = token;
       AppState.currentRole = 'teacher';
+      AppState.selectedClass = (res.classes && res.classes[0]) || '8A';
 
       SafeStorage.setItem('purwa_token', token);
       SafeStorage.setItem('purwa_role', 'teacher');
@@ -277,8 +278,10 @@
           });
         });
         AppState.studentProgress = progressMap;
+        AppState.unitStates = progressMap;
       } else {
         AppState.studentProgress = res.progress_map || {};
+        AppState.unitStates = res.progress_map || {};
       }
       renderStudentDashboard(res);
       renderLearningMap();
@@ -408,18 +411,22 @@
 
   // --- 6. Teacher Command Center Data Loader & Renderer ---
   async function loadTeacherOverviewData() {
+    const classSelect = document.getElementById('teacher-class-select');
+    const classId = (classSelect && classSelect.value) || AppState.selectedClass || '8A';
+    AppState.selectedClass = classId;
+
     try {
       const res = await callApi('dashboard', {
         token: AppState.sessionToken,
         session_token: AppState.sessionToken,
-        classId: AppState.selectedClass,
-        class_id: AppState.selectedClass
+        classId: classId,
+        class_id: classId
       });
       AppState.teacherOverview = res;
       renderTeacherDashboard(res);
     } catch (err) {
       console.warn('Gagal memuat overview instruktur:', err);
-      toast('Gagal memuat data overview instruktur.', 'error');
+      toast('Gagal memuat data overview instruktur: ' + (err.message || ''), 'error');
     }
   }
 
@@ -433,6 +440,137 @@
     if (elAvg) elAvg.textContent = (data.avg_progress || 82) + '%';
     if (elPending) elPending.textContent = data.pending_review_count || 12;
     if (elAttention) elAttention.textContent = data.attention_count || 3;
+  }
+
+  async function teacherQuickVerifySummary() {
+    const studentInput = document.getElementById('teacher-verify-student-id');
+    const unitSelect = document.getElementById('teacher-verify-unit-id');
+    const studentId = studentInput ? studentInput.value.trim() : '';
+    const unitId = unitSelect ? unitSelect.value : 'CH08-01-U01';
+
+    if (!studentId) {
+      toast('Masukkan NIS / ID Siswa yang diverifikasi.', 'error');
+      return;
+    }
+
+    try {
+      const activityId = unitId + '-LRN01';
+      const classSelect = document.getElementById('teacher-class-select');
+      const classId = (classSelect && classSelect.value) || AppState.selectedClass || '8A';
+
+      await callApi('saveTeacherChecks', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken,
+        classId,
+        activityId,
+        checkType: 'summary',
+        status: 'verified',
+        score: 85,
+        note: 'Buku catatan fisik telah diverifikasi lengkap oleh guru.',
+        studentIds: [studentId]
+      });
+
+      toast(`Buku catatan siswa ${studentId} berhasil diverifikasi! Quiz Chamber terbuka.`, 'success');
+      loadTeacherOverviewData();
+    } catch (e) {
+      toast('Gagal verifikasi: ' + (e.message || 'Terjadi kesalahan.'), 'error');
+    }
+  }
+
+  async function teacherQuickVerifyGroupLab() {
+    const teamInput = document.getElementById('teacher-verify-team-id');
+    const actInput = document.getElementById('teacher-verify-lab-activity-id');
+    const scoreInput = document.getElementById('teacher-verify-lab-score');
+    const teamId = teamInput ? teamInput.value.trim() : '';
+    const activityId = actInput ? actInput.value.trim() : '';
+    const score = scoreInput ? parseInt(scoreInput.value, 10) : 85;
+
+    if (!teamId || !activityId) {
+      toast('ID Tim dan ID Aktivitas Praktikum wajib diisi.', 'error');
+      return;
+    }
+
+    try {
+      await callApi('saveGroupLab', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken,
+        teamId,
+        activityId,
+        status: 'verified',
+        score: isNaN(score) ? 85 : score,
+        note: 'Laporan praktikum disahkan instruktur.'
+      });
+
+      toast(`Laporan LKPD Tim ${teamId} berhasil disahkan! Nilai disinkronkan ke seluruh anggota.`, 'success');
+      loadTeacherOverviewData();
+    } catch (e) {
+      toast('Gagal menilai tim: ' + (e.message || 'Terjadi kesalahan.'), 'error');
+    }
+  }
+
+  async function teacherAuthorizeFallback() {
+    const teamInput = document.getElementById('teacher-fallback-team-id');
+    const deputyInput = document.getElementById('teacher-fallback-deputy-id');
+    const actInput = document.getElementById('teacher-fallback-activity-id');
+    const reasonInput = document.getElementById('teacher-fallback-reason');
+    const teamId = teamInput ? teamInput.value.trim() : '';
+    const deputyId = deputyInput ? deputyInput.value.trim() : '';
+    const activityId = actInput ? actInput.value.trim() : '';
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+
+    if (!teamId || !activityId || !reason) {
+      toast('ID Tim, ID Aktivitas Praktikum, dan Alasan pengalihan wajib diisi (minimal 10 karakter).', 'error');
+      return;
+    }
+
+    try {
+      const res = await callApi('authorizeControlledFallback', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken,
+        teamId,
+        deputyId: deputyId || undefined,
+        activityId,
+        reason
+      });
+
+      toast(`Controlled Fallback BERHASIL disahkan untuk Wakil Ketua (${res.deputyId}) Tim ${teamId}! Status: AKTIF.`, 'success');
+      if (reasonInput) reasonInput.value = '';
+      loadTeacherOverviewData();
+    } catch (e) {
+      toast('Gagal mengesahkan fallback: ' + (e.message || 'Terjadi kesalahan.'), 'error');
+    }
+  }
+
+  async function teacherRevokeFallback() {
+    const teamInput = document.getElementById('teacher-fallback-team-id');
+    const deputyInput = document.getElementById('teacher-fallback-deputy-id');
+    const actInput = document.getElementById('teacher-fallback-activity-id');
+    const reasonInput = document.getElementById('teacher-fallback-reason');
+    const teamId = teamInput ? teamInput.value.trim() : '';
+    const deputyId = deputyInput ? deputyInput.value.trim() : '';
+    const activityId = actInput ? actInput.value.trim() : '';
+    const reason = reasonInput ? reasonInput.value.trim() : 'Pencabutan pengalihan wewenang oleh guru.';
+
+    if (!teamId || !activityId) {
+      toast('ID Tim dan ID Aktivitas Praktikum wajib diisi untuk pencabutan pengesahan.', 'error');
+      return;
+    }
+
+    try {
+      const res = await callApi('revokeControlledFallback', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken,
+        teamId,
+        deputyId: deputyId || undefined,
+        activityId,
+        reason
+      });
+
+      toast(`Controlled Fallback Tim ${teamId} BERHASIL DICABUT. Status: REVOKED. Wewenang kembali ke Ketua.`, 'success');
+      loadTeacherOverviewData();
+    } catch (e) {
+      toast('Gagal mencabut fallback: ' + (e.message || 'Terjadi kesalahan.'), 'error');
+    }
   }
 
   // --- 7. Application Bootstrapping & Route Handling ---
@@ -494,6 +632,16 @@
     const formTeacher = document.getElementById('form-auth-teacher');
     if (formTeacher) formTeacher.addEventListener('submit', handleTeacherLogin);
 
+    const selectClass = document.getElementById('teacher-class-select');
+    if (selectClass) {
+      selectClass.addEventListener('change', () => {
+        AppState.selectedClass = selectClass.value;
+        if (AppState.currentRole === 'teacher') {
+          loadTeacherOverviewData();
+        }
+      });
+    }
+
     window.addEventListener('hashchange', handleRoute);
 
     const params = new URLSearchParams(window.location.search);
@@ -517,6 +665,12 @@
   window.renderStudentDashboard = renderStudentDashboard;
   window.renderLearningMap = renderLearningMap;
   window.renderTeacherDashboard = renderTeacherDashboard;
+  window.teacherQuickVerifySummary = teacherQuickVerifySummary;
+  window.teacherQuickVerifyGroupLab = teacherQuickVerifyGroupLab;
+  window.teacherAuthorizeFallback = teacherAuthorizeFallback;
+  window.teacherRevokeFallback = teacherRevokeFallback;
+  window.loadTeacherOverviewData = loadTeacherOverviewData;
+  window.loadStudentDashboardData = loadStudentDashboardData;
   window.initApp = initApp;
 
   // Auto-run on DOMContentLoaded

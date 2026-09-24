@@ -31,6 +31,8 @@ const {
   teacherLearningDashboard,
   saveUnlockOverrides,
   practiceWorkspace_,
+  authorizeControlledFallback,
+  revokeControlledFallback,
   semesterCard
 } = require('../services/learningService');
 
@@ -40,7 +42,9 @@ const {
  * Format Response: { ok: boolean, data?: object, error?: string }
  */
 async function handlePurwaRpc(req, res) {
-  const { action, payload = {} } = req.body || {};
+  const body = req.body || {};
+  const action = body.action;
+  const payload = (body.payload && typeof body.payload === 'object') ? body.payload : body;
 
   if (!action || typeof action !== 'string') {
     return res.status(200).json({
@@ -49,7 +53,7 @@ async function handlePurwaRpc(req, res) {
     });
   }
 
-  const token = payload.token || payload.session_token;
+  const token = payload.token || payload.session_token || body.token || body.session_token;
 
   try {
     switch (action) {
@@ -265,11 +269,15 @@ async function handlePurwaRpc(req, res) {
         });
       }
 
+      case 'submitReadingSummary':
       case 'submitSummary':
       case 'submitSummaryForReview':
       case 'submit_learning_summary':
       case 'submit_summary': {
         const session = requireSession(token, 'student');
+        if (payload.confirmChecked === false) {
+          throw new Error('Harap centang konfirmasi buku tulis sebelum mengirim laporan rangkuman.');
+        }
         const data = submitSummaryForReview(session, payload.unitId || payload.unit_id);
         return res.status(200).json({
           ok: true,
@@ -277,13 +285,32 @@ async function handlePurwaRpc(req, res) {
         });
       }
 
+      case 'verifySummary':
+      case 'verify_summary':
       case 'teacherChecks':
       case 'saveTeacherChecks': {
         const session = requireSession(token, 'teacher');
-        const data = saveTeacherChecks(session, payload);
+        let activityId = payload.activityId || payload.activity_id;
+        if (!activityId && (payload.unitId || payload.unit_id)) {
+          activityId = `${payload.unitId || payload.unit_id}-LRN01`;
+        }
+        const studentId = payload.studentId || payload.student_id;
+        const studentIds = payload.studentIds || (studentId ? [studentId] : []);
+        const data = saveTeacherChecks(session, {
+          classId: payload.classId || payload.class_id || '8A',
+          activityId,
+          checkType: payload.checkType || 'summary',
+          status: payload.approved ? 'verified' : (payload.status || 'verified'),
+          score: payload.score !== undefined ? payload.score : 100,
+          note: payload.feedback || payload.note || 'Disahkan oleh guru.',
+          studentIds: studentIds.length > 0 ? studentIds : payload.studentIds
+        });
         return res.status(200).json({
           ok: true,
-          data
+          data: {
+            verified: true,
+            ...data
+          }
         });
       }
 
@@ -369,6 +396,26 @@ async function handlePurwaRpc(req, res) {
           ...payload,
           unitId: payload.unitId || payload.unit_id
         }, true);
+        return res.status(200).json({
+          ok: true,
+          data
+        });
+      }
+
+      case 'authorizeControlledFallback':
+      case 'authorizeTeamFallback': {
+        const session = requireSession(token, 'teacher');
+        const data = authorizeControlledFallback(session, payload);
+        return res.status(200).json({
+          ok: true,
+          data
+        });
+      }
+
+      case 'revokeControlledFallback':
+      case 'revokeTeamFallback': {
+        const session = requireSession(token, 'teacher');
+        const data = revokeControlledFallback(session, payload);
         return res.status(200).json({
           ok: true,
           data

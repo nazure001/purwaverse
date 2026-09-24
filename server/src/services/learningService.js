@@ -104,6 +104,7 @@ function studentLearningContext_(studentId) {
 
   const latestOverrides = {};
   overrides.forEach(x => {
+    if (String(x.reason || '').startsWith('[CONTROLLED_FALLBACK')) return;
     const p = latestOverrides[x.activity_id];
     if (!p || String(x.created_at) > String(p.created_at)) {
       latestOverrides[x.activity_id] = x;
@@ -133,8 +134,11 @@ function verifiedCheck_(studentId, activityId, type) {
 }
 
 function unlockOverride_(studentId, activityId) {
-  const x = findAll_('unlock_overrides', r => r.student_id === studentId && r.activity_id === activityId)
-    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+  const x = findAll_('unlock_overrides', r =>
+    r.student_id === studentId &&
+    r.activity_id === activityId &&
+    !String(r.reason || '').startsWith('[CONTROLLED_FALLBACK')
+  ).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
   return x ? String(x.allowed).toLowerCase() === 'true' || x.allowed === 1 : null;
 }
 
@@ -456,14 +460,24 @@ function saveTeacherChecks(session, payload) {
     r.class_id === payload.classId && (r.active === 1 || String(r.active).toLowerCase() === 'true')
   );
   const ids = new Set(activeStudents.map(r => r.student_id));
+  const studentMap = new Map();
+  activeStudents.forEach(s => {
+    studentMap.set(s.student_id, s.student_id);
+    if (s.nis) studentMap.set(String(s.nis), s.student_id);
+    studentMap.set(String(s.roll_no), s.student_id);
+    studentMap.set(`${s.class_id}-${s.roll_no}`, s.student_id);
+    studentMap.set(`${s.class_id}-${String(s.roll_no).padStart(2, '0')}`, s.student_id);
+  });
+
   const score = payload.score === '' || payload.score === undefined || payload.score === null ? null : Number(payload.score);
   if (score !== null && (!Number.isFinite(score) || score < 0 || score > 100)) {
     throw new Error('Nilai harus 0-100.');
   }
 
   const saved = [];
-  (payload.studentIds || []).forEach(studentId => {
-    if (!ids.has(studentId)) {
+  (payload.studentIds || []).forEach(rawId => {
+    const studentId = studentMap.get(String(rawId).trim()) || (ids.has(rawId) ? rawId : null);
+    if (!studentId) {
       throw new Error('Siswa di luar kelas tidak dapat diperiksa.');
     }
     const latest = latestTeacherCheck_(studentId, payload.activityId, payload.checkType);
@@ -499,7 +513,7 @@ function saveTeacherChecks(session, payload) {
     });
   });
 
-  return { saved: saved.length };
+  return { saved: saved.length, savedCount: saved.length };
 }
 
 /**
@@ -978,6 +992,21 @@ function practiceWorkspace_(session, unitId) {
     ? (session.actor_id === teamInfo.leaderId ? 'leader' : session.actor_id === teamInfo.deputyId ? 'deputy' : 'member')
     : 'none';
 
+  // Controlled Fallback: Alasan deputy bukan otorisasi.
+  // Akses edit wakil HANYA diberikan setelah pengesahan guru tercatat di database.
+  // Metadata fallback lama yang dibuat sendiri tidak boleh menjadi dasar izin.
+  const teacherAuth = teamInfo ? getTeacherFallbackAuthorization_(teamInfo.deputyId, teamInfo.team.team_id, unit.practice_activity_id) : null;
+  const fallbackAuthorized = Boolean(teacherAuth && teacherAuth.authorized);
+
+  let canEdit = false;
+  if (teamInfo && (!result || ['draft', 'needs_revision'].includes(result.status))) {
+    if (editorRole === 'leader') {
+      canEdit = true;
+    } else if (editorRole === 'deputy') {
+      canEdit = fallbackAuthorized;
+    }
+  }
+
   return {
     unitId,
     title: unit.title,
@@ -990,21 +1019,294 @@ function practiceWorkspace_(session, unitId) {
     report: stored.report,
     reportMeta: stored.meta,
     editorRole,
-    canEdit: !!teamInfo && (editorRole === 'leader' || editorRole === 'deputy') && (!result || ['draft', 'needs_revision'].includes(result.status)),
+    canEdit,
+    fallbackAuthorized,
+    fallbackReason: teacherAuth ? teacherAuth.reason : (stored.meta && stored.meta.fallbackReason) || '',
+    fallbackMeta: teacherAuth || null,
     clientVersion: result ? result.updated_at : ''
   };
 }
 
 /**
- * Menyimpan draft atau mengirim laporan praktikum tim LKPD (Hanya Scientist Leader atau Deputy)
+ * Mencari catatan pengesahan Controlled Fallback resmi oleh guru di basis data
+ * @param {string} deputyId
+ * @param {string} teamId
+ * @param {string} activityId
+ */
+function getTeacherFallbackAuthorization_(deputyId, teamId, activityId) {
+  if (!deputyId || !activityId) return null;
+  const prefix = `[CONTROLLED_FALLBACK:${teamId}]`;
+  const revokePrefix = `[CONTROLLED_FALLBACK_REVOKED:${teamId}]`;
+
+  const overrides = findAll_('unlock_overrides', r =>
+    r.student_id === deputyId &&
+    r.activity_id === activityId &&
+    (String(r.reason || '').startsWith(prefix) || String(r.reason || '').startsWith(revokePrefix))
+  ).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+
+  if (!overrides.length) return null;
+  const latest = overrides[0];
+
+  const isRevoked = String(latest.reason || '').startsWith(revokePrefix) || Number(latest.allowed) === 0;
+  if (isRevoked) {
+    const cleanReason = String(latest.reason || '').replace(revokePrefix, '').trim();
+    return {
+      authorized: false,
+      status: 'revoked',
+      teacherId: latest.created_by,
+      deputyId: latest.student_id,
+      teamId: teamId,
+      activityId: activityId,
+      reason: cleanReason,
+      revokedAt: latest.created_at,
+      authorizedAt: null
+    };
+  }
+
+  const cleanReason = latest.reason.slice(prefix.length).trim();
+  return {
+    authorized: true,
+    status: 'active',
+    teacherId: latest.created_by,
+    deputyId: latest.student_id,
+    teamId: teamId,
+    activityId: activityId,
+    reason: cleanReason,
+    authorizedAt: latest.created_at,
+    revokedAt: null
+  };
+}
+
+/**
+ * Memvalidasi apakah activityId terdaftar, bertipe praktik/LKPD/challenge, dan cocok dengan unit
+ */
+function validatePracticeActivity_(activityId, unitId) {
+  if (!activityId) {
+    throw new Error('ID aktivitas praktikum (activityId) wajib disertakan.');
+  }
+
+  const units = allLearningUnits_();
+  const masterAct = findOne_('master_activities', { activity_id: activityId });
+  const practiceCatalog = practiceCatalogItem_(activityId);
+
+  if (!masterAct && !practiceCatalog) {
+    throw new Error(`Aktivitas ${activityId} tidak terdaftar pada sumber aktivitas kurikulum.`);
+  }
+
+  const validTypes = ['lab', 'challenge', 'practice'];
+  if (masterAct && !validTypes.includes(masterAct.type)) {
+    throw new Error(`Aktivitas ${activityId} bertipe "${masterAct.type}", bukan aktivitas praktik/LKPD/challenge.`);
+  }
+
+  const unitForAct = units.find(u => u.practice_activity_id === activityId);
+  if (!unitForAct) {
+    throw new Error(`Aktivitas ${activityId} bukan merupakan aktivitas lembar kerja praktik (LKPD) unit manapun.`);
+  }
+
+  if (unitId && unitId !== unitForAct.unit_id) {
+    throw new Error(`Aktivitas ${activityId} adalah milik unit ${unitForAct.unit_id}, tidak cocok dengan unit ${unitId}.`);
+  }
+
+  return { activityId, unitId: unitForAct.unit_id, unit: unitForAct, masterAct };
+}
+
+/**
+ * Guru mengesahkan pengalihan wewenang LKPD ke Wakil Ketua (Controlled Fallback)
+ * Menyimpan identitas guru, deputy, tim/aktivitas, alasan, dan waktu.
+ * @param {object} session - Sesi guru
+ * @param {object} payload - { teamId, activityId, unitId, reason, deputyId }
+ */
+function authorizeControlledFallback(session, payload) {
+  if (session.actor_type !== 'teacher') {
+    throw new Error('Hanya instruktur / guru yang berwenang mengesahkan pengalihan wewenang LKPD.');
+  }
+  const teamId = payload.teamId || payload.team_id;
+  let activityId = payload.activityId || payload.activity_id;
+  const reason = String(payload.reason || '').trim();
+
+  if (!teamId) {
+    throw new Error('ID Tim wajib disertakan.');
+  }
+  if (!reason || reason.length < 10) {
+    throw new Error('Alasan pengesahan pengalihan oleh guru wajib diisi (minimal 10 karakter).');
+  }
+
+  const team = findOne_('teams', { team_id: teamId });
+  if (!team) throw new Error('Tim sains tidak ditemukan.');
+  ensureTeacherClassAccess(session, team.class_id);
+
+  if (!activityId && payload.unitId) {
+    const units = allLearningUnits_();
+    const u = units.find(x => x.unit_id === payload.unitId);
+    if (u && u.practice_activity_id) activityId = u.practice_activity_id;
+  }
+  const validAct = validatePracticeActivity_(activityId, payload.unitId || payload.unit_id);
+  activityId = validAct.activityId;
+
+  const members = findAll_('team_members', r => r.team_id === teamId);
+  if (!members.length) throw new Error('Anggota tim sains tidak ditemukan.');
+
+  let deputy = null;
+  if (payload.deputyId) {
+    deputy = members.find(m => m.student_id === payload.deputyId);
+    if (!deputy) {
+      throw new Error(`Siswa ${payload.deputyId} bukan merupakan anggota tim ${teamId}.`);
+    }
+    if (Number(deputy.is_leader) === 1 || deputy.role === 'Scientist Leader') {
+      throw new Error('Ketua kelompok tidak dapat didaftarkan sebagai wakil penerima fallback.');
+    }
+    if (deputy.role !== 'Deputy Scientist Leader' && deputy.role !== 'Deputy Scientist') {
+      throw new Error(`Siswa ${payload.deputyId} memiliki peran "${deputy.role}", bukan wakil ketua resmi (Deputy). Otorisasi fallback ditolak.`);
+    }
+  } else {
+    deputy = members.find(m => m.role === 'Deputy Scientist Leader' || m.role === 'Deputy Scientist');
+    if (!deputy) {
+      throw new Error('Wakil ketua (Deputy) tidak ditemukan di dalam tim ini. Tentukan deputyId secara spesifik.');
+    }
+  }
+
+  const now = isoNow_();
+  const overrideId = uid_('FBK');
+  const fallbackReasonText = `[CONTROLLED_FALLBACK:${teamId}] ${reason}`;
+
+  append_('unlock_overrides', {
+    override_id: overrideId,
+    student_id: deputy.student_id,
+    activity_id: activityId,
+    allowed: 1,
+    reason: fallbackReasonText,
+    created_by: session.actor_id,
+    created_at: now
+  });
+
+  audit_({ type: 'teacher', id: session.actor_id }, 'AUTHORIZE_CONTROLLED_FALLBACK', 'team_activity', `${teamId}|${activityId}`, {
+    teacher_id: session.actor_id,
+    deputy_id: deputy.student_id,
+    team_id: teamId,
+    activity_id: activityId,
+    reason: reason,
+    authorized_at: now
+  });
+
+  return {
+    authorized: true,
+    status: 'active',
+    overrideId,
+    teacherId: session.actor_id,
+    deputyId: deputy.student_id,
+    teamId,
+    activityId,
+    reason,
+    authorizedAt: now
+  };
+}
+
+/**
+ * Guru mencabut pengesahan Controlled Fallback (wewenang kembali ke Ketua Tim)
+ * @param {object} session - Sesi guru
+ * @param {object} payload - { teamId, activityId, unitId, deputyId, reason }
+ */
+function revokeControlledFallback(session, payload = {}) {
+  if (session.actor_type !== 'teacher') {
+    throw new Error('Hanya instruktur / guru yang berwenang mencabut pengesahan fallback.');
+  }
+  const teamId = payload.teamId || payload.team_id;
+  let activityId = payload.activityId || payload.activity_id;
+  const reason = String(payload.reason || 'Pencabutan pengalihan wewenang oleh guru.').trim();
+
+  if (!teamId) {
+    throw new Error('ID Tim wajib disertakan.');
+  }
+  const team = findOne_('teams', { team_id: teamId });
+  if (!team) throw new Error('Tim sains tidak ditemukan.');
+  ensureTeacherClassAccess(session, team.class_id);
+
+  if (!activityId && payload.unitId) {
+    const units = allLearningUnits_();
+    const u = units.find(x => x.unit_id === payload.unitId);
+    if (u && u.practice_activity_id) activityId = u.practice_activity_id;
+  }
+  const validAct = validatePracticeActivity_(activityId, payload.unitId || payload.unit_id);
+  activityId = validAct.activityId;
+
+  const members = findAll_('team_members', r => r.team_id === teamId);
+  if (!members.length) throw new Error('Anggota tim sains tidak ditemukan.');
+
+  let deputy = null;
+  if (payload.deputyId) {
+    deputy = members.find(m => m.student_id === payload.deputyId);
+    if (!deputy) {
+      throw new Error(`Siswa ${payload.deputyId} bukan merupakan anggota tim ${teamId}.`);
+    }
+    if (deputy.role !== 'Deputy Scientist Leader' && deputy.role !== 'Deputy Scientist') {
+      throw new Error(`Siswa ${payload.deputyId} memiliki peran "${deputy.role}", bukan wakil ketua resmi (Deputy). Pencabutan fallback ditolak.`);
+    }
+  } else {
+    deputy = members.find(m => m.role === 'Deputy Scientist Leader' || m.role === 'Deputy Scientist');
+  }
+  if (!deputy) throw new Error('Wakil ketua tim tidak ditemukan.');
+
+  const now = isoNow_();
+  const overrideId = uid_('FBR');
+  const revokeReasonText = `[CONTROLLED_FALLBACK_REVOKED:${teamId}] ${reason}`;
+
+  append_('unlock_overrides', {
+    override_id: overrideId,
+    student_id: deputy.student_id,
+    activity_id: activityId,
+    allowed: 0,
+    reason: revokeReasonText,
+    created_by: session.actor_id,
+    created_at: now
+  });
+
+  audit_({ type: 'teacher', id: session.actor_id }, 'REVOKE_CONTROLLED_FALLBACK', 'team_activity', `${teamId}|${activityId}`, {
+    teacher_id: session.actor_id,
+    deputy_id: deputy.student_id,
+    team_id: teamId,
+    activity_id: activityId,
+    reason,
+    revoked_at: now
+  });
+
+  return {
+    authorized: false,
+    status: 'revoked',
+    overrideId,
+    teacherId: session.actor_id,
+    deputyId: deputy.student_id,
+    teamId,
+    activityId,
+    reason,
+    revokedAt: now
+  };
+}
+
+/**
+ * Menyimpan draft atau mengirim laporan praktikum tim LKPD (Hanya Scientist Leader atau Deputy dengan Controlled Fallback)
  * @param {object} session
- * @param {object} payload - { unitId, report, clientVersion }
+ * @param {object} payload - { unitId, report, clientVersion, fallbackReason }
  * @param {boolean} submit - true jika kirim resmi untuk dinilai
  */
 function saveTeamPracticeReport(session, payload, submit) {
   const workspace = practiceWorkspace_(session, payload.unitId);
   if (!workspace.team) throw new Error('Tim sains belum tersedia.');
-  if (!workspace.canEdit) throw new Error('Hanya Scientist Leader atau wakil yang dapat mengubah laporan tim.');
+
+  const isFallback = workspace.editorRole === 'deputy';
+  const providedReason = String(payload.fallbackReason || '').trim();
+
+  // Controlled Fallback Guard: Deputy tidak otomatis bebas edit.
+  // Alasan deputy BUKAN otorisasi; akses edit baru diberikan setelah pengesahan guru tercatat.
+  if (isFallback) {
+    if (!workspace.fallbackAuthorized) {
+      throw new Error('Pengalihan wewenang ke wakil ketua belum disahkan oleh guru. Akses edit ditolak.');
+    }
+    if (submit && !providedReason) {
+      throw new Error('Alasan pengalihan (fallbackReason) wajib diisi jika laporan dikelola oleh wakil ketua.');
+    }
+  } else if (!workspace.canEdit) {
+    throw new Error('Hanya Scientist Leader atau wakil dengan pengesahan guru yang dapat mengubah laporan tim.');
+  }
 
   const id = `${workspace.team.teamId}|${workspace.practiceActivityId}`;
   const current = findOne_('group_lab', { lab_result_id: id });
@@ -1014,13 +1316,9 @@ function saveTeamPracticeReport(session, payload, submit) {
     throw new Error('Draft berubah di perangkat lain. Muat ulang sebelum menyimpan.');
   }
 
-  const isFallback = workspace.editorRole === 'deputy';
-  const fallbackReason = isFallback && submit
-    ? String(payload.fallbackReason || '').trim()
-    : '';
-
-  if (submit && isFallback && !fallbackReason) {
-    throw new Error('Alasan pengalihan (fallbackReason) wajib diisi jika laporan dikirimkan oleh wakil ketua.');
+  const effectiveReason = providedReason || workspace.fallbackReason;
+  if (isFallback && !effectiveReason) {
+    throw new Error('Alasan pengalihan (fallbackReason) wajib diisi jika laporan dikelola oleh wakil ketua.');
   }
 
   const report = cleanPracticeReport_(payload.report);
@@ -1038,8 +1336,13 @@ function saveTeamPracticeReport(session, payload, submit) {
   const meta = {
     submittedBy: submit ? session.actor_id : (currentMeta.submittedBy || ''),
     submittedRole: submit ? workspace.editorRole : (currentMeta.submittedRole || ''),
-    isFallback: submit ? isFallback : Boolean(currentMeta.isFallback),
-    fallbackReason: submit ? fallbackReason : (currentMeta.fallbackReason || ''),
+    isFallback: isFallback || Boolean(currentMeta.isFallback),
+    fallbackDeputyId: isFallback ? session.actor_id : (currentMeta.fallbackDeputyId || ''),
+    fallbackTeacherId: workspace.fallbackMeta ? workspace.fallbackMeta.teacherId : (currentMeta.fallbackTeacherId || ''),
+    fallbackAuthorizedAt: workspace.fallbackMeta ? workspace.fallbackMeta.authorizedAt : (currentMeta.fallbackAuthorizedAt || ''),
+    fallbackReason: effectiveReason || (currentMeta.fallbackReason || ''),
+    transferredBy: isFallback ? session.actor_id : (currentMeta.transferredBy || ''),
+    transferredAt: isFallback ? now : (currentMeta.transferredAt || ''),
     submittedAt: submit ? now : (currentMeta.submittedAt || ''),
     lastEditor: session.actor_id,
     editorRole: workspace.editorRole
@@ -1063,7 +1366,7 @@ function saveTeamPracticeReport(session, payload, submit) {
     unit_id: payload.unitId,
     editor_role: workspace.editorRole,
     is_fallback: isFallback,
-    fallback_reason: fallbackReason
+    fallback_reason: effectiveReason
   });
 
   return {
@@ -1459,6 +1762,9 @@ module.exports = {
   groupLabDashboard,
   studentTeamWithProgress_,
   practiceWorkspace_,
+  authorizeControlledFallback,
+  revokeControlledFallback,
+  getTeacherFallbackAuthorization_,
 
   // Teacher Dashboard & Overrides
   teacherLearningDashboard,

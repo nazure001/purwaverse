@@ -64,6 +64,10 @@
     }
     el.textContent = message;
     el.className = 'show ' + (type || 'info');
+    window._lastToast = { message, type: type || 'info', timestamp: Date.now() };
+    if ((type || 'info') === 'error') {
+      window._lastErrorToast = { message, timestamp: Date.now() };
+    }
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => {
       el.className = '';
@@ -87,11 +91,14 @@
         }
         const data = await res.json();
         if (!data.ok) {
-          throw new Error(data.error || 'Terjadi kesalahan sistem.');
+          const errMessage = data.error || 'Terjadi kesalahan sistem.';
+          window._lastApiError = { action, message: errMessage, timestamp: Date.now() };
+          throw new Error(errMessage);
         }
         return data.data;
       } catch (err) {
         if (attempt === retries) {
+          window._lastApiError = { action, message: err.message, timestamp: Date.now() };
           console.error('[API Error] ' + action, err);
           throw err;
         }

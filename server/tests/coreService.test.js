@@ -19,7 +19,8 @@ const {
 const {
   studentLogin,
   teacherLogin,
-  logout
+  logout,
+  hashArgon2
 } = require('../src/services/securityService');
 const {
   getDiagnosticItems,
@@ -51,7 +52,7 @@ test('Core Services Migration Test Suite (Phase 4)', async (t) => {
   seedDiagnostic();
 
   // Siapkan 8 siswa uji untuk kelas 8A
-  const pinHash = await argon2.hash('1234');
+  const pinHash = await hashArgon2('1234');
   for (let i = 1; i <= 8; i++) {
     append_('master_students', {
       student_id: `STD-CORE-00${i}`,

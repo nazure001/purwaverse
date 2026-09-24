@@ -299,10 +299,16 @@
 
       <!-- Summary / Resume Submission Card -->
       <div class="industrial-card" style="background: rgba(14, 23, 38, 0.94); border: 1px solid var(--brass-border); border-radius: 12px; padding: 28px;">
-        <h3 style="font-size: 17px; font-weight: 700; color: var(--brass-light); margin-bottom: 8px;">LEMBAR RANGKUMAN SISWA</h3>
-        <p id="unit-notebook-prompt" style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;"></p>
-        <textarea id="textarea-summary" style="width: 100%; min-height: 120px; background: rgba(9, 16, 28, 0.9); border: 1px solid var(--steel-border); border-radius: 8px; padding: 14px; color: #fff; font-family: inherit; font-size: 14px; line-height: 1.5; resize: vertical; margin-bottom: 16px;" placeholder="Tuliskan rangkuman dan poin observasi penting dari materi ini..."></textarea>
-        <button class="btn-brass" onclick="submitSummary()">Kirim Rangkuman untuk Verifikasi Instruktur ✓</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 17px; font-weight: 700; color: var(--brass-light); margin: 0;">BUKU CATATAN FISIK SISWA</h3>
+          <span id="summary-status-badge" class="status-badge" style="border: 1px solid var(--steel-border); color: var(--text-sub);">Belum Dilaporkan</span>
+        </div>
+        <p id="unit-notebook-prompt" style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;">Tuliskan poin penting dan diagram materi ini pada buku tulis catatan IPA kamu.</p>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; background: rgba(9, 16, 28, 0.6); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--steel-border);">
+          <input type="checkbox" id="check-notebook-ready" style="width: 18px; height: 18px; accent-color: var(--brass-light); cursor: pointer;">
+          <label for="check-notebook-ready" style="font-size: 13.5px; color: #fff; cursor: pointer;">Saya telah selesai mencatat materi ini di buku tulis catatan IPA secara lengkap dan siap diperiksa guru.</label>
+        </div>
+        <button id="btn-submit-summary" class="btn-brass" onclick="submitSummary()">Lapor: Buku Siap Diperiksa Guru ✓</button>
       </div>
     </section>
 
@@ -344,58 +350,97 @@
       </div>
     </section>
 
-    <!-- 7. TEAM WORKSHOP (LKPD KELOMPOK) -->
+    <!-- 7. TEAM WORKSHOP (LKPD KELOMPOK DENGAN CONTROLLED FALLBACK) -->
     <section id="view-team-lab" class="view-container team-workshop-view" aria-hidden="true">
-      <div class="team-header-row">
+      <div class="team-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
         <div>
-          <h2 style="font-size: 24px; font-weight: 800; color: var(--brass-light);">TEAM WORKSHOP</h2>
-          <div style="font-size: 13px; color: var(--text-muted);">Kolaborasi hari ini, inovasi untuk masa depan.</div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <h2 id="team-lab-activity-title" style="font-size: 24px; font-weight: 800; color: var(--brass-light); margin: 0;">LEMBAR KERJA PRAKTIKUM (LKPD TIM)</h2>
+            <span id="team-user-role-badge" class="status-badge" style="background: rgba(200, 150, 60, 0.25); color: var(--brass-light); border-color: var(--brass-border); font-size: 11px;">Scientist Leader</span>
+            <span id="team-fallback-indicator" class="status-badge" style="display: none; background: rgba(16, 185, 129, 0.25); color: #34d399; border-color: #34d399; font-size: 11px;">FALLBACK DIAKTIFKAN</span>
+          </div>
+          <div id="team-role-explanation" style="font-size: 13px; color: var(--text-muted); max-width: 760px; line-height: 1.5;">Anda adalah Scientist Leader. Anda memiliki hak akses utama untuk menginput dan mengirim laporan praktikum tim.</div>
         </div>
-        <div class="team-badge-pill">Tim: BIO ENGINEERS</div>
+        <div id="team-lab-version-tag" class="team-badge-pill" style="font-family: monospace; font-size: 11px;">clientVersion: draft baru</div>
       </div>
 
-      <div class="team-members-grid">
-        <div class="team-member-card">
-          <div class="team-member-avatar">A</div>
-          <div class="team-member-name">Ahmad</div>
-          <div class="team-member-role">Leader</div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar">B</div>
-          <div class="team-member-name">Budi</div>
-          <div class="team-member-role">Deputy</div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar">C</div>
-          <div class="team-member-name">Citra</div>
-          <div class="team-member-role">Anggota</div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar">D</div>
-          <div class="team-member-name">Dewi</div>
-          <div class="team-member-role">Anggota</div>
-        </div>
-        <div class="team-member-card">
-          <div class="team-member-avatar">R</div>
-          <div class="team-member-name">Rizky</div>
-          <div class="team-member-role">Anggota</div>
-        </div>
+      <!-- Deputy Controlled Fallback Notice & Input Box -->
+      <div id="deputy-fallback-input-box" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--steel-border); border-left: 4px solid var(--brass-light); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+        <label for="input-team-fallback-reason" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">ALASAN PENGALIHAN WEWENANG (CONTROLLED FALLBACK):</label>
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Jika Scientist Leader berhalangan, masukkan alasan di bawah ini. Guru wajib memberikan pengesahan di Command Center agar Anda dapat mengedit atau mengirimkan laporan ini.</div>
+        <input type="text" id="input-team-fallback-reason" class="auth-input" style="width: 100%; padding: 10px 14px; font-size: 13.5px;" placeholder="Contoh: Scientist Leader sedang sakit / terkendala gawai...">
       </div>
 
-      <div class="blueprint-frame" style="padding: 28px; margin-bottom: 28px;">
-        <h3 style="font-size: 16px; font-weight: 700; color: var(--holo-cyan); margin-bottom: 18px;">LEMBAR KERJA PRAKTIKUM (LKPD TIM)</h3>
+      <!-- Team Members Grid -->
+      <div style="margin-bottom: 24px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); letter-spacing: 1px; margin-bottom: 10px;">ANGGOTA TIM PENELITI</div>
+        <div id="team-members-container" class="team-members-grid"></div>
+      </div>
+
+      <!-- LKPD Report Form Blueprint -->
+      <div class="blueprint-frame" style="padding: 28px; margin-bottom: 28px; background: rgba(14, 23, 38, 0.94); border: 1px solid var(--brass-border); border-radius: 12px;">
+        <h3 style="font-size: 16px; font-weight: 800; color: var(--holo-cyan); margin-bottom: 20px; letter-spacing: 0.5px;">LAPORAN PENELITIAN & OBSERVASI TIM</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div>
+            <label for="lkpd-input-prediction" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">1. PREDIKSI AWAL TIM</label>
+            <textarea id="lkpd-input-prediction" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Apa yang tim perkirakan akan terjadi berdasarkan teori?"></textarea>
+          </div>
+          <div>
+            <label for="lkpd-input-tools" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">2. ALAT & BAHAN AKTUAL</label>
+            <textarea id="lkpd-input-tools" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Alat dan bahan yang benar-benar digunakan saat observasi..."></textarea>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div>
+            <label for="lkpd-input-trial1" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">3. PROSEDUR TRIAL 1</label>
+            <textarea id="lkpd-input-trial1" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Langkah pelaksanaan uji coba pertama..."></textarea>
+          </div>
+          <div>
+            <label for="lkpd-input-data" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">4. TABEL / DATA PENGAMATAN</label>
+            <textarea id="lkpd-input-data" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Objek / perbesaran | Detail teramati | Detail tidak pasti..."></textarea>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div>
+            <label for="lkpd-input-improvement" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">5. PERBAIKAN DARI TRIAL 1 KE TRIAL 2</label>
+            <textarea id="lkpd-input-improvement" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Apa kelemahan Trial 1 dan bagaimana perbaikannya?"></textarea>
+          </div>
+          <div>
+            <label for="lkpd-input-trial2" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">6. PROSEDUR & HASIL TRIAL 2</label>
+            <textarea id="lkpd-input-trial2" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Hasil setelah satu variabel atau teknik diperbaiki..."></textarea>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div>
+            <label for="lkpd-input-evidence" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">7. BUKTI UTAMA YANG DIDAPATKAN</label>
+            <textarea id="lkpd-input-evidence" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Data mana yang paling kuat membuktikan hipotesis?"></textarea>
+          </div>
+          <div>
+            <label for="lkpd-input-conclusion" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">8. KESIMPULAN ILMIAH TIM</label>
+            <textarea id="lkpd-input-conclusion" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Kesimpulan berdasarkan fakta pengamatan..."></textarea>
+          </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
           <div>
-            <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 4px;">PENGUMPULAN DATA (100%)</div>
-            <div class="loading-progress-bar-wrap"><div class="loading-progress-fill" style="width: 100%;"></div></div>
+            <label for="lkpd-input-reflection" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">9. BATASAN MODEL & REFLEKSI</label>
+            <textarea id="lkpd-input-reflection" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Bagian apa dari praktikum yang tidak sama dengan kondisi sebenarnya?"></textarea>
           </div>
           <div>
-            <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 4px;">ANALISIS (70%)</div>
-            <div class="loading-progress-bar-wrap"><div class="loading-progress-fill" style="width: 70%;"></div></div>
+            <label for="lkpd-input-member-roles" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 6px;">10. PEMBAGIAN PERAN ANGGOTA</label>
+            <textarea id="lkpd-input-member-roles" class="auth-input" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Kontribusi masing-masing anggota selama praktikum..."></textarea>
           </div>
         </div>
-        <textarea id="team-worksheet-notes" style="width: 100%; min-height: 140px; background: rgba(9, 16, 28, 0.9); border: 1px solid var(--steel-border); border-radius: 8px; padding: 14px; color: #fff; font-family: inherit; font-size: 14px; line-height: 1.5; resize: vertical; margin-bottom: 16px;" placeholder="Tuliskan catatan hipotesis, tabel hasil uji coba mikroskopik, dan analisis tim..."></textarea>
-        <button class="btn-brass" onclick="submitTeamWorksheet()">Kirim Laporan Tim untuk Review ✓</button>
+
+        <div style="display: flex; gap: 16px; border-top: 1px solid var(--steel-border); padding-top: 20px;">
+          <button id="btn-save-team-draft" class="btn-steel" style="padding: 12px 24px; font-weight: 700;" onclick="saveTeamWorksheetDraft()">Simpan Draft LKPD</button>
+          <button id="btn-submit-team-worksheet" class="btn-brass" style="padding: 12px 28px; font-weight: 700;" onclick="submitTeamWorksheet()">Kirim Laporan Resmi ke Guru ✓</button>
+          <button class="btn-steel" style="padding: 12px 20px; margin-left: auto;" onclick="showView('view-student-dashboard')">← Kembali ke Dashboard</button>
+        </div>
       </div>
     </section>
 
@@ -519,6 +564,48 @@
               <button class="topbar-nav-button" style="padding: 4px 8px; font-size: 11px;" onclick="toast('Status tim dikonfirmasi ke Budi Santoso.', 'info')">Periksa Tim</button>
             </li>
           </ul>
+        </div>
+      </div>
+
+      <!-- Teacher Verification & Fallback Management Panels -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px;">
+        <!-- Card 1: Verifikasi Buku Catatan Siswa -->
+        <div class="industrial-card" style="background: rgba(14, 23, 38, 0.94); border: 1px solid var(--steel-border); border-radius: 12px; padding: 20px;">
+          <h3 style="font-size: 14.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 12px;">PENGESAHAN RESUME BUKU CATATAN</h3>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="teacher-verify-student-id" class="auth-input" placeholder="NIS/ID Siswa (cth: 8A-91)" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+              <select id="teacher-verify-unit-id" class="auth-input" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                <option value="CH08-01-U01">Unit 1: Sel Unit Kehidupan</option>
+                <option value="CH08-01-U02">Unit 2: Sel Hewan & Tumbuhan</option>
+                <option value="CH08-01-U03">Unit 3: Hierarki Organisasi</option>
+              </select>
+            </div>
+            <button id="btn-teacher-verify-summary" class="btn-brass" style="padding: 8px 16px; font-size: 12.5px; width: 100%;" onclick="teacherQuickVerifySummary()">SAHKAN BUKU CATATAN (BUKA KUIS) ✓</button>
+          </div>
+        </div>
+
+        <!-- Card 2: Pengesahan & Pencabutan Controlled Fallback LKPD -->
+        <div class="industrial-card" style="background: rgba(14, 23, 38, 0.94); border: 1px solid var(--steel-border); border-radius: 12px; padding: 20px;">
+          <h3 style="font-size: 14.5px; font-weight: 700; color: var(--brass-light); margin-bottom: 12px;">PENGESAHAN CONTROLLED FALLBACK LKPD</h3>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="teacher-fallback-team-id" class="auth-input" placeholder="ID Tim (cth: TEAM-8A-SYN)" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+              <input type="text" id="teacher-fallback-deputy-id" class="auth-input" placeholder="ID Wakil (cth: SYN-DEP)" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <select id="teacher-fallback-activity-id" class="auth-input" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                <option value="CH08-01-U02-LAB01">CH08-01-U02-LAB01: Observasi Mikroskopis</option>
+                <option value="CH08-01-U03-CHL01">CH08-01-U03-CHL01: Cell Case File</option>
+                <option value="CH08-02-U02-LAB01">CH08-02-U02-LAB01: Gerbang Penyerapan</option>
+              </select>
+              <input type="text" id="teacher-fallback-reason" class="auth-input" placeholder="Alasan Pengalihan Guru" style="flex: 1.5; padding: 8px 12px; font-size: 13px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-teacher-authorize-fallback" class="btn-brass" style="flex: 1; padding: 8px 12px; font-size: 12px;" onclick="teacherAuthorizeFallback()">SAHKAN FALLBACK (AKTIF) →</button>
+              <button id="btn-teacher-revoke-fallback" class="btn-steel" style="flex: 1; padding: 8px 12px; font-size: 12px; border-color: var(--status-danger); color: #fca5a5;" onclick="teacherRevokeFallback()">CABUT FALLBACK (REVOKE) ✕</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>

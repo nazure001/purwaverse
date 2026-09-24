@@ -18,7 +18,8 @@ const {
 } = require('../src/database/repository');
 const {
   studentLogin,
-  teacherLogin
+  teacherLogin,
+  hashArgon2
 } = require('../src/services/securityService');
 const { seedClasses, seedLearningData } = require('../src/database/seed');
 
@@ -39,7 +40,7 @@ test('Learning Services & Quiz Engine Migration Test Suite (Phase 5)', async (t)
   seedLearningData();
 
   // Siapkan siswa uji untuk kelas 8A
-  const pinHash = await argon2.hash('1234');
+  const pinHash = await hashArgon2('1234');
   append_('master_students', {
     student_id: 'STD-LRN-001',
     nis: 'NIS-LRN-001',
