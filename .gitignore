@@ -66,6 +66,7 @@ docs/reports/*.md
 !docs/reports/LMS_PHASE_1_CLOSURE_MANIFEST.md
 !docs/reports/VPS_STAGING_READINESS_AUDIT.md
 !docs/reports/VPS_STAGING_DEPLOYMENT_AND_UAT_RESULT.md
+!docs/reports/PRE_STAGING_CLOSURE_ERRATA_AND_NEXT_GATE.md
 
 # Superseded local browser evidence
 docs/reports/screenshots/5_browser_quiz_chamber_passed.png

@@ -1,8 +1,12 @@
 # PURWAVERSE FUTURE ARCHITECTURE SPECIFICATION
-## Pre-Deployment Blueprint & Extensibility Guide
-**Version:** 1.0.0 (Pre-Deployment Phase 1 Review)  
-**Status:** Architectural Blueprint & Extension Strategy  
-**Focus:** Non-breaking modular foundation for future multi-curriculum & public access.
+## Multi-Grade, Multi-Track & Reusable Visual Blueprint
+**Version:** 1.1.0 (Staging-Blocked Architecture Update)
+
+**Status:** `STAGING_BLOCKED` — menunggu DNS/TLS publik dan UAT browser melalui domain resmi
+
+**Focus:** Fondasi non-breaking untuk IPA Fase D, penilaian V2, PurwaWiki, OSN, Research Academy, dan aset visual reusable.
+
+> **Batas implementasi:** dokumen ini adalah kontrak arah pengembangan. Selama baseline belum memperoleh `STAGING_PASS`, tidak boleh ada perubahan runtime, schema, data nilai, atau import konten berdasarkan blueprint ini.
 
 ---
 
@@ -49,7 +53,7 @@ Saat ini, sistem berjalan untuk lingkungan tertutup sekolah (`STUDENT` dan `TEAC
 ### Spesifikasi Tipe Pengguna:
 1. **`STUDENT` (Siswa KBM Sekolah)**
    * Berasal dari roster kelas resmi (`master_students`).
-   * Terikat pada `class_id` (8A s.d. 8E) dan nomor absen.
+   * Terikat pada enrollment tahun ajaran aktif, jenjang, `class_id` dinamis (dapat mencakup rombel A s.d. K atau lebih), dan nomor absen.
    * Mengikuti alur berjenjang: *Baca → Rangkum Buku → Kuis → Praktik Tim*.
    * Membawa riwayat progres hasil migrasi Google Apps Script.
 2. **`PUBLIC_USER` (Pengguna Publik / Mandiri)**
@@ -66,7 +70,8 @@ Saat ini, sistem berjalan untuk lingkungan tertutup sekolah (`STUDENT` dan `TEAC
 
 ## 3. Curriculum Layer (Multi-Track & Multi-Grade Architecture)
 
-Sistem saat ini aktif melayani satu jenjang: **IPA VIII KBM (Semester 1 & 2)** sebagai MVP produksi.  
+Sistem saat ini baru memiliki baseline **IPA VIII KBM (Semester 1 & 2)** yang sudah lulus pengujian lokal dan internal VPS, tetapi **belum production** karena domain staging publik dan TLS belum terverifikasi.
+
 Ke depan, engine Purwaverse disiapkan untuk menaungi seluruh spektrum **Fase D SMP Terpadu (Kelas 7, 8, dan 9)** serta multi-track peminatan sains berdampingan dalam satu database tanpa percampuran logika penilaian:
 
 ```
@@ -93,23 +98,25 @@ Ke depan, engine Purwaverse disiapkan untuk menaungi seluruh spektrum **Fase D S
 | Jenjang | Kurikulum ID | Karakteristik & Fokus Pembelajaran | Sumber Literatur Repo | Status |
 |---|---|---|---|---|
 | **Kelas 7**<br>*(Fase D Awal)* | `CUR-IPA-VII-KBM` | **Fondasi Sains & Observasi Nyata:**<br>• Hakikat sains, keselamatan kerja, & pengukuran alat lab fisik.<br>• Zat dan perubahannya (wujud, suhu, kalor, pemuaian).<br>• Gerak lurus & gaya dasar.<br>• Klasifikasi makhluk hidup & mikroskop dasar.<br>• Ekologi, interaksi makhluk hidup, & keanekaragaman hayati.<br>• Bumi dan tata surya. | [`docs/Kelas 7/`](../Kelas%207/)<br>*(18 Buku BSE K13/KTSP)* | *Future Ready (Skema Siap)* |
-| **Kelas 8**<br>*(Fase D Menengah)* | `CUR-IPA-VIII-KBM` | **Inti Penyelidikan & Mekanika Tubuh/Benda (MVP):**<br>• Pengenalan sel & mikroskop lanjutan.<br>• Struktur & fungsi tubuh (pencernaan, sirkulasi, pernapasan, ekskresi).<br>• Usaha, energi, & pesawat sederhana.<br>• Getaran, gelombang, & cahaya (optik).<br>• Unsur, senyawa, campuran, & zat aditif/adiktif.<br>• Struktur bumi, lempeng tektonik, & kebencanaan. | [`docs/Kelas 8/`](../Kelas%208/)<br>*(14 Buku BSE K13/KTSP)* | **Aktif Berjalan (Production MVP)** |
+| **Kelas 8**<br>*(Fase D Menengah)* | `CUR-IPA-VIII-KBM` | **Inti Penyelidikan & Mekanika Tubuh/Benda (MVP):**<br>• Pengenalan sel & mikroskop lanjutan.<br>• Struktur & fungsi tubuh (pencernaan, sirkulasi, pernapasan, ekskresi).<br>• Usaha, energi, & pesawat sederhana.<br>• Getaran, gelombang, & cahaya (optik).<br>• Unsur, senyawa, campuran, & zat aditif/adiktif.<br>• Struktur bumi, lempeng tektonik, & kebencanaan. | [`docs/Kelas 8/`](../Kelas%208/)<br>*(14 Buku BSE K13/KTSP)* | **Baseline staging internal; publik masih blocked** |
 | **Kelas 9**<br>*(Fase D Akhir)* | `CUR-IPA-IX-KBM` | **Sintesis Abstrak & Transisi Fase E (SMA):**<br>• Sistem reproduksi manusia & perkembangbiakan makhluk hidup.<br>• Pewarisan sifat (genetika Mendel, DNA, & bioteknologi dasar).<br>• Listrik statis & dinamis (arus, tegangan, hambatan, daya).<br>• Kemagnetan & induksi elektromagnetik.<br>• Bioteknologi pangan konvensional & modern.<br>• Partikel penyusun materi (atom, ion, molekul) & tanah bagi kehidupan. | [`docs/Kelas 9/`](../Kelas%209/)<br>*(10 Buku BSE K13/KTSP)* | *Future Ready (Skema Siap)* |
 
-### Konsep Skema Data Kurikulum Multi-Grade:
-```sql
--- TABEL PERSIAPAN MASA DEPAN (Belum perlu dibuat sekarang)
-CREATE TABLE IF NOT EXISTS curricula (
-    curriculum_id TEXT PRIMARY KEY,       -- e.g. 'CUR-IPA-VII-KBM', 'CUR-IPA-VIII-KBM', 'CUR-IPA-IX-KBM'
-    name TEXT NOT NULL,                  -- e.g. 'IPA Terpadu Kelas 7 (Fase D)'
-    grade_level INTEGER NOT NULL,        -- 7, 8, atau 9
-    type TEXT NOT NULL,                  -- 'school_private', 'competition', 'research_track', 'public_knowledge'
-    description TEXT,
-    access_level TEXT DEFAULT 'enrolled',-- 'public', 'enrolled', 'invitation_only'
-    icon_asset TEXT,
-    active INTEGER DEFAULT 1
-);
+### Status Skema Multi-Grade
+
+Tabel `courses`, `learning_units`, `lessons`, `concepts`, dan tabel relasi Content Engineering sudah tersedia sebagai fondasi. Keberadaan tabel belum berarti alur multi-grade sudah operasional. Runtime masih memerlukan enrollment bertahun ajaran dan seluruh query progres/nilai/tim harus menjadi course-aware sebelum kelas 7 atau 9 dapat diaktifkan.
+
+Course ID yang dibakukan:
+
+```text
+CUR-IPA-VII-KBM
+CUR-IPA-VIII-KBM
+CUR-IPA-IX-KBM
+CUR-OSN-IPA
+CUR-RESEARCH-IPA
+CUR-PURWAWIKI
 ```
+
+Satu `student_id` dipertahankan lintas tahun. Perubahan kelas, nomor absen, jenjang, dan course direkam sebagai enrollment baru; histori sebelumnya tidak ditimpa. Konteks course/enrollment harus diturunkan dari sesi terverifikasi, bukan dari parameter bebas klien.
 
 ### Konvensi Penamaan ID Modul per Jenjang:
 Untuk mencegah benturan data, format ID bab dirancang berstandar:
@@ -171,24 +178,9 @@ Sebuah node konsep, misalnya **"Transformasi Energi"**, dapat terhubung ke berba
      (CH07-02-U03)                 (CH08-01-U03)                  (CH09-03-U02)
 ```
 
-### Jembatan Skema Konsep Masa Depan:
-Tanpa membongkar tabel `master_activities`, relasi konsep dapat dibangun menggunakan tabel relasi many-to-many:
-```sql
--- TABEL PERSIAPAN MASA DEPAN (Belum perlu dibuat sekarang)
-CREATE TABLE IF NOT EXISTS concepts (
-    concept_id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    domain TEXT NOT NULL,          -- e.g., 'biology', 'physics', 'chemistry'
-    description TEXT
-);
+### Jembatan Konsep yang Sudah Tersedia
 
-CREATE TABLE IF NOT EXISTS activity_concepts (
-    activity_id TEXT NOT NULL REFERENCES master_activities(activity_id),
-    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
-    weight REAL DEFAULT 1.0,
-    PRIMARY KEY (activity_id, concept_id)
-);
-```
+Schema saat ini sudah menyediakan `concepts`, `lesson_concepts`, `activity_concepts`, dan `assessment_concepts`. Fondasi many-to-many tersebut dipertahankan tanpa membongkar 23 tabel operasional KBM. Aktivasi lintas jenjang tetap menunggu rekonsiliasi workbook, import terkontrol, dan UAT course-aware.
 **Keuntungan**:
 * Analitik guru masa depan dapat mendeteksi: *"Siswa lemah di konsep Transformasi Energi, baik di Bab 1 (Sel) maupun Bab 5 (Pesawat Sederhana)"*.
 * Tidak mengganggu alur pembacaan bab IPA VIII yang sedang berjalan saat ini.
@@ -221,9 +213,118 @@ CREATE TABLE IF NOT EXISTS wiki_articles (
 );
 ```
 
+PurwaWiki menggunakan concept ID dan pustaka aset yang sama dengan course lain, tetapi disajikan sebagai konten read-only/cache-heavy. Artikel publik tidak memiliki akses ke roster, sesi siswa, nilai, tim, atau leaderboard KBM. Tautan "Pelajari lebih lanjut" dari materi wajib tidak memengaruhi progres atau membuka unit berikutnya.
+
 ---
 
-## 6. Daftar Anti-Pattern & Field yang Jangan Dikunci (Critical Checklist)
+## 6. Kontrak Praktikum dan Penilaian V2
+
+`SCIENCE_OVERALL_V2` memisahkan bukti individual dan tim:
+
+| Komponen | Bobot | Otoritas |
+|---|---:|---|
+| Quick Quiz web individual | 10% | skor otomatis, nilai terbaik per kuis wajib |
+| Kuis nyata individual | 40% | guru, append-only, nilai terbaik tervalidasi per asesmen wajib |
+| Praktikum tim | 40% | guru berdasarkan proses, data, analisis, keselamatan, dan laporan |
+| Kontribusi individual | 10% | guru berdasarkan bukti kontribusi anggota |
+
+Nilai akhir tetap `BELUM_LENGKAP` selama komponen wajib belum tersedia; ketidakhadiran menggunakan status susulan/dispensasi, bukan langsung nol. Tim dapat dibentuk lebih awal, tetapi Leader/Deputy harus memenuhi kelayakan. Praktikum dibuka oleh guru dan tidak menunggu semua anggota memiliki progres materi yang sama. Progres kognitif individual tetap wajib diselesaikan dan tidak dapat digantikan nilai tim.
+
+---
+
+## 7. Reusable Science Illustration System
+
+### 7.1 Prinsip dan Identitas
+
+Setiap submateri wajib memiliki minimal satu visual inti. Visual tambahan digunakan jika konsep memerlukan proses, konteks, susunan eksperimen, perbandingan, grafik, atau sketsa observasi. Satu halaman wajib dibatasi sekitar 3–4 visual utama; visual tambahan dialihkan ke PurwaWiki/pengayaan.
+
+Diagram ilmiah berlabel mengutamakan SVG terkontrol. Ilustrasi kontekstual dapat memakai WebP berwarna, sedangkan sketsa LKPD memakai SVG/PNG monokrom ramah cetak. Teks ilmiah tidak dibakar ke raster generatif; label ditambahkan melalui SVG/HTML agar dapat diaudit. Gambar generatif bukan sumber fakta dan tidak boleh menyalin ilustrasi buku komersial.
+
+Stable ID:
+
+```text
+AST-{DOMAIN}-{CONCEPT}-{TYPE}-{NN}
+```
+
+Tipe yang diizinkan:
+
+```text
+STRUCTURE PROCESS CONTEXT EXPERIMENT OBSERVATION GRAPH COMPARISON SAFETY SKETCH
+```
+
+### 7.2 Registry, Referensi, dan Penyimpanan
+
+`asset_map_final.xlsx` menjadi sumber metadata, kemudian diekspor ke manifest aplikasi. Field minimal mencakup identitas konsep, tipe, tujuan, `must_show`, `must_not_show`, relasi ilmiah, audiens, varian file, alt text, caption, sumber, lisensi, reviewer, versi, checksum, dan `review_status`.
+
+Lifecycle:
+
+```text
+DRAFT -> SCIENTIFIC_REVIEW -> APPROVED -> PUBLISHED
+                         \-> REVISION_REQUIRED
+PUBLISHED -> DEPRECATED
+```
+
+Hanya aset `APPROVED`/`PUBLISHED` yang boleh masuk paket production. Lesson menyimpan referensi, bukan salinan:
+
+```json
+[
+  {
+    "asset_id": "AST-BIO-CELL-STRUCTURE-01",
+    "role": "core_diagram",
+    "placement": "after_section_2",
+    "caption_override": null,
+    "required": true
+  }
+]
+```
+
+Role resmi: `hero`, `core_diagram`, `process`, `context`, `experiment_setup`, `observation_reference`, `comparison`, dan `print_support`.
+
+File statis disimpan sekali di `public/assets/science/{domain}/{concept}/`, bukan sebagai Base64/blob SQLite. Varian standar:
+
+```text
+{asset_id}.svg
+{asset_id}-display.webp
+{asset_id}-thumb.webp
+{asset_id}-print.png
+```
+
+UI memakai dimensi eksplisit, lazy loading, thumbnail pada daftar, varian display saat materi dibuka, dan fallback informatif jika aset hilang. Nginx melayani aset berversi/checksum dengan cache immutable. SVG wajib disanitasi sebelum publikasi.
+
+### 7.3 Standar Prompt dan Review
+
+Prompt visual disusun dari spesifikasi konsep dengan field wajib:
+
+```text
+ASSET ID
+TARGET COURSE/AUDIENCE
+LEARNING OBJECTIVE
+PRIMARY CONCEPT
+SCIENTIFIC SOURCE BASIS
+ILLUSTRATION TYPE
+MUST SHOW
+SCIENTIFIC RELATIONSHIPS
+SCALE/ORIENTATION
+MUST NOT SHOW
+COMMON MISCONCEPTIONS TO AVOID
+VISUAL STYLE
+COLOR AND CONTRAST
+BACKGROUND
+COMPOSITION
+LABEL PLAN
+ACCESSIBILITY
+OUTPUT VARIANTS
+PRINT REQUIREMENTS
+REVIEW CHECKLIST
+```
+
+Prompt harus melarang watermark, logo, teks acak, anatomi/struktur fiktif, arah proses terbalik, dan klaim skala/warna yang tidak benar. Setiap aset diperiksa terhadap tujuan belajar, minimal satu literatur resmi/tepercaya, miskonsepsi, hak pakai/provenance, keterbacaan HP/proyektor/cetak, alt text, dan persetujuan guru.
+
+Build/import harus gagal jika referensi aset tidak ada, aset wajib belum approved, alt text/sumber/lisensi kosong, checksum salah, SVG tidak aman, atau file melewati batas ukuran yang ditetapkan pipeline.
+
+---
+
+## 8. Daftar Anti-Pattern & Field yang Jangan Dikunci (Critical Checklist)
 
 Untuk memastikan kode saat ini ramah pengembangan masa depan (*future-proof*), hindari praktik berikut:
 
@@ -237,42 +338,52 @@ Untuk memastikan kode saat ini ramah pengembangan masa depan (*future-proof*), h
    * *Alasan*: Jika tabel `master_activities` diberi `CHECK(type IN ('learn', 'quiz', 'lab'))`, maka penambahan tipe `wiki_ref`, `case_study`, atau `simulation` di masa depan akan memerlukan migrasi tabel destruktif.
 4. **JANGAN menggabungkan leaderboard publik dengan leaderboard KBM.**
    * *Alasan*: Siswa KBM sekolah membutuhkan evaluasi berbasis kelas internal. User publik tidak boleh menggeser posisi akademik siswa sekolah.
-5. **JANGAN memasukkan logika AI ke dalam critical path evaluasi kuis.**
-   * *Alasan*: Penilaian kuis KBM IPA VIII harus deterministik, terverifikasi kunci jawabannya, dan bebas halusinasi LLM. AI hanya boleh digunakan sebagai asisten guru atau pemberi umpan balik formatif opsional di Phase 2.
+5. **JANGAN memasukkan logika AI ke dalam critical path pembelajaran atau penilaian.**
+   * *Alasan*: Penilaian KBM harus deterministik atau divalidasi guru. AI tidak menggantikan membaca, mencatat, praktik, review ilmiah, atau keputusan guru.
 6. **JANGAN mengasumsikan rombel kelas dibatasi secara kaku hanya A s.d. E.**
    * *Alasan*: Di sekolah pengguna dan sekolah menengah negeri/swasta besar, rombel satu angkatan jamak mencapai rombel **K** (misal `7A` s.d. `7K`, `8A` s.d. `8K`, `9A` s.d. `9K`). Seluruh query, filter antarmuka, dan konfigurasi guru wajib memperlakukan `class_id` sebagai string dinamis, bukan regex atau enum kaku `[A-E]`.
 
 ---
 
-## 7. Matriks Analisis Risiko Ekstensi Masa Depan
+7. **JANGAN menggandakan file aset untuk setiap course atau menu.**
+   * *Alasan*: duplikasi memperbesar penyimpanan, memperlambat cache, dan menimbulkan versi visual yang tidak konsisten. Semua consumer wajib memakai stable asset ID.
+
+---
+
+## 9. Matriks Analisis Risiko Ekstensi Masa Depan
 
 | Skenario Ekstensi | Potensi Risiko | Tingkat Risiko | Strategi Mitigasi Terencana |
 |---|---|---|---|
 | **Multi-Curriculum** | Database membengkak; data siswa KBM tercampur dengan peserta non-sekolah. | **Sedang** | Terapkan partisi `curriculum_id` pada query dan repository layer. Filter default selalu `CUR-IPA-VIII-KBM`. |
+| **Enrollment lintas tahun** | Riwayat siswa tertimpa ketika naik kelas. | **Tinggi** | Pertahankan `student_id`; enrollment baru bersifat historis dan query selalu memakai enrollment aktif terverifikasi. |
 | **PurwaWiki Terbuka** | Beban baca database tinggi akibat artikel diakses publik luas; cache lambat. | **Rendah** | Sajikan artikel PurwaWiki via Static Site Generation / Edge Cache (Nginx/Vercel), bukan query SQLite berulang. |
+| **Pustaka visual bersama** | Aset salah konsep dipakai ulang luas atau cache menahan versi lama. | **Sedang** | Wajibkan scientific review, stable ID, version/checksum, manifest tervalidasi, dan cache immutable per versi. |
 | **Public Registration** | Spam pendaftaran; bot scraping; percobaan pembobolan PIN siswa KBM. | **Tinggi** | Pisahkan endpoint pendaftaran publik dari endpoint login siswa. Tambahkan Cloudflare Turnstile / Captcha & rate limiting ketat. |
-| **Learning Analytics & AI** | Latensi request meningkat tajam jika AI dipanggil sinkron; biaya token melonjak. | **Sedang** | Jalankan pemrosesan analitik secara asinkron (*background job*). Guru melihat insight dari cache hasil agregasi. |
+| **Konten generatif** | Diagram tampak meyakinkan tetapi salah secara ilmiah atau melanggar hak cipta. | **Tinggi** | Generator hanya alat produksi; literatur dan review guru adalah otoritas. Jangan salin halaman buku atau publikasi aset yang belum approved. |
 
 ---
 
-## 8. Urutan Prioritas Implementasi
+## 10. Urutan Prioritas Implementasi dan Gate
 
-```
-[ P0: Deployment VPS Stabil ]
-  ├── Nginx, PM2, SQLite WAL, SSL Let's Encrypt, Security Headers
-  │
-  └── [ P1: Konten IPA VIII KBM ]
-        ├── Masukkan teks materi lengkap Bab 1 - 6
-        ├── Perkaya butir soal Kuis Chamber (HOTS & Stimulus)
-        │
-        └── [ P2: Finalisasi Migrasi GAS & Backup ]
-              ├── Backup master Google Sheets
-              ├── Uji integritas data roster 207 siswa
-              │
-              └── [ P3: Future Extension Layer ]
-                    ├── PurwaWiki Engine
-                    ├── Multi-track Olimpiade & Research
-                    └── AI Teacher Co-Pilot (Phase 2)
-```
+| Fase | Implementasi | Gate keluar |
+|---|---|---|
+| **0. Tutup baseline staging** | DNS, TLS, browser publik, mobile, print, finalisasi laporan dan data sintetis. | `STAGING_PASS`, tanpa P0/P1. |
+| **1. Dokumentasi** | Sinkronkan blueprint multi-grade, V2, multi-track, dan visual system. | Review dokumen; tanpa perubahan runtime. |
+| **2. V2 praktikum & nilai** | Tim provisional, eligibility Leader/Deputy, pembukaan praktik oleh guru, kuis nyata append-only, kontribusi, formula 10/40/40/10. | Pilot satu kelas/satu praktikum lulus UAT. |
+| **3. Asset foundation** | Finalisasi asset map, registry/manifest, resolver, varian, lazy loading, cache, fallback, alt text, sanitasi SVG, 3–5 aset pilot. | Satu aset reused di KBM, preview wiki, LKPD, dan print; review ilmiah lulus. |
+| **4. IPA VIII lengkap** | Rekonsiliasi delapan workbook, audit 21 unit, lengkapi materi dan visual berdasarkan CP/ATP guru. | Semua unit wajib memiliki aset approved dan integrasi lulus. |
+| **5. Fondasi multi-grade** | Enrollment lintas tahun, course aktif, filter guru, query progres/nilai/tim course-aware, migrasi histori kelas 8. | Tidak ada kebocoran antarjenjang/rombel/tahun. |
+| **6. Pilot kelas 7** | ATP disetujui guru; satu bab lengkap dengan materi, visual, aktivitas, asesmen, dan praktik. | Alur siswa/guru kelas 7 dan isolasi kelas 8 lulus. |
+| **7. Pilot kelas 9** | Proses yang sama setelah pilot kelas 7 stabil. | Alur kelas 9 dan isolasi lintas jenjang lulus. |
+| **8. PurwaWiki** | Artikel read-only berbasis concept ID dan reusable asset; static generation/cache. | Akses publik tidak dapat menjangkau data privat dan tidak memengaruhi progres. |
+| **9. OSN & Research Academy** | Course opsional, bank soal bertingkat, proposal/evidence/rubrik/laporan penelitian. | Enrollment dan nilai terpisah dari KBM. |
 
-> **Kesimpulan Mandat**: Seluruh fondasi arsitektur di atas telah selaras. Tidak ada kode berjalan yang diubah atau dirusak pada tahapan ini. Stabilitas KBM Phase 1 tetap terjaga 100%.
+### Kontrak Antarmuka Masa Depan
+
+- Session menyediakan `activeEnrollment`, `courseId`, `gradeLevel`, `classId`, dan `schoolYear`.
+- API progres, tim, dan nilai menurunkan course/enrollment dari session terverifikasi.
+- Dashboard guru memfilter tahun ajaran, jenjang, rombel, semester, dan bab.
+- API nilai mengembalikan komponen, bobot, kelengkapan, kekurangan, serta nilai akhir hanya jika seluruh komponen wajib lengkap.
+- Content loader menyelesaikan `asset_id` melalui manifest; PurwaWiki hanya membaca konten/aset publik.
+
+> **Kesimpulan Mandat**: satu engine melayani seluruh jalur, tetapi identitas, enrollment, progres, nilai, dan akses tetap terisolasi. Tahap runtime berikutnya hanya boleh dimulai setelah gate fase sebelumnya terbukti lulus.

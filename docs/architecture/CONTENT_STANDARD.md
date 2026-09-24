@@ -24,6 +24,10 @@ Urutan bab tetap mengikuti rancangan guru: semester ganjil lebih teoritis dan se
 
 Ilustrasi harus membantu menjelaskan konsep, memiliki label dan keterangan, serta merupakan gambar orisinal/adaptasi pembelajaran. Ilustrasi buku dapat dijadikan acuan isi, tetapi tidak disalin tanpa izin yang sesuai.
 
+Setiap submateri wajib memiliki minimal satu visual inti yang terhubung melalui stable `asset_id`. Diagram struktur/proses mengutamakan SVG terkontrol; ilustrasi kontekstual dapat memakai WebP, dan sketsa LKPD memakai SVG/PNG monokrom ramah cetak. Aset harus memiliki alt text, caption, sumber konsep, provenance/lisensi, versi, status review, dan persetujuan guru sebelum dipublikasikan. File disimpan satu kali dalam pustaka aset bersama dan direferensikan ulang oleh KBM, PurwaWiki, OSN, Research Academy, LKPD, serta halaman cetak.
+
+Prompt generatif tidak menjadi otoritas ilmiah. Prompt harus mencantumkan tujuan belajar, konsep dan sumber dasar, struktur wajib, relasi ilmiah, larangan/miskonsepsi, skala, gaya, label, aksesibilitas, output, dan checklist review. Teks/label ilmiah tidak dibakar ke raster generatif; label ditambahkan melalui SVG/HTML agar dapat dikoreksi.
+
 ## Standar praktik yang relevan
 
 Praktik tidak wajib hadir pada setiap submateri. Praktik dipilih ketika pengamatan, pengukuran, pemodelan, pengujian adil, atau analisis bukti memberi manfaat yang nyata. Setiap praktik terpilih harus memuat:

@@ -47,7 +47,7 @@ Submateri pembelajaran terstruktur yang memuat bahan ajar lengkap:
 * `lesson_id`: ID unik pelajaran (misal: `LSN-080101-01`).
 * `learning_objective`: Capaian / tujuan pembelajaran konkret berakar pada Kurikulum Merdeka.
 * `content_markdown`: Uraian materi 6 bagian (Tujuan, Uraian, Contoh Nyata, Koreksi Miskonsepsi, Rangkuman Kunci, Panduan Catatan Buku).
-* `assets_json`: Koleksi diagram beranotasi, SVG, atau ilustrasi pendukung.
+* `assets_json`: Referensi stable `asset_id`, role, placement, caption override, dan status required; file fisik diselesaikan melalui manifest aset bersama, bukan disalin per lesson.
 * `tables_json`: Tabel data perbandingan atau parameter ilmiah terstruktur.
 
 ### Tier 4: Concept (`concepts`)
