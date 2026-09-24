@@ -1,8 +1,8 @@
 # PANDUAN RUNBOOK DEPLOYMENT STAGING VPS (VPS STAGING RUNBOOK)
 
-**Dokumen**: `docs/deployment/VPS_STAGING_RUNBOOK.md`  
-**Target Lingkungan**: VPS Linux Ubuntu 22.04 / 24.04 LTS (Staging Terisolasi)  
-**Status Runbook**: REVISED & MANDATORY SECURITY COMPLIANT  
+**Dokumen**: `docs/deployment/VPS_STAGING_RUNBOOK.md`
+**Target Lingkungan**: VPS Linux Ubuntu 22.04 / 24.04 LTS (Staging Terisolasi)
+**Status Runbook**: REVISED & MANDATORY SECURITY COMPLIANT
 **Tujuan**: Menjalankan rilis staging langkah demi langkah secara aman, atomik, dan terisolasi tanpa menyentuh data riil siswa.
 
 > [!CAUTION]
@@ -284,7 +284,7 @@ curl -s -u guru_staging:PASSWORD_ANDA https://staging.purwaverse.sekolah.sch.id/
 
 ### Langkah 12: Eksekusi UAT Staging (User Acceptance Testing)
 
-Buka peramban, masukkan kredensial Basic Auth, lalu jalankan 25 skenario pengujian sesuai:  
+Buka peramban, masukkan kredensial Basic Auth, lalu jalankan 25 skenario pengujian sesuai:
 `docs/testing/VPS_STAGING_UAT.md`.
 
 ---

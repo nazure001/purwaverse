@@ -1,9 +1,9 @@
 # LAPORAN PENYELESAIAN AUDIT KOREKSI LMS FIX FASE 1
 
-**Dokumen**: `docs/reports/LMS_FIX_PHASE_1_COMPLETION.md`  
-**Tanggal Evaluasi**: 23 September 2026 (WIB)  
-**Status Evaluasi**: VERIFIED WITH PHYSICAL EXECUTION EVIDENCE  
-**Batasan Ruang Lingkup**: **TIDAK MEMBUAT IMPORTER & TIDAK DEPLOY VPS** (Sesuai Arahan Pengendali/Controller).  
+**Dokumen**: `docs/reports/LMS_FIX_PHASE_1_COMPLETION.md`
+**Tanggal Evaluasi**: 23 September 2026 (WIB)
+**Status Evaluasi**: VERIFIED WITH PHYSICAL EXECUTION EVIDENCE
+**Batasan Ruang Lingkup**: **TIDAK MEMBUAT IMPORTER & TIDAK DEPLOY VPS** (Sesuai Arahan Pengendali/Controller).
 
 ---
 
@@ -117,7 +117,7 @@ Laporan ini menyajikan bukti pelaksanaan aktual dari seluruh 12 butir koreksi ya
 ```text
 ================================================================
 PURWAVERSE LMS - TRACKED SOURCE LOADERS ISOLATION TEST
-Database Uji: D:\repo\purwaverse-ipa-viii-mvp-private\server\tests\test_loader_isolated.db
+Database Uji: server\tests\test_loader_isolated.db
 ================================================================
 
 [STEP 1] Menjalankan runFullSeed() dari berkas data tracked...
@@ -162,7 +162,7 @@ Database Uji: D:\repo\purwaverse-ipa-viii-mvp-private\server\tests\test_loader_i
 🌱 [ISOLATED SETUP] Seeding master data from tracked source...
 ================================================================
 PURWAVERSE LMS PHASE 1 - ISOLATED E2E & CONTROLLED FALLBACK TEST
-Database: D:\repo\purwaverse-ipa-viii-mvp-private\server\tests\test_isolated_e2e.db
+Database: server\tests\test_isolated_e2e.db
 ================================================================
 
 ✔ [ISOLATED SETUP] Synthetic accounts (SYN-LEAD, SYN-DEP, SYN-MEM) & team seeded.
@@ -233,7 +233,7 @@ Database: D:\repo\purwaverse-ipa-viii-mvp-private\server\tests\test_isolated_e2e
 🌱 [BROWSER E2E] Seeding master data from tracked sources...
 ================================================================
 PURWAVERSE LMS - REAL INTERACTIVE BROWSER E2E TEST (CDP)
-Isolated Database: D:\repo\purwaverse-ipa-viii-mvp-private\server\tests\test_browser_e2e.db
+Isolated Database: server\tests\test_browser_e2e.db
 ================================================================
 
 ✔ [BROWSER E2E] Synthetic accounts and team seeded.
@@ -309,58 +309,58 @@ Connected to CDP target: ws://127.0.0.1:9222/devtools/page/...
 Seluruh tangkapan layar di bawah ini dibuat segar (*freshly captured*) pada sesi pengujian tanggal **23 September 2026**:
 
 ### 1. Dashboard Siswa (Leader Login)
-![Student Leader Dashboard](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/1_browser_student_login.png)
+![Student Leader Dashboard](docs/reports/screenshots/1_browser_student_login.png)
 *Alur: Siswa Ahmad Synthetic Leader (`8A-91`) berhasil masuk, menampilkan nama, kelas 8A, status XP, dan navigasi belajar.*
 
 ### 2. Pembaca Materi Unit 1
-![Materi Pembelajaran Unit 1](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/2_browser_unit1_material.png)
+![Materi Pembelajaran Unit 1](docs/reports/screenshots/2_browser_unit1_material.png)
 *Alur: Unit 1 "Sel sebagai Unit Kehidupan" dibuka; ilustrasi sel dan glosarium ilmiah termuat dengan sempurna.*
 
 ### 3. Pelaporan Konfirmasi Buku Catatan Fisik
-![Konfirmasi Buku Catatan Dilaporkan](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/3_browser_notebook_reported.png)
+![Konfirmasi Buku Catatan Dilaporkan](docs/reports/screenshots/3_browser_notebook_reported.png)
 *Alur: Checkbox konfirmasi dicentang siswa; badge berubah menjadi "Menunggu Verifikasi Guru" (gerbang kuis terkunci).*
 
 ### 4. Pengesahan Resume di Teacher Command Center
-![Teacher Command Center Verification](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/4_browser_teacher_verified.png)
+![Teacher Command Center Verification](docs/reports/screenshots/4_browser_teacher_verified.png)
 *Alur: Guru memeriksa catatan siswa pada kelas terpilih (8A) dan memberikan pengesahan resume; membuka gerbang Quiz Chamber.*
 
 ### 5A. Skenario Kuis A: Di Bawah KKM (< 70) → Unit 2 Tetap Terkunci
-![Quiz di Bawah KKM - Unit 2 Tetap Terkunci](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/5a_browser_quiz_below_kkm_locked.png)
+![Quiz di Bawah KKM - Unit 2 Tetap Terkunci](docs/reports/screenshots/5a_browser_quiz_below_kkm_locked.png)
 *Alur: Siswa menjawab salah pada seluruh butir (skor 0/100); peta belajar memverifikasi Unit 2 tetap terkunci (`contentUnlocked=false`).*
 
 ### 5B. Skenario Kuis B: Lulus KKM (100/100) → Unit 2 Terbuka
-![Quiz Lulus KKM - Unit 2 Terbuka](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/5b_browser_quiz_passed_unlocked.png)
+![Quiz Lulus KKM - Unit 2 Terbuka](docs/reports/screenshots/5b_browser_quiz_passed_unlocked.png)
 *Alur: Siswa mengulang kuis dengan jawaban benar dinamis; skor sempurna 100/100 diraih dan Unit 2 berhasil terbuka (`contentUnlocked=true`).*
 
 ### 6A. Deputy Membuka LKPD Sebelum Otorisasi (Tombol Nonaktif)
-![Tombol Deputy Dinonaktifkan Sebelum Otorisasi](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/6a_browser_deputy_buttons_disabled.png)
+![Tombol Deputy Dinonaktifkan Sebelum Otorisasi](docs/reports/screenshots/6a_browser_deputy_buttons_disabled.png)
 *Alur: Siswa Deputy (`8A-92`) membuka LKPD; role terdeteksi "Deputy Scientist", input terkunci, tombol "Simpan Draft" dan "Kirim Laporan" terbukti `disabled=true`.*
 
 ### 6B. Leader Menyimpan Draft Nyata LKPD
-![LKPD Leader Draft Terisi Nyata](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/6b_browser_leader_lkpd_draft.png)
+![LKPD Leader Draft Terisi Nyata](docs/reports/screenshots/6b_browser_leader_lkpd_draft.png)
 *Alur: Leader mengisi 10 butir form praktikum dan menyimpan draft; versi terverifikasi di DOM (`clientVersion: 2026-09-23T...`).*
 
 ### 7. Pengesahan Controlled Fallback oleh Guru di Command Center
-![Teacher Controlled Fallback Authorization](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/7_browser_teacher_fallback_authorized.png)
+![Teacher Controlled Fallback Authorization](docs/reports/screenshots/7_browser_teacher_fallback_authorized.png)
 *Alur: Guru memasukkan ID Tim (`SYN-TEAM-8A-01`), ID Deputy (`SYN-DEP`), ID Aktivitas eksplisit (`CH08-01-U02-LAB01`), dan alasan sah; otorisasi diterbitkan.*
 
 ### 8. Deputy Mengirimkan Laporan Tim Pasca-Otorisasi
-![LKPD Deputy Authorized Submission](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/8_browser_deputy_lkpd_submitted.png)
+![LKPD Deputy Authorized Submission](docs/reports/screenshots/8_browser_deputy_lkpd_submitted.png)
 *Alur: Banner "FALLBACK DIAKTIFKAN" muncul pada workspace Deputy; tombol aktif dan Deputy berhasil mengirimkan laporan resmi tim.*
 
 ### 9. Verifikasi Persistensi Pasca Reload Halaman
-![Verifikasi Persistensi Pasca Reload](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/9_browser_reload_persistence.png)
+![Verifikasi Persistensi Pasca Reload](docs/reports/screenshots/9_browser_reload_persistence.png)
 *Alur: Halaman di-reload secara keras (`Page.reload`); status laporan tetap `submitted`, metadata fallback tercatat rapi, dan form terkunci read-only.*
 
 ### 10. Pencabutan Controlled Fallback oleh Guru
-![Pencabutan Fallback oleh Guru](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/reports/screenshots/10_browser_teacher_fallback_revoked.png)
+![Pencabutan Fallback oleh Guru](docs/reports/screenshots/10_browser_teacher_fallback_revoked.png)
 *Alur: Guru menekan "Cabut Fallback (Revoke)" di Command Center; status berubah menjadi `revoked` dan wewenang mutlak kembali kepada Leader.*
 
 ---
 
 ## 4. Urutan Resmi 6 Bab Kurikulum Keputusan Guru
 
-Sesuai dokumen arsitektur [`docs/architecture/CONTENT_STANDARD.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/architecture/CONTENT_STANDARD.md), urutan materi IPA Kelas VIII di Purwaverse **mengikuti keputusan dan rancangan pedagogis guru**:
+Sesuai dokumen arsitektur [`docs/architecture/CONTENT_STANDARD.md`](docs/architecture/CONTENT_STANDARD.md), urutan materi IPA Kelas VIII di Purwaverse **mengikuti keputusan dan rancangan pedagogis guru**:
 > *"Urutan bab tetap mengikuti rancangan guru: semester ganjil lebih teoritis dan semester genap berfokus pada hitungan. Sumber komersial atau buku BSE tidak boleh mengubah urutan tersebut."*
 
 Koreksi terhadap kesalahan pemetaan lama:

@@ -1,5 +1,5 @@
 # Purwaverse Science Engine · IPA Kelas VIII SMP
-> **A Module by IZZI WORKSHOP**  
+> **A Module by IZZI WORKSHOP**
 > *Platform Pembelajaran IPA Terpadu Kelas VIII SMP Berbasis Bukti, Observasi Ilmiah, dan Kolaborasi Tim Laboratorium.*
 
 ---
@@ -58,20 +58,30 @@ Jalur ini digunakan untuk deployment server mandiri (VPS Ubuntu, Debian, atau se
    ```
    Sesuaikan parameter berikut di `server/.env`:
    ```ini
-   NODE_ENV=production
+   NODE_ENV=staging
    PORT=3000
-   DB_PATH=./data/purwaverse.db
-   JWT_SECRET=ganti_dengan_random_string_minimal_32_karakter
-   STUDENT_PIN_PEPPER=ganti_dengan_uuid_rahasia
-   TEACHER_PASSWORD_SALT=ganti_dengan_salt_rahasia
-   TEACHER_DEV_PASSWORD=KataSandiGuruAman123!
+   DB_PATH=./data/purwaverse_staging.db
+   TRUST_PROXY=1
+   ALLOWED_ORIGIN=https://staging.purwaverse.sekolah.sch.id
+   SESSION_TTL_HOURS=8
+   TEACHER_USERNAME=guru
+   TEACHER_PASSWORD_HASH=$argon2id$v=19$m=65536,t=3,p=4$vJ7... # Hash Argon2id resmi guru
+   TEACHER_DEV_PASSWORD= # WAJIB KOSONG di lingkungan staging dan production!
    ```
 
-4. **Inisialisasi Database SQLite & Data Awal:**
-   ```bash
-   npm --prefix server run db:seed
-   ```
-   *Perintah ini akan membuat tabel master, 5 kelas (8A-8E), roster siswa, data diagnostik, dan 21 unit kurikulum IPA VIII.*
+4. **Inisialisasi Database:**
+   * **Untuk Lingkungan Staging (Akun Sintetis — WAJIB):**
+     ```bash
+     npm --prefix server run db:seed:staging
+     # atau: node scripts/seed-staging-synthetic.js --db=./server/data/purwaverse_staging.db
+     ```
+     *Menginisialisasi basis data khusus staging dengan tepat 3 akun siswa sintetis mandiri.*
+   * **Untuk Lingkungan Sekolah / Produksi:**
+     ```bash
+     npm --prefix server run db:seed
+     ```
+     > **PERINGATAN KERAS**: Perintah `npm run db:seed` memuat 208 data roster siswa sekolah resmi. **DILARANG KERAS** menjalankan perintah ini di lingkungan staging atau server publik sebelum verifikasi dan audit selesai.*
+   > **Catatan Kesiapan**: Sistem saat ini berada dalam status verifikasi baseline lokal dan persiapan VPS staging terisolasi (belum dinyatakan siap produksi penuh).
 
 5. **Build Aset Web Frontend:**
    ```bash
@@ -251,5 +261,5 @@ Seluruh dokumentasi telah dikategorisasikan di direktori **[`docs/`](docs/README
 * Hubungi WhatsApp pengembang/instruktur pada tombol terapung untuk bantuan teknis.
 
 ---
-**Purwaverse Science Engine** — *Same Curiosity · Bigger Possibilities*  
+**Purwaverse Science Engine** — *Same Curiosity · Bigger Possibilities*
 *A Module by IZZI WORKSHOP*

@@ -1,6 +1,6 @@
 /**
  * PURWAVERSE LMS PHASE 1 - ISOLATED E2E VERIFICATION SCRIPT
- * 
+ *
  * Menjalankan pengujian E2E lengkap dengan:
  * 1. Database SQLite terisolasi sementara (test_isolated_e2e.db).
  * 2. Seeding bersih dari source data tracked (rosterData, diagnosticData, learningData).
@@ -55,7 +55,7 @@ const SYNTHETIC_TEAM = 'SYN-TEAM-8A-01';
 
 async function seedSyntheticAccounts() {
   const pinHash = await hashArgon2('1234');
-  
+
   // Leader: roll 91
   append_('master_students', {
     student_id: 'SYN-LEAD',

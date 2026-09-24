@@ -1,7 +1,7 @@
 /**
  * PURWAVERSE LMS - SCRIPT SEEDING STAGING SINTETIS RESMI
  * File: scripts/seed-staging-synthetic.js
- * 
+ *
  * Standar Keamanan & Integritas:
  * 1. Skema identik 100% dengan server/src/database/schema.sql
  *    - Tabel `teams`: team_id, class_id, version, balance_score, status, created_at, created_by
@@ -48,7 +48,7 @@ const { hashArgon2 } = require('../server/src/services/securityService');
  */
 function assertSafeStagingTarget(targetDbPath) {
   const normalized = String(targetDbPath || '').toLowerCase();
-  
+
   // Guard 1: Wajib memiliki penanda 'staging', 'test', atau 'synthetic'
   const isStagingLabeled = normalized.includes('staging') || normalized.includes('test') || normalized.includes('synthetic');
   if (!isStagingLabeled) {
@@ -73,7 +73,7 @@ function assertSafeStagingTarget(targetDbPath) {
  */
 async function seedStagingSynthetic(customPath) {
   const targetPath = customPath || process.env.DB_PATH || path.resolve(__dirname, '../server/data/purwaverse_staging.db');
-  
+
   assertSafeStagingTarget(targetPath);
 
   // Pastikan folder target tersedia

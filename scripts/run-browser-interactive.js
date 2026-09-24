@@ -1,6 +1,6 @@
 /**
  * PURWAVERSE LMS PHASE 1 - REAL INTERACTIVE BROWSER E2E TEST (CDP)
- * 
+ *
  * Pengujian browser interaktif nyata melalui Chrome DevTools Protocol:
  * 1. Login Siswa (Leader)
  * 2. Baca materi Unit 1
@@ -15,7 +15,7 @@
  * 8. Deputy mengisi alasan, mengedit, dan submit laporan LKPD
  * 9. Reload browser dan verifikasi persistensi status
  * 10. Pencabutan otorisasi fallback oleh guru
- * 
+ *
  * Menggunakan database sementara & akun sintetis:
  * SYN-LEAD (8A, absen 91, PIN 1234)
  * SYN-DEP  (8A, absen 92, PIN 1234)

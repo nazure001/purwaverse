@@ -1,8 +1,8 @@
 # RENCANA UJI PENERIMAAN PENGGUNA STAGING VPS (VPS STAGING UAT PLAN)
 
-**Dokumen**: `docs/testing/VPS_STAGING_UAT.md`  
-**Lingkungan Sasaran**: Staging VPS (Domain: `https://staging.purwaverse.sekolah.sch.id`)  
-**Basis Data Uji**: Database Staging Mandiri (`purwaverse_staging.db`)  
+**Dokumen**: `docs/testing/VPS_STAGING_UAT.md`
+**Lingkungan Sasaran**: Staging VPS (Domain: `https://staging.purwaverse.sekolah.sch.id`)
+**Basis Data Uji**: Database Staging Mandiri (`purwaverse_staging.db`)
 **Akun Uji Sintetis**:
 - Siswa Leader: Ahmad Synthetic Leader (`SYN-LEAD`), Kelas `8A`, No. Absen `91`, PIN `1234`
 - Siswa Deputy: Budi Synthetic Deputy (`SYN-DEP`), Kelas `8A`, No. Absen `92`, PIN `1234`
