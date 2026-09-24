@@ -65,10 +65,12 @@ docs/reports/*.md
 !docs/reports/LMS_FIX_PHASE_1_COMPLETION.md
 !docs/reports/LMS_PHASE_1_CLOSURE_MANIFEST.md
 !docs/reports/VPS_STAGING_READINESS_AUDIT.md
+!docs/reports/VPS_STAGING_DEPLOYMENT_AND_UAT_RESULT.md
 
 # Superseded local browser evidence
 docs/reports/screenshots/5_browser_quiz_chamber_passed.png
 docs/reports/screenshots/6_browser_leader_lkpd_draft.png
+docs/reports/screenshots/mobile_*.png
 
 # Local high-resolution asset edit source (1.3 MB)
 public/assets/gear_small_copper-cutout.png
