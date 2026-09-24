@@ -112,7 +112,7 @@
     const assetMap = {
       large: 'assets/gear_large_brass.jpg',
       medium: 'assets/gear_medium_brass.jpg',
-      small: 'assets/gear_small_copper.jpg',
+      small: 'assets/gear_small_copper.png',
       checkmark: 'assets/gear_checkmark.jpg'
     };
     const src = assetMap[size] || assetMap.medium;
