@@ -44,7 +44,7 @@ Pemilik Sistem (*Owner*) / Kepala Sekolah wajib mengisi dan menentukan parameter
 
 ### 3.1 Penetapan Domain Produksi Resmi
 Pilihan nama domain/subdomain yang DNS A-Record-nya telah/akan diarahkan ke IP publik VPS:
-* [x] Domain yang Ditetapkan: `purwaverese.izzi.my.id`  
+* [x] Domain yang Ditetapkan: `purwaverse.izzi.my.id`  
   *(Contoh: `purwaverse.sekolah.sch.id` atau domain resmi yang ditunjuk)*
 
 ### 3.2 Konfirmasi Server VPS Produksi
