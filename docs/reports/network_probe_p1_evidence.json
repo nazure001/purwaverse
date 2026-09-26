@@ -1,0 +1,16 @@
+{
+  "requestUrl": "/api/purwa",
+  "requestAction": "learningUnit",
+  "requestUnitId": "CH08-01-U02",
+  "hasSessionToken": true,
+  "httpStatus": 200,
+  "httpStatusText": "OK",
+  "responseTimeMs": 157,
+  "responseHeaders": {
+    "contentType": "application/json; charset=utf-8"
+  },
+  "responseBody": {
+    "ok": false,
+    "error": "Submateri masih terkunci. Selesaikan tahap sebelumnya."
+  }
+}
