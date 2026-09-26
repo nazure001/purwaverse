@@ -44,15 +44,15 @@ Pemilik Sistem (*Owner*) / Kepala Sekolah wajib mengisi dan menentukan parameter
 
 ### 3.1 Penetapan Domain Produksi Resmi
 Pilihan nama domain/subdomain yang DNS A-Record-nya telah/akan diarahkan ke IP publik VPS:
-* [ ] Domain yang Ditetapkan: `________________________________________________`  
+* [x] Domain yang Ditetapkan: `purwaverese.izzi.my.id`  
   *(Contoh: `purwaverse.sekolah.sch.id` atau domain resmi yang ditunjuk)*
 
 ### 3.2 Konfirmasi Server VPS Produksi
-* [ ] Konfirmasi Kesiapan Server: **DISETUJUI**  
+* [x] Konfirmasi Kesiapan Server: **DISETUJUI**  
   *(Akses SSH non-root user `deploy` aktif, Node.js v20 LTS, Nginx, dan direktori `/var/backups/purwaverse/` berizin `chmod 700`)*
 
 ### 3.3 Persetujuan Impor Data Siswa Riil (207 Siswa Resmi)
-* [ ] Izin Impor Data Siswa Riil: **DISETUJUI**  
+* [x] Izin Impor Data Siswa Riil: **DISETUJUI**  
   *(Menyetujui eksekusi protokol 6 tahap pada `DATA_IMPORT_EXECUTION_PLAN.md`: validasi skema, dry-run memori, hashing PIN 4-digit via Argon2id + pepper produksi, dan pemusnahan berkas CSV mentah)*
 
 ### 3.4 Jadwal Waktu Peluncuran (Launch Window)
