@@ -959,3 +959,107 @@
     display: none;
   }
 }
+
+/* ==========================================================================
+   PRINT MEDIA STYLESHEET (A4 INK-SAVING & READABILITY OPTIMIZATION)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  body, html, body.blueprint-bg {
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Sembunyikan elemen navigasi interaktif, tombol, dan floating widgets */
+  #engine-topbar,
+  .engine-topbar,
+  .wa-floating-btn,
+  #toast,
+  .btn-brass,
+  .btn-steel,
+  .btn-icon,
+  .node-action-btn,
+  #btn-open-unit-quiz,
+  #btn-submit-summary,
+  #btn-save-team-draft,
+  #btn-submit-team-worksheet,
+  .learning-map-container,
+  .quiz-timer-badge,
+  .quiz-timer-box,
+  .portal-header,
+  nav,
+  header {
+    display: none !important;
+  }
+
+  /* Reset layout panel dan card ke gaya cetak bersih hemat tinta */
+  .view-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .blueprint-frame,
+  .industrial-card,
+  .card,
+  .teacher-command-view {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    page-break-inside: avoid;
+  }
+
+  .blueprint-header h2,
+  #unit-reader-title,
+  h2, h3, h4 {
+    color: #000000 !important;
+  }
+
+  p, span, div, label {
+    color: #222222 !important;
+  }
+
+  .chapter-lab-tag,
+  .blueprint-code {
+    border-color: #666666 !important;
+    color: #444444 !important;
+  }
+
+  /* Expand textarea dan input formulir agar isian siswa terlihat utuh */
+  textarea,
+  .auth-input,
+  input[type="text"] {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #777777 !important;
+    height: auto !important;
+    min-height: 60px !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    resize: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Team member card layout pada LKPD */
+  .team-member-card {
+    background: #f8f9fa !important;
+    border: 1px solid #dddddd !important;
+    color: #000000 !important;
+  }
+
+  .team-member-name,
+  .team-member-role {
+    color: #111111 !important;
+  }
+}
+
