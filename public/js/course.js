@@ -28,6 +28,15 @@
     const activeUnitId = unitId || window.AppState.activeUnitId || 'CH08-01-U01';
     window.AppState.activeUnitId = activeUnitId;
 
+    const isFirstUnit = activeUnitId === 'CH08-01-U01';
+    const state = (window.AppState && window.AppState.unitStates && window.AppState.unitStates[activeUnitId]) ||
+                  (window.AppState && window.AppState.studentProgress && window.AppState.studentProgress[activeUnitId]);
+
+    if (!isFirstUnit && (!state || state.contentUnlocked === false || state.status === 'locked')) {
+      toast('Submateri masih terkunci. Selesaikan kuis unit sebelumnya untuk membuka materi ini.', 'warning');
+      return;
+    }
+
     let unit = (window.AppState && window.AppState.staticUnits && window.AppState.staticUnits[activeUnitId]);
     if (!unit && window.AppState && window.AppState.sessionToken) {
       try {

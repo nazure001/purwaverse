@@ -172,7 +172,7 @@
     const pin = document.getElementById('input-student-pin').value.trim();
 
     if (!studentId || !pin) {
-      toast('Masukkan NIS dan PIN 6-digit.', 'error');
+      toast('Masukkan NIS dan PIN 4-digit.', 'error');
       return;
     }
 
@@ -402,6 +402,15 @@
   }
 
   function handleUnitClick(unitId) {
+    const isFirstUnit = unitId === 'CH08-01-U01';
+    const prog = (AppState.unitStates && AppState.unitStates[unitId]) ||
+                 (AppState.studentProgress && AppState.studentProgress[unitId]);
+
+    if (!isFirstUnit && (!prog || prog.contentUnlocked === false || prog.status === 'locked')) {
+      toast('Submateri masih terkunci. Selesaikan kuis dan tahap sebelumnya.', 'warning');
+      return;
+    }
+
     if (window.openCourseUnit) {
       window.openCourseUnit(unitId);
     } else {
