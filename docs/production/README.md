@@ -1,16 +1,18 @@
-# PURWAVERSE LMS — PRODUCTION READINESS PACKAGE
+# PURWAVERSE LMS — PRODUCTION LAUNCH & READINESS CONTROL PACKAGE
 
 **Direktori:** `docs/production/`  
-**Status Paket:** `PRODUCTION_READINESS_PACKAGE_V1`  
-**Baseline Rilis Acuan:** [`lms-phase1-staging-passed`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/releases/PHASE1_STAGING_BASELINE.md)  
+**Status Paket:** `PRODUCTION_LAUNCH_CONTROL_COMPLETE`  
+**Baseline Rilis Acuan:** [`lms-phase1-staging-passed`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/releases/PHASE1_STAGING_BASELINE.md) (`e31efd3`)  
+**Mode Operasi:** `CONTROLLED EXECUTION PREPARATION`  
 **Otoritas:** Controller Fase Transisi Produksi & Tim Antigravity  
 
 ---
 
-## 1. Peta Dokumen Kesiapan Produksi (Deliverables Matrix)
+## 1. Peta Dokumen Kesiapan & Kontrol Peluncuran (Deliverables Matrix)
 
-Paket kesiapan produksi ini disusun secara komprehensif untuk memastikan seluruh aspek infrastruktur, keamanan, basis data, prosedur rilis, dan pemantauan sistem telah terdefinisi secara terstandar sebelum peluncuran produksi:
+Paket dokumen produksi Purwaverse LMS terbagi menjadi dua kelompok instrumen: **Fondasi Kesiapan Produksi (*Production Readiness*)** dan **Kontrol Eksekusi Peluncuran (*Launch Control*)**:
 
+### Bagian A: Fondasi Kesiapan Produksi (Readiness Foundation)
 | No | Nama Dokumen | Fokus & Isi Pokok | Tautan Berkas |
 |---|---|---|---|
 | **0** | **Baseline Rilis Staging** | Kunci acuan versi stabil, fitur tersedia, batasan sistem, dan anchor rollback. | [`docs/releases/PHASE1_STAGING_BASELINE.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/releases/PHASE1_STAGING_BASELINE.md) |
@@ -24,8 +26,27 @@ Paket kesiapan produksi ini disusun secara komprehensif untuk memastikan seluruh
 
 ---
 
-## 2. Prinsip & Batasan Kerja Fase Ini
+### Bagian B: Kontrol Eksekusi Peluncuran (Launch Control Package)
+| No | Nama Dokumen | Fokus & Isi Pokok | Tautan Berkas |
+|---|---|---|---|
+| **8** | **Checklist Peluncuran Produksi** | Gerbang ganda: Approval Gate (izin pemilik, domain) & Deployment Gate (pre, deploy, post). | [`PRODUCTION_LAUNCH_CHECKLIST.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/PRODUCTION_LAUNCH_CHECKLIST.md) |
+| **9** | **Rencana Eksekusi Impor Data** | Alur 6 tahap: CSV ➔ Validasi ➔ Dry Run ➔ Approval ➔ Produksi ➔ Verifikasi 207 siswa riil. | [`DATA_IMPORT_EXECUTION_PLAN.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/DATA_IMPORT_EXECUTION_PLAN.md) |
+| **10** | **Protokol Uji Asap Produksi** | Skenario cepat KBM (<10m): Alur Siswa (Login, Unit 1, Kuis, Progres) & Alur Guru (Rombel, LKPD). | [`PRODUCTION_SMOKE_TEST.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/PRODUCTION_SMOKE_TEST.md) |
+| **11** | **Checklist Aktivasi Observabilitas** | Panduan aktivasi 5 titik: PM2 log, Nginx log, pantau disk, backup otomatis, dan uptime ping. | [`OBSERVABILITY_ACTIVATION_CHECKLIST.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/OBSERVABILITY_ACTIVATION_CHECKLIST.md) |
+| **12** | **Registrasi Risiko Final** | Matriks 8 risiko teridentifikasi (impor data, domain, konkurensi, korupsi DB, Mi browser). | [`FINAL_PRODUCTION_RISK_REGISTER.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/FINAL_PRODUCTION_RISK_REGISTER.md) |
 
-* **FROZEN CODEBASE:** Tidak ada kode runtime (`server/src/` maupun `public/`) yang dimodifikasi.
-* **ZERO DATA CONTAMINATION:** Data riil 207 siswa sekolah tetap berada di luar server hingga izin pemilik diterbitkan.
-* **SAFETY FIRST:** Seluruh prosedur mengedepankan kemampuan pemulihan balik (*instant rollback*) dan zero data loss.
+---
+
+## 2. Status Disiplin Kerja Saat Ini
+
+```text
+===================================================================
+ KETENTUAN OPERASIONAL        STATUS SAAT INI
+===================================================================
+ Runtime Codebase             FROZEN (server/src & public/ terkunci)
+ Feature Development          LOCKED (0 penambahan fitur)
+ Real Student Data            WAITING APPROVAL (belum diimpor)
+ Production Deployment        WAITING OWNER SIGN-OFF
+ Automated Regression Tests   66/66 PASS (100% lulus tanpa kegagalan)
+===================================================================
+```
