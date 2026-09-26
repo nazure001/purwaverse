@@ -34,6 +34,7 @@ Paket dokumen produksi Purwaverse LMS terbagi menjadi dua kelompok instrumen: **
 | **10** | **Protokol Uji Asap Produksi** | Skenario cepat KBM (<10m): Alur Siswa (Login, Unit 1, Kuis, Progres) & Alur Guru (Rombel, LKPD). | [`PRODUCTION_SMOKE_TEST.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/PRODUCTION_SMOKE_TEST.md) |
 | **11** | **Checklist Aktivasi Observabilitas** | Panduan aktivasi 5 titik: PM2 log, Nginx log, pantau disk, backup otomatis, dan uptime ping. | [`OBSERVABILITY_ACTIVATION_CHECKLIST.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/OBSERVABILITY_ACTIVATION_CHECKLIST.md) |
 | **12** | **Registrasi Risiko Final** | Matriks 8 risiko teridentifikasi (impor data, domain, konkurensi, korupsi DB, Mi browser). | [`FINAL_PRODUCTION_RISK_REGISTER.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/FINAL_PRODUCTION_RISK_REGISTER.md) |
+| **13** | **Formulir Pengesahan Pemilik (Go-Live Gate)** | Instrumen persetujuan manusia tertinggi: penetapan domain, izin impor 207 siswa, jadwal rilis, dan tanda tangan Owner. | [`OWNER_GO_LIVE_APPROVAL.md`](file:///d:/repo/purwaverse-ipa-viii-mvp-private/docs/production/OWNER_GO_LIVE_APPROVAL.md) |
 
 ---
 
