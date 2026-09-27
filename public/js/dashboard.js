@@ -825,39 +825,50 @@
         classId: classId || '8A'
       });
 
-      const cards = (res && res.cards) || [];
-      if (cards.length === 0) {
+      const rawCards = (res && (res.students || res.cards || (res.data && (res.data.students || res.data.cards)))) || [];
+      if (rawCards.length === 0) {
         container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px; grid-column: 1 / -1;">Tidak ada data kartu siswa.</div>';
         return;
       }
 
-      const cardsHtml = cards.map(c => `
+      const cardsHtml = rawCards.map(c => {
+        const studentId = c.studentId || c.student_id;
+        const classId = c.classId || c.class_id;
+        const rollNo = c.rollNo || c.roll_no;
+        const code = c.code || `${classId}-${String(rollNo).padStart(2, '0')}`;
+        const name = c.name;
+        const pin = c.pin;
+        const className = c.className || ('Kelas ' + classId);
+        const qrUrl = c.qrUrl || `${window.location.origin}/?login=${encodeURIComponent(code)}&pin=${encodeURIComponent(pin)}`;
+
+        return `
         <div class="student-card-item">
           <div class="card-item-header">
             <div class="card-school-brand">
               <span class="card-school-name">SMP NEGERI 1 PURWAKARTA</span>
               <span class="card-lab-name">LAB IPA DIGITAL PURWAVERSE</span>
             </div>
-            <div class="card-class-badge">${escapeHtml(c.className || ('Kelas ' + c.classId))} • No. ${String(c.rollNo).padStart(2, '0')}</div>
+            <div class="card-class-badge">${escapeHtml(className)} • No. ${String(rollNo).padStart(2, '0')}</div>
           </div>
           <div class="card-item-body">
             <div class="card-details">
-              <div class="card-student-name">${escapeHtml(c.name)}</div>
+              <div class="card-student-name">${escapeHtml(name)}</div>
               <div class="card-meta-row">
-                <strong>NIS / ID:</strong> ${escapeHtml(c.studentId)}
+                <strong>NIS / ID:</strong> ${escapeHtml(studentId)} (${escapeHtml(code)})
               </div>
               <div class="card-pin-box">
                 <span class="pin-box-label">PIN AKSES:</span>
-                <span class="pin-box-code">${escapeHtml(c.pin)}</span>
+                <span class="pin-box-code">${escapeHtml(pin)}</span>
               </div>
               <div class="card-instruction">Pindai QR dengan kamera HP untuk masuk otomatis ke Lab.</div>
             </div>
             <div class="card-qr-box">
-              <img class="card-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=2&data=${encodeURIComponent(c.qrUrl)}" alt="QR Login" onerror="this.src='https://quickchart.io/qr?text=${encodeURIComponent(c.qrUrl)}&size=150'">
+              <img class="card-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=2&data=${encodeURIComponent(qrUrl)}" alt="QR Login" onerror="this.src='https://quickchart.io/qr?text=${encodeURIComponent(qrUrl)}&size=150'">
             </div>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       container.innerHTML = cardsHtml;
     } catch (err) {
