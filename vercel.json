@@ -2,12 +2,12 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
-  "functions": {
-    "api/purwa.js": {
-      "maxDuration": 60
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://purwaverse.izzi.my.id/$1",
+      "permanent": false
     }
-  },
-  "rewrites": [
-    { "source": "/api/purwa", "destination": "/api/purwa.js" }
   ]
 }
+
