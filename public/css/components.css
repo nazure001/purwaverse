@@ -1063,3 +1063,119 @@
   }
 }
 
+/* ==========================================================================
+   14. OEM BROWSER ADVISORY BANNER (Mobile-First Device Guard)
+   ========================================================================== */
+.browser-advisor-banner {
+  background: rgba(18, 29, 48, 0.95);
+  border: 1.5px solid var(--brass-main);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(212, 175, 55, 0.2);
+  position: relative;
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.browser-advisor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.browser-advisor-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--brass-light);
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid var(--brass-border);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.browser-advisor-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--brass-light);
+  margin: 0;
+}
+
+.browser-advisor-body {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.browser-advisor-body b {
+  color: var(--brass-light);
+}
+
+.browser-advisor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.browser-advisor-btn-chrome {
+  background: var(--brass-gradient);
+  color: #070c14 !important;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.browser-advisor-btn-chrome:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--brass-glow);
+}
+
+.browser-advisor-btn-copy {
+  background: rgba(14, 22, 38, 0.85);
+  color: var(--text-main);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--steel-border);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.browser-advisor-btn-copy:hover {
+  border-color: var(--brass-main);
+  background: rgba(22, 34, 58, 0.95);
+}
+
+.browser-advisor-dismiss {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.browser-advisor-dismiss:hover {
+  color: var(--text-main);
+}
+
+

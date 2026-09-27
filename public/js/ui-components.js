@@ -205,6 +205,132 @@
     `;
   }
 
+  // --- 11. OEM & Stock Browser Advisory (Mobile Device Compatibility Guard) ---
+  function detectOemBrowser(customUa) {
+    const ua = (customUa || (navigator && navigator.userAgent) || '').toLowerCase();
+    
+    // 1. Xiaomi / Redmi / POCO
+    if (ua.includes('miuibrowser') || ua.includes('xiaomi')) {
+      return { isOem: true, brand: 'Xiaomi / Redmi / POCO', name: 'Mi Browser' };
+    }
+    // 2. Vivo / iQOO
+    if (ua.includes('vivobrowser')) {
+      return { isOem: true, brand: 'Vivo / iQOO', name: 'Vivo Browser' };
+    }
+    // 3. OPPO / Realme
+    if (ua.includes('heytapbrowser') || ua.includes('oppobrowser')) {
+      return { isOem: true, brand: 'OPPO / Realme', name: 'HeyTap / Oppo Browser' };
+    }
+    // 4. Infinix / Tecno / Itel (Transsion)
+    if (ua.includes('hibrowser') || ua.includes('phoenix')) {
+      return { isOem: true, brand: 'Infinix / Tecno / Itel', name: 'HiBrowser / Phoenix' };
+    }
+    // 5. Samsung
+    if (ua.includes('samsungbrowser')) {
+      return { isOem: true, brand: 'Samsung', name: 'Samsung Internet' };
+    }
+    // 6. Huawei / Honor
+    if (ua.includes('huaweibrowser')) {
+      return { isOem: true, brand: 'Huawei', name: 'Huawei Browser' };
+    }
+    // 7. UC Browser
+    if (ua.includes('ucbrowser') || ua.includes('ubrowser')) {
+      return { isOem: true, brand: 'UCWeb', name: 'UC Browser' };
+    }
+    // 8. In-App WebViews (Social Media & Messengers)
+    if (ua.includes('fb_iab') || ua.includes('fban') || ua.includes('fbav') || ua.includes('instagram') || ua.includes('line/') || ua.includes('bytedance') || ua.includes('musical_ly')) {
+      return { isOem: true, brand: 'Aplikasi Media Sosial', name: 'In-App Browser' };
+    }
+    
+    return { isOem: false, brand: '', name: '' };
+  }
+
+  function copyLabLink() {
+    const url = window.location.href.split('#')[0];
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        toast('Tautan lab berhasil disalin! Buka Google Chrome lalu tempel tautan.', 'success');
+      }).catch(() => {
+        fallbackCopyText(url);
+      });
+    } else {
+      fallbackCopyText(url);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Tautan lab berhasil disalin! Buka Google Chrome lalu tempel tautan.', 'success');
+    } catch (e) {
+      toast('Silakan salin manual tautan: ' + text, 'info');
+    }
+  }
+
+  function dismissBrowserAdvisor() {
+    try {
+      sessionStorage.setItem('purwa_oem_dismissed', '1');
+    } catch (e) {}
+    const banner = document.getElementById('browser-advisor-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function initBrowserDetection() {
+    try {
+      if (sessionStorage.getItem('purwa_oem_dismissed') === '1') {
+        return;
+      }
+      const detection = detectOemBrowser();
+      if (!detection.isOem) return;
+
+      const banner = document.getElementById('browser-advisor-banner');
+      if (!banner) return;
+
+      const host = window.location.host;
+      const pathAndQuery = window.location.pathname + window.location.search;
+      const chromeIntent = 'intent://' + host + pathAndQuery + '#Intent;scheme=https;package=com.android.chrome;end';
+
+      banner.innerHTML = `
+        <div class="browser-advisor-header">
+          <span class="browser-advisor-badge">SARAN AKSES LAB</span>
+          <h4 class="browser-advisor-title">Terdeteksi: ${escapeHtml(detection.name)}</h4>
+        </div>
+        <div class="browser-advisor-body">
+          Browser bawaan pada perangkat <b>${escapeHtml(detection.brand)}</b> sering membatasi form login atau memutuskan sesi lab. Demi kelancaran belajar, sangat disarankan membuka Purwaverse di <b>Google Chrome</b>.
+        </div>
+        <div class="browser-advisor-actions">
+          <a href="${chromeIntent}" class="browser-advisor-btn-chrome" id="btn-open-chrome">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            Buka di Google Chrome ↗
+          </a>
+          <button type="button" class="browser-advisor-btn-copy" id="btn-copy-lab-link" onclick="copyLabLink()">
+            📋 Salin Tautan
+          </button>
+          <button type="button" class="browser-advisor-dismiss" onclick="dismissBrowserAdvisor()">
+            Lanjutkan di sini ✕
+          </button>
+        </div>
+      `;
+      banner.style.display = 'block';
+    } catch (err) {
+      console.warn('[BrowserAdvisor] Error initiating detection:', err);
+    }
+  }
+
+  // Auto-init on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBrowserDetection);
+  } else {
+    initBrowserDetection();
+  }
+
   // Export to Global
   window.SafeStorage = SafeStorage;
   window.escapeHtml = escapeHtml;
@@ -216,5 +342,9 @@
   window.renderStudentProgressBoard = renderStudentProgressBoard;
   window.renderAchievementBadge = renderAchievementBadge;
   window.renderLabConsole = renderLabConsole;
+  window.detectOemBrowser = detectOemBrowser;
+  window.initBrowserDetection = initBrowserDetection;
+  window.copyLabLink = copyLabLink;
+  window.dismissBrowserAdvisor = dismissBrowserAdvisor;
 
 })(window);
