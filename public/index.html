@@ -454,7 +454,7 @@
           <h2 style="font-size: 26px; font-weight: 800; color: var(--brass-light);">TEACHER COMMAND CENTER</h2>
           <div style="font-size: 13.5px; color: var(--text-muted);">Monitoring Pemahaman Siswa, Evaluasi LKPD, dan Intervensi Pembelajaran.</div>
         </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <span style="font-size: 13px; color: var(--text-sub);">Kelas:</span>
           <select id="teacher-class-select" class="auth-input" style="width: 110px; padding: 8px 12px;">
             <option value="8A">VIII-A</option>
@@ -463,6 +463,12 @@
             <option value="8D">VIII-D</option>
             <option value="8E">VIII-E</option>
           </select>
+          <button id="btn-print-cards" class="btn-steel" style="padding: 8px 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;" onclick="openCredentialCardPrintModal()">
+            🖨️ Cetak Kartu Siswa (A4)
+          </button>
+          <button id="btn-export-excel" class="btn-brass" style="padding: 8px 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;" onclick="exportTeacherGradebookExcel()">
+            📊 Unduh Rekap Nilai (.xlsx)
+          </button>
         </div>
       </div>
 
@@ -611,7 +617,93 @@
           </div>
         </div>
       </div>
+
+      <!-- 8B. STUDENT ROSTER & RESUME VERIFICATION TABLE -->
+      <div class="industrial-card" style="background: rgba(14, 23, 38, 0.94); border: 1px solid var(--steel-border); border-radius: 12px; padding: 24px; margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--brass-light); margin-bottom: 4px;">DAFTAR SISWA & PENGESAHAN RESUME BUKU CATATAN</h3>
+            <div style="font-size: 12.5px; color: var(--text-muted);">Pilih siswa untuk verifikasi resume massal agar kuis bab otomatis terbuka bagi siswa terpilih.</div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="teacher-student-search" class="auth-input" placeholder="🔍 Cari nama atau no. absen..." style="width: 240px; padding: 8px 14px; font-size: 13px;" oninput="filterTeacherStudentTable()">
+            <button class="btn-steel" style="padding: 8px 12px; font-size: 12px;" onclick="loadTeacherOverviewData()">🔄 Segarkan Data</button>
+          </div>
+        </div>
+
+        <!-- Bulk Action Bar -->
+        <div id="bulk-action-bar" style="display: none; background: rgba(30, 41, 59, 0.85); border: 1px solid var(--brass-main); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--brass-light);"><span id="selected-student-count">0</span> Siswa Terpilih</span>
+            <span style="font-size: 12px; color: var(--text-sub);">| Unit Target:</span>
+            <select id="bulk-verify-unit-id" class="auth-input" style="padding: 6px 10px; font-size: 12.5px;">
+              <option value="CH08-01-U01">Unit 1: Sel Unit Kehidupan</option>
+              <option value="CH08-01-U02">Unit 2: Sel Hewan & Tumbuhan</option>
+              <option value="CH08-01-U03">Unit 3: Hierarki Organisasi</option>
+              <option value="CH08-02-U01">Unit 4: Tubuh sebagai Sistem</option>
+              <option value="CH08-02-U02">Unit 5: Sistem Pencernaan</option>
+              <option value="CH08-02-U03">Unit 6: Sistem Peredaran Darah</option>
+            </select>
+          </div>
+          <button id="btn-bulk-verify" class="btn-brass" style="padding: 8px 16px; font-size: 12.5px;" onclick="teacherBulkVerifySummaries()">SAHKAN RESUME TERPILIH (BUKA KUIS) ✓</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="teacher-table" id="teacher-student-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-students" onchange="toggleSelectAllStudents(this)"></th>
+                <th style="width: 60px; text-align: center;">Absen</th>
+                <th style="width: 100px;">NIS / ID</th>
+                <th>Nama Siswa</th>
+                <th style="width: 120px; text-align: center;">Diagnostik</th>
+                <th style="width: 120px; text-align: center;">Status Unit 1</th>
+                <th style="width: 120px; text-align: center;">Status Unit 2</th>
+                <th style="width: 120px; text-align: center;">Status Unit 3</th>
+                <th style="width: 110px; text-align: center;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="teacher-student-table-body">
+              <tr>
+                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">Memuat data siswa...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
+
+    <!-- 9. MODAL CETAK KARTU KREDENSIAL SISWA (A4 PRINT READY) -->
+    <div id="modal-credential-cards" class="credential-cards-modal" style="display: none;">
+      <div class="credential-modal-backdrop" onclick="closeCredentialCardsModal()"></div>
+      <div class="credential-modal-dialog">
+        <div class="credential-modal-header no-print">
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: var(--brass-light); margin-bottom: 2px;">KARTU KREDENSIAL SISWA (FORMAT A4 PRINT READY)</h3>
+            <div style="font-size: 12px; color: var(--text-muted);">10 kartu per lembar A4 (2 kolom x 5 baris) dengan garis potong putus-putus dan QR Code login instan.</div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="print-class-filter" class="auth-input" style="padding: 6px 12px; font-size: 13px;" onchange="loadCardsForPrintFilter(this.value)">
+              <option value="8A">Kelas 8A</option>
+              <option value="8B">Kelas 8B</option>
+              <option value="8C">Kelas 8C</option>
+              <option value="8D">Kelas 8D</option>
+              <option value="8E">Kelas 8E</option>
+              <option value="all">Semua Kelas (8A - 8E)</option>
+            </select>
+            <button class="btn-brass" style="padding: 8px 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="printCredentialCards()">
+              🖨️ Cetak Dokumen (A4)
+            </button>
+            <button class="btn-steel" style="padding: 8px 12px; font-size: 13px;" onclick="closeCredentialCardsModal()">Tutup ✕</button>
+          </div>
+        </div>
+        <div class="credential-modal-body">
+          <div id="printable-cards-container" class="cards-grid-a4">
+            <!-- Cards rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Floating WhatsApp Support -->
     <a class="wa-floating-btn" href="https://wa.me/6285721215213" target="_blank" rel="noopener" title="Konsultasi WhatsApp">

@@ -1733,6 +1733,243 @@ function semesterCard(session, semester) {
   };
 }
 
+/**
+ * Mengambil daftar kartu kredensial siswa beserta PIN untuk keperluan cetak kartu A4
+ * @param {object} session - Sesi guru
+ * @param {string} classId - ID Kelas ('8A', '8B', dst atau 'all')
+ */
+function getStudentCredentialCards(session, classId) {
+  if (classId && classId !== 'all') {
+    ensureTeacherClassAccess(session, classId);
+  }
+
+  const allowedClasses = classId && classId !== 'all'
+    ? [classId]
+    : ['8A', '8B', '8C', '8D', '8E'];
+
+  const results = [];
+  for (const cId of allowedClasses) {
+    const students = findAll_('master_students', r =>
+      r.class_id === cId && (r.active === 1 || String(r.active).toLowerCase() === 'true')
+    ).sort((a, b) => Number(a.roll_no) - Number(b.roll_no));
+
+    for (const s of students) {
+      const pinRec = findOne_('pin_issuance', { student_id: s.student_id });
+      results.push({
+        student_id: s.student_id,
+        class_id: s.class_id,
+        roll_no: Number(s.roll_no),
+        name: s.name,
+        nis: s.nis || '',
+        pin: pinRec ? pinRec.pin : '1234',
+        code: `${s.class_id}-${String(s.roll_no).padStart(2, '0')}`
+      });
+    }
+  }
+
+  return {
+    classId: classId || 'all',
+    total: results.length,
+    students: results
+  };
+}
+
+/**
+ * Menghasilkan berkas XML Spreadsheet 2003 (.xls) multi-tab untuk seluruh kelas 8A-8E
+ * @param {object} session - Sesi guru
+ * @returns {string} XML Spreadsheet content
+ */
+function generateMasterGradebookExcel(session) {
+  const classes = ['8A', '8B', '8C', '8D', '8E'];
+
+  function escapeXml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  let worksheetsXml = '';
+
+  for (const classId of classes) {
+    const students = findAll_('master_students', r =>
+      r.class_id === classId && (r.active === 1 || String(r.active).toLowerCase() === 'true')
+    ).sort((a, b) => Number(a.roll_no) - Number(b.roll_no));
+
+    let rowsXml = `
+      <Row ss:Height="28">
+        <Cell ss:MergeAcross="9" ss:StyleID="TitleHeader">
+          <Data ss:Type="String">REKAPITULASI NILAI IPA KELAS ${escapeXml(classId)} — PURWAVERSE LMS</Data>
+        </Cell>
+      </Row>
+      <Row ss:Height="18">
+        <Cell ss:MergeAcross="9" ss:StyleID="SubHeader">
+          <Data ss:Type="String">Tahun Ajaran: ${escapeXml(CONFIG.SCHOOL_YEAR || '2026/2027')} | Dicetak: ${new Date().toISOString().slice(0, 10)} | Total Siswa: ${students.length}</Data>
+        </Cell>
+      </Row>
+      <Row ss:Height="22">
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">No</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Kode Siswa</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">NIS</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Nama Siswa</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">L/P</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Kehadiran (Hari)</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Rerata Kuis (%)</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Rangkuman Buku</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Nilai Akhir</Data></Cell>
+        <Cell ss:StyleID="ColHeader"><Data ss:Type="String">Status</Data></Cell>
+      </Row>
+    `;
+
+    for (const s of students) {
+      const attendances = findAll_('attendance', a => a.student_id === s.student_id);
+      const totalAttendance = attendances.length;
+
+      const attempts = findAll_('quiz_attempts', q => q.student_id === s.student_id);
+      let avgQuiz = 0;
+      if (attempts.length > 0) {
+        const sum = attempts.reduce((acc, curr) => acc + Number(curr.score || 0), 0);
+        avgQuiz = Math.round(sum / attempts.length);
+      }
+
+      const summaries = findAll_('teacher_checks', t => t.student_id === s.student_id && t.check_type === 'summary' && t.status === 'verified');
+      const verifiedSummariesCount = summaries.length;
+
+      const finalScore = avgQuiz > 0 
+        ? Math.round((avgQuiz * 0.7) + (Math.min(verifiedSummariesCount * 10, 100) * 0.3))
+        : (verifiedSummariesCount > 0 ? 75 : 0);
+
+      const statusKetuntasan = finalScore >= (CONFIG.QUIZ_PASSING_SCORE || 70) ? 'Tuntas' : 'Perlu Bimbingan';
+
+      rowsXml += `
+        <Row ss:Height="19">
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${s.roll_no}</Data></Cell>
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(s.class_id)}-${String(s.roll_no).padStart(2, '0')}</Data></Cell>
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(s.nis || '-')}</Data></Cell>
+          <Cell ss:StyleID="DataText"><Data ss:Type="String">${escapeXml(s.name)}</Data></Cell>
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(s.gender || '-')}</Data></Cell>
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${totalAttendance}</Data></Cell>
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${avgQuiz}</Data></Cell>
+          <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${verifiedSummariesCount} Unit</Data></Cell>
+          <Cell ss:StyleID="DataCenterBold"><Data ss:Type="Number">${finalScore}</Data></Cell>
+          <Cell ss:StyleID="${statusKetuntasan === 'Tuntas' ? 'StatusTuntas' : 'StatusRemedial'}"><Data ss:Type="String">${statusKetuntasan}</Data></Cell>
+        </Row>
+      `;
+    }
+
+    worksheetsXml += `
+      <Worksheet ss:Name="Kelas ${escapeXml(classId)}">
+        <Table ss:DefaultRowHeight="18">
+          <Column ss:Width="35"/>
+          <Column ss:Width="80"/>
+          <Column ss:Width="80"/>
+          <Column ss:Width="230"/>
+          <Column ss:Width="45"/>
+          <Column ss:Width="100"/>
+          <Column ss:Width="100"/>
+          <Column ss:Width="110"/>
+          <Column ss:Width="80"/>
+          <Column ss:Width="120"/>
+          ${rowsXml}
+        </Table>
+      </Worksheet>
+    `;
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>Rekap Nilai IPA Kelas 8</Title>
+  <Author>Purwaverse LMS</Author>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="TitleHeader">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="14" ss:Color="#0F172A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="SubHeader">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#64748B" ss:Italic="1"/>
+  </Style>
+  <Style ss:ID="ColHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="DataText">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataCenterBold">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#0F172A" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="StatusTuntas">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#065F46" ss:Bold="1"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="StatusRemedial">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#991B1B" ss:Bold="1"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ ${worksheetsXml}
+</Workbook>`;
+}
+
 module.exports = {
   // Learning Gate & State Machine
   unitState_,
@@ -1769,8 +2006,11 @@ module.exports = {
   // Teacher Dashboard & Overrides
   teacherLearningDashboard,
   saveUnlockOverrides,
+  getStudentCredentialCards,
+  generateMasterGradebookExcel,
 
   // Semester Card
   semesterCard,
   semesterCardData_
 };
+

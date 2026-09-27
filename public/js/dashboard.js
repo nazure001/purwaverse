@@ -449,6 +449,9 @@
     if (elAvg) elAvg.textContent = (data.avg_progress || 82) + '%';
     if (elPending) elPending.textContent = data.pending_review_count || 12;
     if (elAttention) elAttention.textContent = data.attention_count || 3;
+
+    AppState.teacherStudents = (data && data.students) || [];
+    renderTeacherStudentTable(AppState.teacherStudents);
   }
 
   async function teacherQuickVerifySummary() {
@@ -628,6 +631,250 @@
     }
   }
 
+  // --- 7. Phase 9: Student Roster Table & Bulk Review Handlers ---
+  function renderTeacherStudentTable(students) {
+    const tbody = document.getElementById('teacher-student-table-body');
+    if (!tbody) return;
+
+    if (!students || students.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">Tidak ada data siswa ditemukan.</td></tr>`;
+      updateSelectedStudentsCount();
+      return;
+    }
+
+    const rowsHtml = students.map(s => {
+      const pMap = {};
+      (s.progress || []).forEach(p => {
+        if (p.activity_id) pMap[p.activity_id] = p;
+      });
+
+      const getUnitBadge = (unitId) => {
+        const actId = unitId + '-LRN01';
+        const prog = pMap[actId];
+        if (!prog) return `<span class="badge-status-locked">Belum Ada</span>`;
+        if (prog.status === 'verified') return `<span class="badge-status-verified">Disahkan ✓</span>`;
+        if (prog.status === 'pending_review' || prog.status === 'in_progress') return `<span class="badge-status-pending">Menunggu</span>`;
+        return `<span class="badge-status-locked">Belum Ada</span>`;
+      };
+
+      const diagBadge = s.profile
+        ? `<span class="badge-status-verified">Tuntas (${s.profile.diagnostic_score || 80})</span>`
+        : `<span class="badge-status-locked">Belum</span>`;
+
+      return `
+        <tr>
+          <td style="text-align: center;">
+            <input type="checkbox" class="student-select-check" value="${escapeHtml(s.studentId)}" onchange="updateSelectedStudentsCount()">
+          </td>
+          <td style="text-align: center; font-weight: 700;">${escapeHtml(s.rollNo)}</td>
+          <td style="font-family: monospace; font-size: 12px; color: var(--brass-light);">${escapeHtml(s.studentId)}</td>
+          <td style="font-weight: 600;">${escapeHtml(s.name)}</td>
+          <td style="text-align: center;">${diagBadge}</td>
+          <td style="text-align: center;">${getUnitBadge('CH08-01-U01')}</td>
+          <td style="text-align: center;">${getUnitBadge('CH08-01-U02')}</td>
+          <td style="text-align: center;">${getUnitBadge('CH08-01-U03')}</td>
+          <td style="text-align: center;">
+            <button class="btn-steel" style="padding: 3px 8px; font-size: 11px;" onclick="teacherDirectVerify('${escapeHtml(s.studentId)}')">Sahkan</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.innerHTML = rowsHtml;
+    updateSelectedStudentsCount();
+  }
+
+  function filterTeacherStudentTable() {
+    const input = document.getElementById('teacher-student-search');
+    const keyword = (input ? input.value : '').toLowerCase().trim();
+    const students = AppState.teacherStudents || [];
+
+    if (!keyword) {
+      renderTeacherStudentTable(students);
+      return;
+    }
+
+    const filtered = students.filter(s => {
+      const name = (s.name || '').toLowerCase();
+      const roll = String(s.rollNo || '');
+      const id = (s.studentId || '').toLowerCase();
+      return name.includes(keyword) || roll.includes(keyword) || id.includes(keyword);
+    });
+
+    renderTeacherStudentTable(filtered);
+  }
+
+  function toggleSelectAllStudents(masterEl) {
+    const isChecked = !!(masterEl && masterEl.checked);
+    const checks = document.querySelectorAll('.student-select-check');
+    checks.forEach(c => { c.checked = isChecked; });
+    updateSelectedStudentsCount();
+  }
+
+  function updateSelectedStudentsCount() {
+    const checks = document.querySelectorAll('.student-select-check:checked');
+    const countEl = document.getElementById('selected-student-count');
+    const bar = document.getElementById('bulk-action-bar');
+    const masterEl = document.getElementById('check-all-students');
+    const allChecks = document.querySelectorAll('.student-select-check');
+
+    if (countEl) countEl.textContent = checks.length;
+    if (bar) bar.style.display = checks.length > 0 ? 'flex' : 'none';
+    if (masterEl && allChecks.length > 0) {
+      masterEl.checked = checks.length === allChecks.length;
+    }
+  }
+
+  async function teacherDirectVerify(studentId) {
+    const input = document.getElementById('teacher-verify-student-id');
+    if (input) input.value = studentId;
+    await teacherQuickVerifySummary();
+  }
+
+  async function teacherBulkVerifySummaries() {
+    const checks = document.querySelectorAll('.student-select-check:checked');
+    const selectedIds = Array.from(checks).map(c => c.value);
+
+    if (selectedIds.length === 0) {
+      toast('Pilih minimal satu siswa untuk verifikasi massal.', 'error');
+      return;
+    }
+
+    const unitSelect = document.getElementById('bulk-verify-unit-id');
+    const unitId = (unitSelect && unitSelect.value) || 'CH08-01-U01';
+    const activityId = unitId + '-LRN01';
+    const classSelect = document.getElementById('teacher-class-select');
+    const classId = (classSelect && classSelect.value) || AppState.selectedClass || '8A';
+
+    try {
+      toast(`Mengesahkan resume untuk ${selectedIds.length} siswa terpilih...`, 'info');
+      await callApi('saveTeacherChecks', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken,
+        classId,
+        activityId,
+        checkType: 'summary',
+        status: 'verified',
+        score: 85,
+        note: 'Pengesahan massal buku catatan fisik oleh guru.',
+        studentIds: selectedIds
+      });
+
+      toast(`Berhasil mengesahkan ${selectedIds.length} buku catatan siswa! Kuis terbuka.`, 'success');
+      loadTeacherOverviewData();
+    } catch (err) {
+      toast('Gagal verifikasi massal: ' + (err.message || 'Terjadi kesalahan.'), 'error');
+    }
+  }
+
+  // --- 8. Phase 9: Master Gradebook Excel Export ---
+  async function exportTeacherGradebookExcel() {
+    try {
+      toast('Mempersiapkan rekap nilai master seluruh kelas (8A-8E)...', 'info');
+      const res = await callApi('exportGradesExcel', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken
+      });
+
+      if (!res || !res.xml) {
+        throw new Error((res && res.error) || 'Data rekap tidak valid.');
+      }
+
+      const blob = new Blob([res.xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = res.filename || 'Rekap_Nilai_IPA_Kelas_8_Master.xls';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast('Rekap nilai berhasil diunduh (Workbook Multi-Sheet 8A-8E)!', 'success');
+    } catch (err) {
+      toast('Gagal mengunduh rekap nilai: ' + (err.message || 'Terjadi kesalahan.'), 'error');
+    }
+  }
+
+  // --- 9. Phase 9: Credential Cards Print System ---
+  function openCredentialCardPrintModal(classId) {
+    const targetClass = classId || AppState.selectedClass || '8A';
+    const filterSelect = document.getElementById('print-class-filter');
+    if (filterSelect) filterSelect.value = targetClass;
+    loadCardsForPrintFilter(targetClass);
+
+    const modal = document.getElementById('modal-credential-cards');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function closeCredentialCardsModal() {
+    const modal = document.getElementById('modal-credential-cards');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function loadCardsForPrintFilter(classId) {
+    const container = document.getElementById('printable-cards-container');
+    if (!container) return;
+
+    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px; grid-column: 1 / -1;">Memuat kartu kredensial siswa...</div>';
+
+    try {
+      const res = await callApi('getCredentialCards', {
+        token: AppState.sessionToken,
+        session_token: AppState.sessionToken,
+        classId: classId || '8A'
+      });
+
+      const cards = (res && res.cards) || [];
+      if (cards.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px; grid-column: 1 / -1;">Tidak ada data kartu siswa.</div>';
+        return;
+      }
+
+      const cardsHtml = cards.map(c => `
+        <div class="student-card-item">
+          <div class="card-item-header">
+            <div class="card-school-brand">
+              <span class="card-school-name">SMP NEGERI 1 PURWAKARTA</span>
+              <span class="card-lab-name">LAB IPA DIGITAL PURWAVERSE</span>
+            </div>
+            <div class="card-class-badge">${escapeHtml(c.className || ('Kelas ' + c.classId))} • No. ${String(c.rollNo).padStart(2, '0')}</div>
+          </div>
+          <div class="card-item-body">
+            <div class="card-details">
+              <div class="card-student-name">${escapeHtml(c.name)}</div>
+              <div class="card-meta-row">
+                <strong>NIS / ID:</strong> ${escapeHtml(c.studentId)}
+              </div>
+              <div class="card-pin-box">
+                <span class="pin-box-label">PIN AKSES:</span>
+                <span class="pin-box-code">${escapeHtml(c.pin)}</span>
+              </div>
+              <div class="card-instruction">Pindai QR dengan kamera HP untuk masuk otomatis ke Lab.</div>
+            </div>
+            <div class="card-qr-box">
+              <img class="card-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=2&data=${encodeURIComponent(c.qrUrl)}" alt="QR Login" onerror="this.src='https://quickchart.io/qr?text=${encodeURIComponent(c.qrUrl)}&size=150'">
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = cardsHtml;
+    } catch (err) {
+      container.innerHTML = `<div style="color: var(--status-danger); text-align: center; padding: 40px; grid-column: 1 / -1;">Gagal memuat kartu: ${escapeHtml(err.message || 'Terjadi kesalahan')}</div>`;
+    }
+  }
+
+  function printCredentialCards() {
+    document.body.classList.add('printing-cards');
+    window.print();
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('printing-cards');
+  });
+
+  // --- Router & Initializer ---
   function handleRoute() {
     const hash = window.location.hash.replace('#', '') || '';
     if (hash) handleTargetView(hash);
@@ -654,11 +901,28 @@
     window.addEventListener('hashchange', handleRoute);
 
     const params = new URLSearchParams(window.location.search);
+
+    // Phase 9: QR Code Auto-Fill & History Sanitization
+    const loginVal = params.get('login') || params.get('studentId') || params.get('nis');
+    const pinVal = params.get('pin');
+    if (loginVal || pinVal) {
+      showView('view-auth');
+      switchAuthTab('student');
+      const inputStudentId = document.getElementById('input-student-id');
+      const inputStudentPin = document.getElementById('input-student-pin');
+      if (inputStudentId && loginVal) inputStudentId.value = loginVal;
+      if (inputStudentPin && pinVal) inputStudentPin.value = pinVal;
+      toast('Kredensial kartu terdeteksi! Klik Masuk ke Lab untuk melanjutkan.', 'success');
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (_) {}
+    }
+
     const targetParam = params.get('view') || window.location.hash.replace('#', '');
 
     if (targetParam && targetParam !== 'loading' && targetParam !== 'view-loading') {
       handleTargetView(targetParam);
-    } else {
+    } else if (!loginVal && !pinVal) {
       initLoadingScreen();
     }
   }
@@ -674,12 +938,23 @@
   window.renderStudentDashboard = renderStudentDashboard;
   window.renderLearningMap = renderLearningMap;
   window.renderTeacherDashboard = renderTeacherDashboard;
+  window.renderTeacherStudentTable = renderTeacherStudentTable;
+  window.filterTeacherStudentTable = filterTeacherStudentTable;
+  window.toggleSelectAllStudents = toggleSelectAllStudents;
+  window.updateSelectedStudentsCount = updateSelectedStudentsCount;
+  window.teacherDirectVerify = teacherDirectVerify;
+  window.teacherBulkVerifySummaries = teacherBulkVerifySummaries;
   window.teacherQuickVerifySummary = teacherQuickVerifySummary;
   window.teacherQuickVerifyGroupLab = teacherQuickVerifyGroupLab;
   window.teacherAuthorizeFallback = teacherAuthorizeFallback;
   window.teacherRevokeFallback = teacherRevokeFallback;
   window.loadTeacherOverviewData = loadTeacherOverviewData;
   window.loadStudentDashboardData = loadStudentDashboardData;
+  window.exportTeacherGradebookExcel = exportTeacherGradebookExcel;
+  window.openCredentialCardPrintModal = openCredentialCardPrintModal;
+  window.closeCredentialCardsModal = closeCredentialCardsModal;
+  window.loadCardsForPrintFilter = loadCardsForPrintFilter;
+  window.printCredentialCards = printCredentialCards;
   window.initApp = initApp;
 
   // Auto-run on DOMContentLoaded

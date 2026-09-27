@@ -33,7 +33,9 @@ const {
   practiceWorkspace_,
   authorizeControlledFallback,
   revokeControlledFallback,
-  semesterCard
+  semesterCard,
+  getStudentCredentialCards,
+  generateMasterGradebookExcel
 } = require('../services/learningService');
 
 /**
@@ -363,6 +365,31 @@ async function handlePurwaRpc(req, res) {
         return res.status(200).json({
           ok: true,
           data
+        });
+      }
+
+      case 'getCredentialCards':
+      case 'get_credential_cards':
+      case 'studentCredentialCards': {
+        const session = requireSession(token, 'teacher');
+        const data = getStudentCredentialCards(session, payload.classId || payload.class_id);
+        return res.status(200).json({
+          ok: true,
+          data
+        });
+      }
+
+      case 'exportGradesExcel':
+      case 'export_grades_excel':
+      case 'teacherGradebookExcel': {
+        const session = requireSession(token, 'teacher');
+        const xml = generateMasterGradebookExcel(session);
+        return res.status(200).json({
+          ok: true,
+          data: {
+            filename: `Rekap_Nilai_IPA_Kelas_8_${new Date().toISOString().slice(0, 10)}.xls`,
+            xml
+          }
         });
       }
 

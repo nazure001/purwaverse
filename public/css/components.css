@@ -1178,4 +1178,332 @@
   color: var(--text-main);
 }
 
+/* ==========================================================================
+   14. PHASE 9: TEACHER ROSTER TABLE & CREDENTIAL CARDS PRINT SYSTEM
+   ========================================================================== */
+.teacher-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--text-main);
+  text-align: left;
+}
+
+.teacher-table th {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--brass-light);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.5px;
+  padding: 12px 14px;
+  border-bottom: 1.5px solid var(--steel-border);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.teacher-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+  vertical-align: middle;
+}
+
+.teacher-table tbody tr:hover {
+  background: rgba(30, 41, 59, 0.4);
+}
+
+.badge-status-verified {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-status-pending {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-status-locked {
+  display: inline-block;
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Modal Credential Cards */
+.credential-cards-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.credential-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 8, 15, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+.credential-modal-dialog {
+  position: relative;
+  z-index: 10;
+  background: #0f172a;
+  border: 1px solid var(--steel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+  width: 100%;
+  max-width: 980px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.credential-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--steel-border);
+  background: rgba(15, 23, 42, 0.95);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.credential-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  background: #090e17;
+}
+
+/* A4 Cards Grid on Screen Preview */
+.cards-grid-a4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+/* Single Student Card Item */
+.student-card-item {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px dashed #64748b;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.card-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.card-school-name {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e3a8a;
+  letter-spacing: 0.5px;
+}
+
+.card-lab-name {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #b45309;
+  letter-spacing: 1px;
+}
+
+.card-class-badge {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.card-item-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-details {
+  flex: 1;
+}
+
+.card-student-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+
+.card-meta-row {
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.card-pin-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1.5px solid #0284c7;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+}
+
+.pin-box-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #0369a1;
+  letter-spacing: 0.5px;
+}
+
+.pin-box-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: 2px;
+}
+
+.card-instruction {
+  font-size: 9px;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.card-qr-box {
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.card-qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ==========================================================================
+   PRINT MEDIA RULES FOR CREDENTIAL CARDS (10 CARDS PER A4 SHEET: 2x5 GRID)
+   ========================================================================== */
+@media print {
+  body.printing-cards {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.printing-cards .view-container,
+  body.printing-cards #engine-topbar,
+  body.printing-cards .wa-floating-btn,
+  body.printing-cards #toast,
+  body.printing-cards .browser-advisor-banner,
+  body.printing-cards .credential-modal-backdrop,
+  body.printing-cards .credential-modal-header,
+  body.printing-cards .no-print {
+    display: none !important;
+  }
+
+  body.printing-cards #modal-credential-cards {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  body.printing-cards .credential-modal-dialog {
+    max-width: 100% !important;
+    max-height: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  body.printing-cards .credential-modal-body {
+    padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  body.printing-cards .cards-grid-a4 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 94mm) !important;
+    grid-auto-rows: 52mm !important;
+    gap: 3mm 6mm !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+    page-break-after: avoid !important;
+  }
+
+  body.printing-cards .student-card-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 1px dashed #64748b !important;
+    border-radius: 4px !important;
+    padding: 10px 12px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    height: 52mm !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Exactly 10 cards per page (2 columns x 5 rows) */
+  body.printing-cards .student-card-item:nth-child(10n) {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+}
+
+
 
