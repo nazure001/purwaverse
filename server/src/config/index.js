@@ -19,6 +19,7 @@ const CONFIG = Object.freeze({
 
   // Domain Config (Sesuai Config.gs)
   APP_NAME: process.env.APP_NAME || 'Purwaverse IPA VIII',
+  SCHOOL_NAME: process.env.SCHOOL_NAME || 'SMP Negeri 2 Karangtengah',
   APP_MODE: process.env.APP_MODE || 'VPS-MIGRATION',
   SOURCE_STATUS: 'READY',
   SCHOOL_YEAR: process.env.SCHOOL_YEAR || '2026/2027',

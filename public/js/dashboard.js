@@ -839,13 +839,14 @@
         const name = c.name;
         const pin = c.pin;
         const className = c.className || ('Kelas ' + classId);
+        const schoolName = c.schoolName || (res && res.schoolName) || (window.PURWAVERSE_BOOTSTRAP && window.PURWAVERSE_BOOTSTRAP.schoolName) || 'SMP Negeri 2 Karangtengah';
         const qrUrl = c.qrUrl || `${window.location.origin}/?login=${encodeURIComponent(code)}&pin=${encodeURIComponent(pin)}`;
 
         return `
         <div class="student-card-item">
           <div class="card-item-header">
             <div class="card-school-brand">
-              <span class="card-school-name">SMP NEGERI 1 PURWAKARTA</span>
+              <span class="card-school-name">${escapeHtml(schoolName.toUpperCase())}</span>
               <span class="card-lab-name">LAB IPA DIGITAL PURWAVERSE</span>
             </div>
             <div class="card-class-badge">${escapeHtml(className)} • No. ${String(rollNo).padStart(2, '0')}</div>

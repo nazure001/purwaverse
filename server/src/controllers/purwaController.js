@@ -64,6 +64,7 @@ async function handlePurwaRpc(req, res) {
           ok: true,
           data: {
             appName: CONFIG.APP_NAME,
+            schoolName: CONFIG.SCHOOL_NAME || 'SMP Negeri 2 Karangtengah',
             mode: CONFIG.APP_MODE,
             status: 'ONLINE'
           }

@@ -1762,7 +1762,8 @@ function getStudentCredentialCards(session, classId) {
         name: s.name,
         nis: s.nis || '',
         pin: pinRec ? pinRec.pin : '1234',
-        code: `${s.class_id}-${String(s.roll_no).padStart(2, '0')}`
+        code: `${s.class_id}-${String(s.roll_no).padStart(2, '0')}`,
+        schoolName: CONFIG.SCHOOL_NAME || 'SMP Negeri 2 Karangtengah'
       });
     }
   }
@@ -1770,6 +1771,7 @@ function getStudentCredentialCards(session, classId) {
   return {
     classId: classId || 'all',
     total: results.length,
+    schoolName: CONFIG.SCHOOL_NAME || 'SMP Negeri 2 Karangtengah',
     students: results
   };
 }
@@ -1802,7 +1804,7 @@ function generateMasterGradebookExcel(session) {
     let rowsXml = `
       <Row ss:Height="28">
         <Cell ss:MergeAcross="9" ss:StyleID="TitleHeader">
-          <Data ss:Type="String">REKAPITULASI NILAI IPA KELAS ${escapeXml(classId)} — PURWAVERSE LMS</Data>
+          <Data ss:Type="String">REKAPITULASI NILAI IPA KELAS ${escapeXml(classId)} — ${escapeXml((CONFIG.SCHOOL_NAME || 'SMP Negeri 2 Karangtengah').toUpperCase())}</Data>
         </Cell>
       </Row>
       <Row ss:Height="18">
